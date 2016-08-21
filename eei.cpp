@@ -41,11 +41,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       std::cout << gas << "\n";
 
-      if (gas > call->gas) {
-        throw std::runtime_error("Out of gas.");
-      }
-
-      call->gas -= gas;
+      takeGas(gas);
 
       return Literal();
     }
