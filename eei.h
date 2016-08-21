@@ -42,25 +42,47 @@ struct EthereumInterface : ShellExternalInterface {
     }
 
     if (import->base == Name("useGas")) {
-      std::cout << "usegas\n";
+      std::cout << "usegas ";
+
+      uint32_t gas = arguments[0].geti32();
+
+      std::cout << gas << "\n";
+
+      if (gas > call->gas) {
+        throw std::runtime_error("Out of gas.");
+      }
+
+      call->gas -= gas;
+
       return Literal();
     }
 
     if (import->base == Name("callDataSize")) {
       std::cout << "calldatasize " << call->input.size() << "\n";
-      return Literal((uint32_t)0);
+      return Literal((uint32_t)call->input.size());
     }
 
     if (import->base == Name("callDataCopy")) {
-      std::cout << "calldatacopy\n";
+      std::cout << "calldatacopy ";
+
+      uint32_t resultOffset = arguments[0].geti32();
+      uint32_t dataOffset = arguments[1].geti32();
+      uint32_t length = arguments[2].geti32();
+
+      std::cout << resultOffset << " " << dataOffset << " " << length << "\n";
+
+      memoryCopy(call->input, dataOffset, resultOffset, length);
+
       return Literal();
     }
 
     if (import->base == Name("return")) {
-      std::cout << "return\n";
-      
+      std::cout << "return ";
+
       uint32_t offset = arguments[0].geti32();
       uint32_t size = arguments[1].geti32();
+
+      std::cout << offset << " " << size << "\n";
 
       call->returnValue.clear();
       for (uint32_t i = offset; i < offset + size; i++) {
@@ -71,6 +93,22 @@ struct EthereumInterface : ShellExternalInterface {
     }
 
     throw std::runtime_error(std::string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
+  }
+
+private:
+  void memoryCopy(std::vector<char> src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length)
+  {
+    if (src.size() < (srcoffset + length)) {
+      // FIXME: exception type
+      throw std::runtime_error("Out of bounds memory copy.");
+    }
+
+    uint32_t i = srcoffset;
+    uint32_t j = dstoffset;
+
+    for (; i < (srcoffset + length); i++, j++) {
+      memory.set<uint8_t>(j, src[i]);
+    }
   }
 
 private:
