@@ -38,6 +38,10 @@ struct EthereumInterface : ShellExternalInterface {
 
   Literal callImport(Import *import, LiteralList& arguments) override;
 
+  void trap(const char* why) override {
+    throw std::runtime_error(std::string("Trap condition: ") + why);
+  }
+
 private:
 
   void memoryCopy(std::vector<char> src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length)
