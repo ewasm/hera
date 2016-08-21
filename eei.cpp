@@ -61,7 +61,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
-    if (import->base == Name("callDataSize")) {
+    if (import->base == Name("getCallDataSize")) {
       std::cout << "calldatasize " << call->input.size() << "\n";
       return Literal((uint32_t)call->input.size());
     }
