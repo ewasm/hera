@@ -57,6 +57,21 @@ struct EthereumInterface : ShellExternalInterface {
       return Literal();
     }
 
+    if (import->base == Name("getAddress")) {
+      std::cout << "getAddress ";
+
+      uint32_t resultOffset = arguments[0].geti32();
+
+      std::cout << resultOffset << "\n";
+
+      union evm_variant arg = { .int64 = 0 };
+      union evm_variant ret = hera->query_fn(call->env, EVM_ADDRESS, arg);
+
+      copyAddressToMemory(ret.address, resultOffset);
+
+      return Literal();
+    }
+
     if (import->base == Name("callDataSize")) {
       std::cout << "calldatasize " << call->input.size() << "\n";
       return Literal((uint32_t)call->input.size());
@@ -108,6 +123,13 @@ private:
 
     for (; i < (srcoffset + length); i++, j++) {
       memory.set<uint8_t>(j, src[i]);
+    }
+  }
+
+  void copyAddressToMemory(struct evm_hash160 hash160, uint32_t dstoffset)
+  {
+    for (int i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {
+      memory.set<uint8_t>(j, hash160.bytes[i]);
     }
   }
 
