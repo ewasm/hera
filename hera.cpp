@@ -24,6 +24,7 @@
 
 #include <vector>
 #include <stdexcept>
+#include <cstdlib>
 
 #include <pass.h>
 #include <wasm.h>
@@ -113,7 +114,11 @@ struct evm_result evm_execute(struct evm_instance* instance,
 
   // copy call result
   ret.output_size = call->returnValue.size();
-  ret.output_data = (const uint8_t *)call->returnValue.data();
+  ret.output_data = (const uint8_t *)malloc(ret.output_size);
+  // FIXME: properly handle memory allocation issues
+  if (ret.output_data) {
+    std::copy(call->returnValue.begin(), call->returnValue.end(), (char *)ret.output_data);
+  }
   ret.gas_left = call->gas;
 
   delete call;
@@ -123,13 +128,9 @@ struct evm_result evm_execute(struct evm_instance* instance,
 
 void evm_destroy_result(struct evm_result result)
 {
-  // if (result.output_data) {
-  //   free(result.output_data);
-  // }
-
-  // if (result.internal_memory) {
-  //   free(result.internal_memory);
-  // }
+  if (result.output_data) {
+     free((void *)result.output_data);
+  }
 }
 
 }
