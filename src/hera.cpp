@@ -44,7 +44,7 @@ using namespace HeraVM;
 
 extern "C" {
 
-char const* evm_get_info(enum evm_info_key key)
+EXPORT char const* evm_get_info(enum evm_info_key key)
 {
   switch(key) {
     case EVM_NAME: return "Hera (eWASM)"; break;
@@ -55,7 +55,7 @@ char const* evm_get_info(enum evm_info_key key)
 }
 
 
-struct evm_instance* evm_create(evm_query_fn query_fn,
+EXPORT struct evm_instance* evm_create(evm_query_fn query_fn,
                                        evm_update_fn update_fn,
                                        evm_call_fn call_fn)
 {
@@ -64,20 +64,20 @@ struct evm_instance* evm_create(evm_query_fn query_fn,
   return reinterpret_cast<evm_instance*>(hera);
 }
 
-void evm_destroy(struct evm_instance* instance)
+EXPORT void evm_destroy(struct evm_instance* instance)
 {
   Hera *hera = reinterpret_cast<Hera*>(instance);
   delete hera;
 }
 
-bool evm_set_option(struct evm_instance* evm,
+EXPORT bool evm_set_option(struct evm_instance* evm,
                            char const* name,
                            char const* value)
 {
   return false;
 }
 
-struct evm_result evm_execute(struct evm_instance* instance,
+EXPORT struct evm_result evm_execute(struct evm_instance* instance,
                                      struct evm_env* env,
                                      enum evm_mode mode,
                                      struct evm_hash256 code_hash,
@@ -126,20 +126,20 @@ struct evm_result evm_execute(struct evm_instance* instance,
   return ret;
 }
 
-void evm_destroy_result(struct evm_result result)
+EXPORT void evm_destroy_result(struct evm_result result)
 {
   if (result.output_data) {
      free((void *)result.output_data);
   }
 }
 
-bool evmjit_is_code_ready(struct evm_instance* instance, enum evm_mode mode,
+EXPORT bool evmjit_is_code_ready(struct evm_instance* instance, enum evm_mode mode,
                                  struct evm_hash256 code_hash)
 {
   return true;
 }
 
-void evmjit_compile(struct evm_instance* instance, enum evm_mode mode,
+EXPORT void evmjit_compile(struct evm_instance* instance, enum evm_mode mode,
                            uint8_t const* code, size_t code_size,
                            struct evm_hash256 code_hash)
 {
