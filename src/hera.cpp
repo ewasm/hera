@@ -133,6 +133,18 @@ void evm_destroy_result(struct evm_result result)
   }
 }
 
+bool evmjit_is_code_ready(struct evm_instance* instance, enum evm_mode mode,
+                                 struct evm_hash256 code_hash)
+{
+  return true;
+}
+
+void evmjit_compile(struct evm_instance* instance, enum evm_mode mode,
+                           uint8_t const* code, size_t code_size,
+                           struct evm_hash256 code_hash)
+{
+}
+
 }
 
 void Hera::execute(HeraCall *call) {
