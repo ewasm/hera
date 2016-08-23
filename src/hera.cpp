@@ -164,9 +164,9 @@ void Hera::execute(HeraCall *call) {
   EthereumInterface *interface = new EthereumInterface(this, call);
   ModuleInstance instance(*module, interface);
 
-  Name _main = Name("main");
-  LiteralList _args;
-  instance.callExport(_main, _args);
+  Name main = Name("main");
+  LiteralList args;
+  instance.callExport(main, args);
 
   delete interface;
   delete module;
