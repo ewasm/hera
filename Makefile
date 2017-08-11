@@ -3,6 +3,10 @@ libbinaryen:
 	cd binaryen/build && cmake .. && make
 
 libhera: libbinaryen
-	clang++ -shared -std=c++11 -Ibinaryen/src -o libhera.so hera.cpp eei.cpp -Lbinaryen/build/lib -lbinaryen
+	clang++ -fPIC -shared -std=c++11 -Ibinaryen/src -o libhera.so hera.cpp eei.cpp -Lbinaryen/build/lib -lbinaryen
 
 all: libhera
+
+clean:
+	rm -f libhera.so
+	rm -rf binaryen/build
