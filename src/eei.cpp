@@ -53,7 +53,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       std::cout << resultOffset << "\n";
 
-      union evm_variant arg = { .address = 0 };
+      union evm_variant arg = { .int64 = 0 };
       union evm_variant ret = hera->query_fn(call->env, EVM_ADDRESS, arg);
 
       copyAddressToMemory(ret.address, resultOffset);
@@ -77,11 +77,26 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       }
 
       union evm_variant ret = hera->query_fn(call->env, EVM_BALANCE, arg);
+      //TODO: write helper for writing uint256 to memory
+      memory.set<struct evm_uint256>(resultOffset, ret.uint256);
+
+      return Literal();
+    }
+
+    if (import->base == Name("getBlockHash")) {
+      std::cout << "getBlockHash";
+
+      uint32_t number = arguments[0].geti32();
+      uint32_t resultOffset = arguments[1].geti32();
+      std::cout << number << " " << resultOffset << "\n";
+      //TODO: do this without a cast 
+      union evm_variant arg = { .int64 = (int64_t)number };
+      union evm_variant ret = hera->query_fn(call->env, EVM_BLOCKHASH, arg);
 
       memory.set<struct evm_uint256>(resultOffset, ret.uint256);
 
       return Literal();
-    } 
+    }
 
     if (import->base == Name("getCallDataSize")) {
       std::cout << "calldatasize " << call->input.size() << "\n";
