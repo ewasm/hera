@@ -55,11 +55,9 @@ EXPORT char const* evm_get_info(enum evm_info_key key)
 }
 
 
-EXPORT struct evm_instance* evm_create(evm_query_fn query_fn,
-                                       evm_update_fn update_fn,
-                                       evm_call_fn call_fn)
+EXPORT struct evm_instance* evm_create(struct evm_host host)
 {
-  Hera *hera = new Hera(query_fn, update_fn, call_fn);
+  Hera *hera = new Hera(host);
 
   return reinterpret_cast<evm_instance*>(hera);
 }

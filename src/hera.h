@@ -54,11 +54,41 @@ public:
 class Hera
 {
 public:
-  Hera(evm_query_fn query_fn, evm_update_fn update_fn, evm_call_fn call_fn)
+  Hera(evm_account_exists_fn account_exists_fn,
+  	evm_get_storage_fn get_storage_fn,
+	evm_set_storage_fn set_storage_fn,
+	evm_get_balance_fn get_balance_fn,
+	evm_get_code_fn get_code_fn,
+	evm_self_destruct_fn self_destruct_fn,
+	evm_call_fn call_fn
+	evm_get_tx_context_fn get_tx_context_fn,
+	evm_get_block_hash_fn get_block_hash_fn,
+	evm_log_fn log_fn)
   {
-    this->query_fn = query_fn;
-    this->update_fn = update_fn;
-    this->call_fn = call_fn;
+    this->account_exists_fn = account_exists_fn;
+    this->get_storage_fn = get_storage_fn;  
+    this->set_storage_fn = set_storage_fn;
+    this->get_balance_fn = get_balance_fn;
+    this->get_code_fn = get_code_fn;
+    this->self_destruct_fn = self_destruct_fn;
+    this->call_fn = call_fn;  
+    this->get_tx_context_fn = get_tx_context_fn;  
+    this->get_block_hash_fn = get_block_hash_fn;  
+    this->log_fn = log_fn;
+  }
+
+  Hera(struct evm_host host)
+  {
+    this->host.account_exists_fn = host.account_exists_fn;
+    this->host.get_storage_fn = host.get_storage_fn;  
+    this->host.set_storage_fn = host.set_storage_fn;
+    this->host.get_balance_fn = host.get_balance_fn;
+    this->host.get_code_fn = host.get_code_fn;
+    this->host.self_destruct_fn = host.self_destruct_fn;
+    this->host.call_fn = host.call_fn;  
+    this->host.get_tx_context_fn = host.get_tx_context_fn;  
+    this->host.get_block_hash_fn = host.get_block_hash_fn;  
+    this->host.log_fn = host.log_fn;
   }
 
   Hera() {}
@@ -66,9 +96,19 @@ public:
   void execute(HeraCall *call);
 
 public:
-  evm_query_fn query_fn = nullptr;
-  evm_update_fn update_fn = nullptr;
+  evm_account_exists_fn account_exists_fn = nullptr;
+  evm_get_storage_fn get_storage_fn = nullptr;
+  evm_set_storage_fn set_storage_fn = nullptr;
+  evm_get_balance_fn get_balance_fn = nullptr;
+  evm_get_code_fn get_code_fn = nullptr;
+  evm_self_destruct_fn self_destruct_fn = nullptr;
   evm_call_fn call_fn = nullptr;
+  evm_get_tx_context_fn get_tx_context_fn = nullptr;
+  evm_get_block_hash_fn get_block_hash_fn = nullptr;
+  evm_log_fn log_fn = nullptr;
+
+public:
+  struct evm_host host = nullptr;
 };
 
 }
