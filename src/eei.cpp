@@ -53,10 +53,9 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       std::cout << resultOffset << "\n";
 
-      union evm_variant arg = { .int64 = 0 };
-      union evm_variant ret = hera->query_fn(call->env, EVM_ADDRESS, arg);
-
-      copyAddressToMemory(ret.address, resultOffset);
+      evm_uint160be address;
+      //TODO: address callback fn
+      copyAddressToMemory(address, resultOffset);
 
       return Literal();
     }
@@ -69,16 +68,11 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       std::cout << addressOffset << " " << resultOffset << "\n";
 
-      union evm_variant arg = { .address = 0 };
-
-      uint32_t i = addressOffset;
-      for (; i < (addressOffset + 20); ++i) {
-        arg.address.bytes[i - addressOffset] = memory.get<uint8_t>(i);	
-      }
-
-      union evm_variant ret = hera->query_fn(call->env, EVM_BALANCE, arg);
-      //TODO: write helper for writing uint256 to memory
-      memory.set<struct evm_uint256>(resultOffset, ret.uint256);
+      struct evm_uint160be *address;
+      copyAddressFromMemory(address, addressOffset);
+      struct evm_uint256be *balance;
+      //TODO: balance callback function with context
+      copy256ToMemory(balance, resultOffset);
 
       return Literal();
     }
@@ -89,11 +83,10 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       uint32_t number = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
       std::cout << number << " " << resultOffset << "\n";
-      //TODO: do this without a cast 
-      union evm_variant arg = { .int64 = (int64_t)number };
-      union evm_variant ret = hera->query_fn(call->env, EVM_BLOCKHASH, arg);
-
-      memory.set<struct evm_uint256>(resultOffset, ret.uint256);
+      
+      struct evm_uint256be *blockhash;
+      //TODO: blockhash callback function with context
+      copy256ToMemory(blockhash, resultOffset);
 
       return Literal();
     }
