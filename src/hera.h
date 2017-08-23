@@ -31,13 +31,12 @@ namespace HeraVM {
 class HeraCall
 {
 public:
-  HeraCall(struct evm_context *_context, std::vector<char> _code, int64_t _gas, std::vector<char> _input, struct evm_uint256be _value)
+  HeraCall(struct evm_context *_context, std::vector<char> _code, int64_t _gas, std::vector<char> _input)
   {
     context = _context;
     code = _code;
     gas = _gas;
     input = _input;
-    value = _value;
   }
 
 public:
@@ -46,7 +45,6 @@ public:
   std::vector<char> code;
   int64_t gas;
   std::vector<char> input;
-  struct evm_uint256be value;
 
   std::vector<char> returnValue;
 };
@@ -61,7 +59,7 @@ public:
     this->set_storage_fn = host.set_storage;
     this->get_balance_fn = host.get_balance;
     this->get_code_fn = host.get_code;
-    this->self_destruct_fn = host.self_destruct;
+    this->self_destruct_fn = host.selfdestruct;
     this->call_fn = host.call;  
     this->get_tx_context_fn = host.get_tx_context;  
     this->get_block_hash_fn = host.get_block_hash;  
@@ -78,7 +76,7 @@ public:
   evm_set_storage_fn set_storage_fn = nullptr;
   evm_get_balance_fn get_balance_fn = nullptr;
   evm_get_code_fn get_code_fn = nullptr;
-  evm_self_destruct_fn self_destruct_fn = nullptr;
+  evm_selfdestruct_fn self_destruct_fn = nullptr;
   evm_call_fn call_fn = nullptr;
   evm_get_tx_context_fn get_tx_context_fn = nullptr;
   evm_get_block_hash_fn get_block_hash_fn = nullptr;

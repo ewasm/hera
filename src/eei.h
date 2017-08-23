@@ -44,7 +44,7 @@ struct EthereumInterface : ShellExternalInterface {
 
 private:
 
-  void takeGas(uint32_t gas)
+  void takeGas(int64_t gas)
   {
       if (gas > call->gas) {
         throw std::runtime_error("Out of gas.");

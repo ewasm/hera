@@ -96,7 +96,7 @@ EXPORT struct evm_result evm_execute(struct evm_instance *instance,
     _input.resize(msg->input_size);
     std::copy_n(msg->input, msg->input_size, _input.begin());
   }
-  HeraCall *call = new HeraCall(context, _code, msg->gas, _input, value);
+  HeraCall *call = new HeraCall(context, _code, msg->gas, _input);
 
   try {
     hera.execute(call);
