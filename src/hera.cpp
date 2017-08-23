@@ -75,16 +75,12 @@ EXPORT bool evm_set_option(struct evm_instance* evm,
   return false;
 }
 
-EXPORT struct evm_result evm_execute(struct evm_instance* instance,
-                                     struct evm_env* env,
-                                     enum evm_mode mode,
-                                     struct evm_hash256 code_hash,
+EXPORT struct evm_result evm_execute(struct evm_instance *instance,
+                                     struct evm_context *context,
+                                     enum evm_revision rev,
+				     const struct evm_message *msg,
                                      uint8_t const* code,
-                                     size_t code_size,
-                                     int64_t gas,
-                                     uint8_t const* input,
-                                     size_t input_size,
-                                     struct evm_uint256 value)
+                                     size_t size)
 {
   auto hera = *reinterpret_cast<Hera*>(instance);
   struct evm_result ret;
@@ -93,15 +89,15 @@ EXPORT struct evm_result evm_execute(struct evm_instance* instance,
 
   std::vector<char> _code(false);
   _code.resize(code_size);
-  std::copy_n(code, code_size, _code.begin());
-
+  std::copy_n(code, size, _code.begin());
+//TODO: adjust for new arg set from evmc
   std::vector<char> _input(false);
   if (input_size) {
     _input.resize(input_size);
     std::copy_n(input, input_size, _input.begin());
   }
-
-  HeraCall *call = new HeraCall(env, _code, gas, _input, value);
+//TODO: adjust for new HeraCall constructor
+  HeraCall *call = new HeraCall(context, _code, gas, _input, value);
 
   try {
     hera.execute(call);
@@ -170,7 +166,7 @@ void Hera::execute(HeraCall *call) {
   // passRunner.addDefaultOptimizationPasses();
   // passRunner.run();
 
-  // Interpet
+  // Interpret
   EthereumInterface *interface = new EthereumInterface(this, call);
   ModuleInstance instance(*module, interface);
 

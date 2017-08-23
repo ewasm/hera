@@ -31,9 +31,9 @@ namespace HeraVM {
 class HeraCall
 {
 public:
-  HeraCall(struct evm_env *_env, std::vector<char> _code, int64_t _gas, std::vector<char> _input, struct evm_uint256 _value)
+  HeraCall(struct evm_context *_context, std::vector<char> _code, int64_t _gas, std::vector<char> _input, struct evm_uint256be _value)
   {
-    env = _env;
+    context = _context;
     code = _code;
     gas = _gas;
     input = _input;
@@ -41,12 +41,12 @@ public:
   }
 
 public:
-  struct evm_env *env;
+  struct evm_context *context;
 
   std::vector<char> code;
   int64_t gas;
   std::vector<char> input;
-  struct evm_uint256 value;
+  struct evm_uint256be value;
 
   std::vector<char> returnValue;
 };
@@ -54,41 +54,18 @@ public:
 class Hera
 {
 public:
-  Hera(evm_account_exists_fn account_exists_fn,
-  	evm_get_storage_fn get_storage_fn,
-	evm_set_storage_fn set_storage_fn,
-	evm_get_balance_fn get_balance_fn,
-	evm_get_code_fn get_code_fn,
-	evm_self_destruct_fn self_destruct_fn,
-	evm_call_fn call_fn
-	evm_get_tx_context_fn get_tx_context_fn,
-	evm_get_block_hash_fn get_block_hash_fn,
-	evm_log_fn log_fn)
-  {
-    this->account_exists_fn = account_exists_fn;
-    this->get_storage_fn = get_storage_fn;  
-    this->set_storage_fn = set_storage_fn;
-    this->get_balance_fn = get_balance_fn;
-    this->get_code_fn = get_code_fn;
-    this->self_destruct_fn = self_destruct_fn;
-    this->call_fn = call_fn;  
-    this->get_tx_context_fn = get_tx_context_fn;  
-    this->get_block_hash_fn = get_block_hash_fn;  
-    this->log_fn = log_fn;
-  }
-
   Hera(struct evm_host host)
   {
-    this->host.account_exists_fn = host.account_exists_fn;
-    this->host.get_storage_fn = host.get_storage_fn;  
-    this->host.set_storage_fn = host.set_storage_fn;
-    this->host.get_balance_fn = host.get_balance_fn;
-    this->host.get_code_fn = host.get_code_fn;
-    this->host.self_destruct_fn = host.self_destruct_fn;
-    this->host.call_fn = host.call_fn;  
-    this->host.get_tx_context_fn = host.get_tx_context_fn;  
-    this->host.get_block_hash_fn = host.get_block_hash_fn;  
-    this->host.log_fn = host.log_fn;
+    this->account_exists_fn = host.account_exists;
+    this->get_storage_fn = host.get_storage;  
+    this->set_storage_fn = host.set_storage;
+    this->get_balance_fn = host.get_balance;
+    this->get_code_fn = host.get_code;
+    this->self_destruct_fn = host.self_destruct;
+    this->call_fn = host.call;  
+    this->get_tx_context_fn = host.get_tx_context;  
+    this->get_block_hash_fn = host.get_block_hash;  
+    this->log_fn = host.log;
   }
 
   Hera() {}
@@ -106,9 +83,6 @@ public:
   evm_get_tx_context_fn get_tx_context_fn = nullptr;
   evm_get_block_hash_fn get_block_hash_fn = nullptr;
   evm_log_fn log_fn = nullptr;
-
-public:
-  struct evm_host host = nullptr;
 };
 
 }
