@@ -44,17 +44,6 @@ using namespace HeraVM;
 
 extern "C" {
 
-EXPORT char const* evm_get_info(enum evm_info_key key)
-{
-  switch(key) {
-    case EVM_NAME: return "Hera (eWASM)"; break;
-    case EVM_VERSION: return "git"; break;
-  }
-
-  return "";
-}
-
-
 EXPORT struct evm_instance* evm_create(struct evm_host host)
 {
   Hera *hera = new Hera(host);
