@@ -37,7 +37,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     if (import->base == Name("useGas")) {
       std::cout << "usegas ";
 
-      int64_t gas = arguments[0].geti64();
+      uint64_t gas = arguments[0].geti64();
 
       std::cout << gas << "\n";
 
@@ -80,7 +80,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     if (import->base == Name("getBlockHash")) {
       std::cout << "getBlockHash";
 
-      int64_t number = arguments[0].geti64();
+      uint64_t number = arguments[0].geti64();
       uint32_t resultOffset = arguments[1].geti32();
       std::cout << number << " " << resultOffset << "\n";
       
@@ -91,17 +91,37 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("call")) {
+      std::cout << "call";
+      
+      uint64_t gas = arguments[0].geti64();
+      uint32_t addressOffset = arguments[1].geti32();
+      uint32_t valueOffset = arguments[2].geti32();
+      uint32_t dataOffset = arguments[3].geti32();
+      uint32_t dataLength = arguments[4].geti32();
+      uint32_t resultOffset = arguments[5].geti32();
+      uint32_t resultLength = arguments[6].geti32();
+
+      evm_uint160be *address;
+      copyAddressFromMemory(address, addressOffset);
+      evm_uint256 *value;
+      copy256FromMemory(value, valueOffset);
+      
+      uint8_t trap_state;
+      return Literal((uint8_t)trap_state);
+    }
+
     if (import->base == Name("getCallDataSize")) {
-      std::cout << "calldatasize " << call->input.size() << "\n";
+      std::cout << "callDataSize " << call->input.size() << "\n";
       return Literal((uint32_t)call->input.size());
     }
 
     if (import->base == Name("callDataCopy")) {
-      std::cout << "calldatacopy ";
+      std::cout << "CallDataCopy ";
 
       uint32_t resultOffset = arguments[0].geti32();
       uint32_t dataOffset = arguments[1].geti32();
-      int32_t length = arguments[2].geti32();
+      uint32_t length = arguments[2].geti32();
 
       std::cout << resultOffset << " " << dataOffset << " " << length << "\n";
 
@@ -114,7 +134,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       std::cout << "return ";
 
       uint32_t offset = arguments[0].geti32();
-      int32_t size = arguments[1].geti32();
+      uint32_t size = arguments[1].geti32();
 
       std::cout << offset << " " << size << "\n";
 
