@@ -116,21 +116,6 @@ private:
      }
   }
 
-  void copyBytesFromMemory(uint32_t offset, uint8_t *dst, size_t length)  {
-     int i = offset;
-     for (; i < (offset + length); ++i) {
-     	*(dst + (i - offset)) = memory.get<uint8_t>(i);
-     }
-  }
-
-  void copyBytesToMemory(uint32_t dstoffset, uint8_t *data, size_t length)
-  {
-     int i = dstoffset;
-     for (; i < (offset + length); ++i) {
-        memory.set<uint8_t>(i, *(data + i - dstoffset));
-     }
-  }
-
 private:
   Hera *hera;
   HeraCall *call;

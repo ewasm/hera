@@ -103,12 +103,12 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       uint32_t resultLength = arguments[6].geti32();
 
       evm_uint160be *dstaddress;
-      copyAddressFromMemory(address, addressOffset);
+      memRead(addressOffset, dstaddress->bytes, 20);
       evm_uint256be *value;
-      copy256FromMemory(value, valueOffset);
+      memRead(valueOffset, value->bytes, 32);
 
       uint8_t *data = new uint8_t[dataLength];
-      copyBytesFromMemory(dataOffset, data, dataLength);
+      memRead(dataOffset, data, dataLength);
 
       struct evm_message *messagecall;
       messagecall->address = *dstaddress;
@@ -128,7 +128,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       //FIXME: exception type
       if (callResult->output_size > resultLength)
       	throw std::runtime_error("EVM call output length exceeds maximum result length");
-      copyBytesToMemory(resultOffset, callResult->output_data, resultLength);
+      memWrite(resultOffset, callResult->output_data, resultLength);
       
       uint8_t trap_state;
       return Literal((uint8_t)trap_state);
