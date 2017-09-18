@@ -55,7 +55,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       evm_uint160be address;
       //TODO: get address of executing account
-      copyAddressToMemory(address, resultOffset);
+      memWrite(resultOffset, address->bytes, 20);
 
       return Literal();
     }
@@ -69,10 +69,10 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       std::cout << addressOffset << " " << resultOffset << "\n";
 
       struct evm_uint160be *address;
-      copyAddressFromMemory(address, addressOffset);
+      memRead(addressOffset, address->bytes, 20);
       struct evm_uint256be *balance;
       hera->get_balance_fn(balance, call->context, address);
-      copy256ToMemory(balance, resultOffset);
+      memWrite(resultOffset, balance->bytes, 32);
 
       return Literal();
     }
@@ -86,7 +86,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       
       struct evm_uint256be *blockhash;
       hera->get_block_hash_fn(blockhash, call->context, number);
-      copy256ToMemory(blockhash, resultOffset);
+      memWrite(resultOffset, blockhash->bytes, 32);
 
       return Literal();
     }
