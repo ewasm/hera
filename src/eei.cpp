@@ -102,10 +102,33 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       uint32_t resultOffset = arguments[5].geti32();
       uint32_t resultLength = arguments[6].geti32();
 
-      evm_uint160be *address;
+      evm_uint160be *dstaddress;
       copyAddressFromMemory(address, addressOffset);
-      evm_uint256 *value;
+      evm_uint256be *value;
       copy256FromMemory(value, valueOffset);
+
+      uint8_t *data = new uint8_t[dataLength];
+      copyBytesFromMemory(dataOffset, data, dataLength);
+
+      struct evm_message *messagecall;
+      messagecall->address = *dstaddress;
+      //TODO: sender
+      messagecall->value = *value;
+      messagecall->input = data;
+      messagecall->input_size = dataLength;
+      //TODO: code hash
+      messagecall->gas = gas;
+      //TODO: depth, flags
+      messagecall->kind = 0;
+
+      struct evm_result *callResult;
+      memset(callResult, 0, sizeof(struct evm_result));
+      hera->call_fn(callResult, call->context, messagecall);
+     
+      //FIXME: exception type
+      if (callResult->output_size > resultLength)
+      	throw std::runtime_error("EVM call output length exceeds maximum result length");
+      copyBytesToMemory(resultOffset, callResult->output_data, resultLength);
       
       uint8_t trap_state;
       return Literal((uint8_t)trap_state);

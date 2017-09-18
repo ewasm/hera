@@ -111,8 +111,23 @@ private:
   void copy256FromMemory(struct evm_uint256be *dst, uint32_t offset)
   {
      int i = offset;
-     for (i; i < (offset + 32); ++i) {
+     for (; i < (offset + 32); ++i) {
      	dst->bytes[i - offset] = memory.get<uint8_t>(i);
+     }
+  }
+
+  void copyBytesFromMemory(uint32_t offset, uint8_t *dst, size_t length)  {
+     int i = offset;
+     for (; i < (offset + length); ++i) {
+     	*(dst + (i - offset)) = memory.get<uint8_t>(i);
+     }
+  }
+
+  void copyBytesToMemory(uint32_t dstoffset, uint8_t *data, size_t length)
+  {
+     int i = dstoffset;
+     for (; i < (offset + length); ++i) {
+        memory.set<uint8_t>(i, *(data + i - dstoffset));
      }
   }
 
