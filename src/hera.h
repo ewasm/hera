@@ -52,25 +52,46 @@ public:
 class Hera
 {
 public:
-  Hera(struct evm_host host)
+  /*Hera(struct evm_context *_context)
   {
-    this->account_exists_fn = host.account_exists;
-    this->get_storage_fn = host.get_storage;  
-    this->set_storage_fn = host.set_storage;
-    this->get_balance_fn = host.get_balance;
-    this->get_code_fn = host.get_code;
-    this->self_destruct_fn = host.selfdestruct;
-    this->call_fn = host.call;  
-    this->get_tx_context_fn = host.get_tx_context;  
-    this->get_block_hash_fn = host.get_block_hash;  
-    this->log_fn = host.log;
-  }
+    this->account_exists_fn = _context->fn_table.account_exists;
+    this->get_storage_fn = _context->fn_table.get_storage;  
+    this->set_storage_fn = _context->fn_table.set_storage;
+    this->get_balance_fn = _context->fn_table.get_balance;
+    this->get_code_fn = _context->fn_table.get_code;
+    this->self_destruct_fn = _context->fn_table.selfdestruct;
+    this->call_fn = _context->fn_table.call;  
+    this->get_tx_context_fn = _context->fn_table.get_tx_context;  
+    this->get_block_hash_fn = _context->fn_table.get_block_hash;  
+    this->log_fn = _context->fn_table.log;
+  }*/
 
-  Hera() {}
+  Hera(const int abi_vn,
+       evm_destroy_fn destroy_fn,
+       evm_execute_fn execute_fn,
+       evm_get_code_status_fn get_code_status_fn,
+       evm_prepare_code_fn prepare_code_fn,
+       evm_set_option_fn set_option_fn) 
+  {
+    this->abi_version = abi_vn;
+    this->destroy = destroy_fn;
+    this->execute = execute_fn;
+    this->get_code_status = get_code_status_fn;
+    this->prepare_code = prepare_code_fn;
+    this->evm_set_option = set_option_fn;
+  }
 
   void execute(HeraCall *call);
 
 public:
+  const int abi_version;
+  evm_destroy_fn destroy = nullptr;
+  evm_execute_fn execute = nullptr;
+  evm_get_code_status_fn get_code_status = nullptr;
+  evm_prepare_code_fn prepare_code = nullptr;
+  evm_set_option_fn set_option = nullptr;
+
+/*
   evm_account_exists_fn account_exists_fn = nullptr;
   evm_get_storage_fn get_storage_fn = nullptr;
   evm_set_storage_fn set_storage_fn = nullptr;
@@ -81,6 +102,7 @@ public:
   evm_get_tx_context_fn get_tx_context_fn = nullptr;
   evm_get_block_hash_fn get_block_hash_fn = nullptr;
   evm_log_fn log_fn = nullptr;
+*/
 };
 
 }
