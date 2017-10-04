@@ -44,10 +44,19 @@ using namespace HeraVM;
 
 extern "C" {
 
-EXPORT struct evm_instance* evm_create(void)
+EXPORT struct evm_instance* evm_create(const int abi_vn,
+                                evm_destroy_fn destroy,
+                                evm_execute_fn execute,
+				evm_get_code_status_fn get_code_status,
+				evm_prepare_code_fn prepare_code,
+				evm_set_option_fn set_option)
 {
-  //FIXME: Hera class constructor should have base fns
-  Hera *hera = new Hera();
+  Hera *hera = new Hera(abi_vn,
+                        destroy,
+			execute,
+			get_code_status,
+			prepare_code,
+			set_option);
 
   return reinterpret_cast<evm_instance*>(hera);
 }

@@ -41,7 +41,6 @@ public:
 
 public:
   struct evm_context *context;
-
   std::vector<char> code;
   int64_t gas;
   std::vector<char> input;
