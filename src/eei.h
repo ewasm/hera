@@ -69,14 +69,14 @@ private:
   }
 
   //TODO: simplify memory helpers to reusable read/write functions like memoryCopy
-  void copyAddressToMemory(struct evm_uint160be address, uint32_t dstoffset)
+  void copyAddressToMemory(struct evm_address address, uint32_t dstoffset)
   {
     for (uint32_t i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {
       memory.set<uint8_t>(j, address.bytes[i]);
     }
   }
 
-  void copyAddressFromMemory(struct evm_uint160be *dst, uint32_t offset)
+  void copyAddressFromMemory(struct evm_address *dst, uint32_t offset)
   {
      int i = offset;
      for (; i < (offset + 20); ++i) {
