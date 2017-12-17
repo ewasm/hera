@@ -44,7 +44,7 @@ struct EthereumInterface : ShellExternalInterface {
 
 private:
 
-  void takeGas(uint32_t gas)
+  void takeGas(uint64_t gas)
   {
       if (gas > call->gas) {
         throw std::runtime_error("Out of gas.");
@@ -68,11 +68,52 @@ private:
     }
   }
 
-  void copyAddressToMemory(struct evm_hash160 hash160, uint32_t dstoffset)
+  //TODO: simplify memory helpers to reusable read/write functions like memoryCopy
+  void copyAddressToMemory(struct evm_address address, uint32_t dstoffset)
   {
     for (uint32_t i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {
-      memory.set<uint8_t>(j, hash160.bytes[i]);
+      memory.set<uint8_t>(j, address.bytes[i]);
     }
+  }
+
+  void copyAddressFromMemory(struct evm_address *dst, uint32_t offset)
+  {
+     int i = offset;
+     for (; i < (offset + 20); ++i) {
+	dst->bytes[i - offset] = memory.get<uint8_t>(i);
+     }
+  }
+
+  void copy256ToMemory(struct evm_uint256be *balance, uint32_t dstoffset)
+  {
+     int i = dstoffset;
+     for (; i < (dstoffset + 32); ++i) {
+        memory.set<uint8_t>(i, balance->bytes[i - dstoffset]);
+     }
+  }
+
+  void memRead(uint32_t offset, uint8_t *dst, size_t length)
+  {
+     uint32_t i;
+     for (i = offset; i < (offset + length); i++) {
+     	*(dst + i - offset) = memory.get<uint8_t>(i);
+     }
+  }
+
+  void memWrite(uint32_t dstoffset, uint8_t *src, size_t length)
+  {
+     uint32_t i;
+     for (i = dstoffset; i < (dstoffset + length); i++) {
+     	memory.set<uint8_t>(i, *(src + i - dstoffset));
+     }
+  }
+
+  void copy256FromMemory(struct evm_uint256be *dst, uint32_t offset)
+  {
+     int i = offset;
+     for (; i < (offset + 32); ++i) {
+     	dst->bytes[i - offset] = memory.get<uint8_t>(i);
+     }
   }
 
 private:

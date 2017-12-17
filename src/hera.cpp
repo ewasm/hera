@@ -44,22 +44,19 @@ using namespace HeraVM;
 
 extern "C" {
 
-EXPORT char const* evm_get_info(enum evm_info_key key)
+EXPORT struct evm_instance* evm_create(const int abi_vn,
+                                evm_destroy_fn destroy,
+                                evm_execute_fn execute,
+				evm_get_code_status_fn get_code_status,
+				evm_prepare_code_fn prepare_code,
+				evm_set_option_fn set_option)
 {
-  switch(key) {
-    case EVM_NAME: return "Hera (eWASM)"; break;
-    case EVM_VERSION: return "git"; break;
-  }
-
-  return "";
-}
-
-
-EXPORT struct evm_instance* evm_create(evm_query_fn query_fn,
-                                       evm_update_fn update_fn,
-                                       evm_call_fn call_fn)
-{
-  Hera *hera = new Hera(query_fn, update_fn, call_fn);
+  Hera *hera = new Hera(abi_vn,
+                        destroy,
+			execute,
+			get_code_status,
+			prepare_code,
+			set_option);
 
   return reinterpret_cast<evm_instance*>(hera);
 }
@@ -71,22 +68,18 @@ EXPORT void evm_destroy(struct evm_instance* instance)
 }
 
 EXPORT bool evm_set_option(struct evm_instance* evm,
-                           char const* name,
-                           char const* value)
+                    char const* name,
+                    char const* value)
 {
   return false;
 }
 
-EXPORT struct evm_result evm_execute(struct evm_instance* instance,
-                                     struct evm_env* env,
-                                     enum evm_mode mode,
-                                     struct evm_hash256 code_hash,
-                                     uint8_t const* code,
-                                     size_t code_size,
-                                     int64_t gas,
-                                     uint8_t const* input,
-                                     size_t input_size,
-                                     struct evm_uint256 value)
+EXPORT struct evm_result evm_execute(struct evm_instance *instance,
+                              struct evm_context *context,
+                              enum evm_revision rev,
+			      const struct evm_message *msg,
+                              uint8_t const* code,
+                              size_t code_size)
 {
   auto hera = *reinterpret_cast<Hera*>(instance);
   struct evm_result ret;
@@ -98,12 +91,11 @@ EXPORT struct evm_result evm_execute(struct evm_instance* instance,
   std::copy_n(code, code_size, _code.begin());
 
   std::vector<char> _input(false);
-  if (input_size) {
-    _input.resize(input_size);
-    std::copy_n(input, input_size, _input.begin());
+  if (msg->input_size) {
+    _input.resize(msg->input_size);
+    std::copy_n(msg->input, msg->input_size, _input.begin());
   }
-
-  HeraCall *call = new HeraCall(env, _code, gas, _input, value);
+  HeraCall *call = new HeraCall(context, _code, msg->gas, _input);
 
   try {
     hera.execute(call);
@@ -172,7 +164,7 @@ void Hera::execute(HeraCall *call) {
   // passRunner.addDefaultOptimizationPasses();
   // passRunner.run();
 
-  // Interpet
+  // Interpret
   EthereumInterface *interface = new EthereumInterface(this, call);
   ModuleInstance instance(*module, interface);
 

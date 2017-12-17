@@ -31,22 +31,19 @@ namespace HeraVM {
 class HeraCall
 {
 public:
-  HeraCall(struct evm_env *_env, std::vector<char> _code, int64_t _gas, std::vector<char> _input, struct evm_uint256 _value)
+  HeraCall(struct evm_context *_context, std::vector<char> _code, int64_t _gas, std::vector<char> _input)
   {
-    env = _env;
+    context = _context;
     code = _code;
     gas = _gas;
     input = _input;
-    value = _value;
   }
 
 public:
-  struct evm_env *env;
-
+  struct evm_context *context;
   std::vector<char> code;
   int64_t gas;
   std::vector<char> input;
-  struct evm_uint256 value;
 
   std::vector<char> returnValue;
 };
@@ -54,21 +51,30 @@ public:
 class Hera
 {
 public:
-  Hera(evm_query_fn query_fn, evm_update_fn update_fn, evm_call_fn call_fn)
+  Hera(const int abi_vn,
+       evm_destroy_fn destroy_fn,
+       evm_execute_fn execute_fn,
+       evm_get_code_status_fn get_code_status_fn,
+       evm_prepare_code_fn prepare_code_fn,
+       evm_set_option_fn set_option_fn) 
   {
-    this->query_fn = query_fn;
-    this->update_fn = update_fn;
-    this->call_fn = call_fn;
+    this->abi_version = abi_vn;
+    this->destroy = destroy_fn;
+    this->execute = execute_fn;
+    this->get_code_status = get_code_status_fn;
+    this->prepare_code = prepare_code_fn;
+    this->evm_set_option = set_option_fn;
   }
-
-  Hera() {}
 
   void execute(HeraCall *call);
 
 public:
-  evm_query_fn query_fn = nullptr;
-  evm_update_fn update_fn = nullptr;
-  evm_call_fn call_fn = nullptr;
+  const int abi_version;
+  evm_destroy_fn destroy = nullptr;
+  evm_execute_fn execute = nullptr;
+  evm_get_code_status_fn get_code_status = nullptr;
+  evm_prepare_code_fn prepare_code = nullptr;
+  evm_set_option_fn set_option = nullptr;
 };
 
 }
