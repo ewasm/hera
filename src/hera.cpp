@@ -33,7 +33,6 @@
 #include <wasm-interpreter.h>
 #include <wasm-printing.h>
 #include <wasm-validator.h>
-#include <shell-interface.h>
 
 #include "evm.h"
 #include "hera.h"
