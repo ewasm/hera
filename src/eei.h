@@ -70,7 +70,7 @@ private:
 
   void copyAddressToMemory(struct evm_hash160 hash160, uint32_t dstoffset)
   {
-    for (int i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {
+    for (uint32_t i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {
       memory.set<uint8_t>(j, hash160.bytes[i]);
     }
   }
