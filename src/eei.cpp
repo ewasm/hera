@@ -31,7 +31,7 @@ namespace HeraVM {
 
 Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     if (import->module != Name("ethereum")) {
-      throw std::runtime_error("Only imports from the 'ethereum' namespace are allowed.");
+      throw InternalErrorException("Only imports from the 'ethereum' namespace are allowed.");
     }
 
     if (import->base == Name("useGas")) {
@@ -96,7 +96,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
-    throw std::runtime_error(std::string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
+    throw InternalErrorException(std::string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
   }
 
 }

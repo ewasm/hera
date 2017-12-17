@@ -107,19 +107,26 @@ EXPORT struct evm_result evm_execute(struct evm_instance* instance,
 
   try {
     hera.execute(call);
+  } catch (OutOfGasException) {
+    ret.gas_left = EVM_EXCEPTION;
+  } catch (InternalErrorException &e) {
+    ret.gas_left = EVM_EXCEPTION;
+    std::cerr << "InternalError: " << e.what() << std::endl;
   } catch (std::exception &e) {
-    // FIXME: `evm_result` should have a way to report this back
-    Fatal() << "Execution failed: " << e.what() << "\n";
+    ret.gas_left = EVM_EXCEPTION;
+    std::cerr << "Unknown exception: " << e.what() << std::endl;
   }
 
-  // copy call result
-  ret.output_size = call->returnValue.size();
-  ret.output_data = (const uint8_t *)malloc(ret.output_size);
-  // FIXME: properly handle memory allocation issues
-  if (ret.output_data) {
-    std::copy(call->returnValue.begin(), call->returnValue.end(), (char *)ret.output_data);
+  if (ret.gas_left != EVM_EXCEPTION) {
+    // copy call result
+    ret.output_size = call->returnValue.size();
+    ret.output_data = (const uint8_t *)malloc(ret.output_size);
+    // FIXME: properly handle memory allocation issues
+    if (ret.output_data) {
+      std::copy(call->returnValue.begin(), call->returnValue.end(), (char *)ret.output_data);
+    }
+    ret.gas_left = call->gas;
   }
-  ret.gas_left = call->gas;
 
   delete call;
 
@@ -157,8 +164,14 @@ void Hera::execute(HeraCall *call) {
     WasmBinaryBuilder parser(*module, call->code, false);
     parser.read();
   } catch (ParseException &p) {
-    throw std::invalid_argument("Error in parsing WASM binary: '" +
-      p.text + "' at " + std::to_string(p.line) + ":" + std::to_string(p.col));
+    throw InternalErrorException(
+      "Error in parsing WASM binary: '" +
+      p.text +
+      "' at " +
+      std::to_string(p.line) +
+      ":" +
+      std::to_string(p.col)
+    );
   }
 
   // Print
