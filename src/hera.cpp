@@ -43,51 +43,21 @@ using namespace HeraVM;
 
 extern "C" {
 
-char const* evm_get_info(enum evm_info_key key)
+static void evm_destroy_result(struct evm_result result)
 {
-  switch(key) {
-    case EVM_NAME: return "Hera (eWASM)"; break;
-    case EVM_VERSION: return "git"; break;
+  if (result.output_data) {
+     free((void *)result.output_data);
   }
-
-  return "";
 }
 
-
-struct evm_instance* evm_create(evm_query_fn query_fn,
-                                       evm_update_fn update_fn,
-                                       evm_call_fn call_fn)
+static struct evm_result evm_execute(
+  struct evm_instance* instance,
+  struct evm_context* context,
+  enum evm_revision rev,
+  const struct evm_message* msg,
+  const uint8_t* code,
+  size_t code_size)
 {
-  Hera *hera = new Hera(query_fn, update_fn, call_fn);
-
-  return reinterpret_cast<evm_instance*>(hera);
-}
-
-void evm_destroy(struct evm_instance* instance)
-{
-  Hera *hera = reinterpret_cast<Hera*>(instance);
-  delete hera;
-}
-
-bool evm_set_option(struct evm_instance* evm,
-                           char const* name,
-                           char const* value)
-{
-  return false;
-}
-
-struct evm_result evm_execute(struct evm_instance* instance,
-                                     struct evm_env* env,
-                                     enum evm_mode mode,
-                                     struct evm_hash256 code_hash,
-                                     uint8_t const* code,
-                                     size_t code_size,
-                                     int64_t gas,
-                                     uint8_t const* input,
-                                     size_t input_size,
-                                     struct evm_uint256 value)
-{
-  auto hera = *reinterpret_cast<Hera*>(instance);
   struct evm_result ret;
 
   memset(&ret, 0, sizeof(struct evm_result));
@@ -96,27 +66,24 @@ struct evm_result evm_execute(struct evm_instance* instance,
   _code.resize(code_size);
   std::copy_n(code, code_size, _code.begin());
 
-  std::vector<char> _input(false);
-  if (input_size) {
-    _input.resize(input_size);
-    std::copy_n(input, input_size, _input.begin());
-  }
+  Hera *hera = new Hera(context);
+  HeraCall *call = new HeraCall(_code, msg);
 
-  HeraCall *call = new HeraCall(env, _code, gas, _input, value);
-
+  ret.gas_left = 0;
+  ret.status_code = EVM_SUCCESS;
   try {
-    hera.execute(call);
+    hera->execute(call);
   } catch (OutOfGasException) {
-    ret.gas_left = EVM_EXCEPTION;
+    ret.status_code = EVM_OUT_OF_GAS;
   } catch (InternalErrorException &e) {
-    ret.gas_left = EVM_EXCEPTION;
+    ret.status_code = EVM_INTERNAL_ERROR;
     std::cerr << "InternalError: " << e.what() << std::endl;
   } catch (std::exception &e) {
-    ret.gas_left = EVM_EXCEPTION;
+    ret.status_code = EVM_INTERNAL_ERROR;
     std::cerr << "Unknown exception: " << e.what() << std::endl;
   }
 
-  if (ret.gas_left != EVM_EXCEPTION) {
+  if (ret.status_code == EVM_SUCCESS) {
     // copy call result
     ret.output_size = call->returnValue.size();
     ret.output_data = (const uint8_t *)malloc(ret.output_size);
@@ -128,27 +95,28 @@ struct evm_result evm_execute(struct evm_instance* instance,
   }
 
   delete call;
+  delete hera;
 
   return ret;
 }
 
-void evm_destroy_result(struct evm_result result)
+
+static void evm_destroy(struct evm_instance* instance)
 {
-  if (result.output_data) {
-     free((void *)result.output_data);
-  }
+  free(instance);
 }
 
-bool evmjit_is_code_ready(struct evm_instance* instance, enum evm_mode mode,
-                                 struct evm_hash256 code_hash)
+struct evm_instance* evm_create()
 {
-  return true;
-}
-
-void evmjit_compile(struct evm_instance* instance, enum evm_mode mode,
-                           uint8_t const* code, size_t code_size,
-                           struct evm_hash256 code_hash)
-{
+  struct evm_instance init = {
+    .abi_version = EVM_ABI_VERSION,
+    .destroy = evm_destroy,
+    .execute = evm_execute
+  };
+  struct evm_instance* instance = (struct evm_instance*)calloc(1, sizeof(struct evm_instance));
+  if (instance)
+    memcpy(instance, &init, sizeof(init));
+  return instance;
 }
 
 }
