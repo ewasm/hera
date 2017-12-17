@@ -91,6 +91,20 @@ private:
      }
   }
 
+  void endianSwp(uint8_t *bytes, size_t len)
+  {
+    int i = 0;
+    int j = len - 1;
+
+    while (i < j) { /* XOR swap each byte of array */
+      bytes[i] ^= bytes[j];
+      bytes[j] ^= bytes[i];
+      bytes[i] ^= bytes[j];
+
+      ++i;
+      --j;
+    }
+  }
 
 private:
   Hera *hera;
