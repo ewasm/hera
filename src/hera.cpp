@@ -64,13 +64,13 @@ static struct evm_result evm_execute(
 
   std::vector<char> _code(code, code + code_size);
 
-  Hera *hera = new Hera(context);
-  HeraCall *call = new HeraCall(_code, msg);
+  Hera hera(context);
+  HeraCall call(_code, msg);
 
   ret.gas_left = 0;
   ret.status_code = EVM_SUCCESS;
   try {
-    hera->execute(call);
+    hera.execute(call);
   } catch (OutOfGasException) {
     ret.status_code = EVM_OUT_OF_GAS;
   } catch (InternalErrorException &e) {
@@ -83,20 +83,17 @@ static struct evm_result evm_execute(
 
   if (ret.status_code == EVM_SUCCESS) {
     // copy call result
-    ret.output_size = call->returnValue.size();
+    ret.output_size = call.returnValue.size();
     ret.output_data = (const uint8_t *)malloc(ret.output_size);
     // FIXME: properly handle memory allocation issues
     if (ret.output_data) {
-      std::copy(call->returnValue.begin(), call->returnValue.end(), (char *)ret.output_data);
-      ret.gas_left = call->gas;
+      std::copy(call.returnValue.begin(), call.returnValue.end(), (char *)ret.output_data);
+      ret.gas_left = call.gas;
     } else {
       ret.status_code = EVM_INTERNAL_ERROR;
       ret.gas_left = 0;
     }
   }
-
-  delete call;
-  delete hera;
 
   return ret;
 }
@@ -122,14 +119,14 @@ struct evm_instance* evm_create()
 
 }
 
-void Hera::execute(HeraCall *call) {
+void Hera::execute(HeraCall& call) {
   std::cout << "Executing...\n";
 
   Module* module = new Module();
 
   // Load module
   try {
-    WasmBinaryBuilder parser(*module, call->code, false);
+    WasmBinaryBuilder parser(*module, call.code, false);
     parser.read();
   } catch (ParseException &p) {
     throw InternalErrorException(
@@ -154,7 +151,7 @@ void Hera::execute(HeraCall *call) {
   // passRunner.run();
 
   // Interpet
-  EthereumInterface *interface = new EthereumInterface(this, call);
+  EthereumInterface *interface = new EthereumInterface(*this, call);
   ModuleInstance instance(*module, interface);
 
   Name main = Name("main");

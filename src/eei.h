@@ -51,7 +51,7 @@ private:
 }
 
 struct EthereumInterface : ShellExternalInterface {
-  EthereumInterface(Hera *_hera, HeraCall *_call) : ShellExternalInterface(), hera(_hera), call(_call) { }
+  EthereumInterface(Hera const& _hera, HeraCall & _call) : ShellExternalInterface(), hera(_hera), call(_call) { }
 
   Literal callImport(Import *import, LiteralList& arguments) override;
 
@@ -65,8 +65,8 @@ private:
   void copyAddressToMemory(struct evm_address const& address, uint32_t dstoffset);
 
 private:
-  Hera *hera;
-  HeraCall *call;
+  Hera const& hera;
+  HeraCall & call;
 };
 
 }
