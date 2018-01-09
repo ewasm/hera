@@ -33,13 +33,28 @@ using namespace wasm;
 
 namespace HeraVM {
 
+class OutOfGasException : std::exception {
+public:
+  const char* what() const noexcept override { return "Out of gas."; }
+};
+
+class InternalErrorException : std::runtime_error {
+public:
+  InternalErrorException(std::string msg): std::runtime_error(msg) {}
+  const char* what() const noexcept override { return std::exception::what(); }
+};
+
+#define heraAssert(condition, msg) { \
+  if (!(condition)) throw InternalErrorException(msg); \
+}
+
 struct EthereumInterface : ShellExternalInterface {
   EthereumInterface(Hera *_hera, HeraCall *_call) : ShellExternalInterface(), hera(_hera), call(_call) { }
 
   Literal callImport(Import *import, LiteralList& arguments) override;
 
   void trap(const char* why) override {
-    throw std::runtime_error(std::string("Trap condition: ") + why);
+    throw InternalErrorException(std::string("Trap condition: ") + why);
   }
 
 private:
@@ -47,7 +62,7 @@ private:
   void takeGas(uint32_t gas)
   {
       if (gas > call->gas) {
-        throw std::runtime_error("Out of gas.");
+        throw OutOfGasException();
       }
 
       call->gas -= gas;
@@ -55,10 +70,9 @@ private:
 
   void memoryCopy(std::vector<char> src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length)
   {
-    if (src.size() < (srcoffset + length)) {
-      // FIXME: exception type
-      throw std::runtime_error("Out of bounds memory copy.");
-    }
+    heraAssert((srcoffset + length) > srcoffset, "Out of bounds (source) memory copy.");
+    heraAssert(src.size() < (srcoffset + length), "Out of bounds (source) memory copy.");
+    heraAssert((dstoffset + length) > dstoffset, "Out of bounds (destination) memory copy.");
 
     uint32_t i = srcoffset;
     uint32_t j = dstoffset;
