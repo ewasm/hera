@@ -44,6 +44,10 @@ public:
   const char* what() const noexcept override { return std::exception::what(); }
 };
 
+#define heraAssert(condition, msg) { \
+  if (!(condition)) throw InternalErrorException(msg); \
+}
+
 struct EthereumInterface : ShellExternalInterface {
   EthereumInterface(Hera *_hera, HeraCall *_call) : ShellExternalInterface(), hera(_hera), call(_call) { }
 
@@ -66,9 +70,9 @@ private:
 
   void memoryCopy(std::vector<char> src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length)
   {
-    if (src.size() < (srcoffset + length)) {
-      throw InternalErrorException("Out of bounds memory copy.");
-    }
+    heraAssert((srcoffset + length) > srcoffset, "Out of bounds (source) memory copy.");
+    heraAssert(src.size() < (srcoffset + length), "Out of bounds (source) memory copy.");
+    heraAssert((dstoffset + length) > dstoffset, "Out of bounds (destination) memory copy.");
 
     uint32_t i = srcoffset;
     uint32_t j = dstoffset;

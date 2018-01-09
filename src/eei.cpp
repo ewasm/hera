@@ -30,9 +30,7 @@ using namespace wasm;
 namespace HeraVM {
 
 Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
-    if (import->module != Name("ethereum")) {
-      throw InternalErrorException("Only imports from the 'ethereum' namespace are allowed.");
-    }
+    heraAssert(import->module == Name("ethereum"), "Only imports from the 'ethereum' namespace are allowed.");
 
     if (import->base == Name("useGas")) {
       std::cout << "usegas ";
@@ -96,7 +94,6 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
-    throw InternalErrorException(std::string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
+    heraAssert(false, std::string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
   }
-
 }
