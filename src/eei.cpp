@@ -56,7 +56,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       cout << resultOffset << "\n";
 
-      copyAddressToMemory(msg.address, resultOffset);
+      storeUint160(msg.address, resultOffset);
 
       return Literal();
     }
@@ -75,8 +75,8 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       cout << resultOffset << " " << dataOffset << " " << length << "\n";
 
-      vector<char> input(msg.input, msg.input + msg.input_size);
-      memoryCopy(input, dataOffset, resultOffset, length);
+      vector<uint8_t> input(msg.input, msg.input + msg.input_size);
+      storeMemory(input, dataOffset, resultOffset, length);
 
       return Literal();
     }
@@ -113,26 +113,107 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     result.gasLeft -= gas;
   }
 
-  void EthereumInterface::memoryCopy(vector<char> const& src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length)
+  /*
+   * Memory Operations
+   */
+
+  void EthereumInterface::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
   {
-    heraAssert((srcoffset + length) > srcoffset, "Out of bounds (source) memory copy.");
-    heraAssert(src.size() < (srcoffset + length), "Out of bounds (source) memory copy.");
-    heraAssert((dstoffset + length) > dstoffset, "Out of bounds (destination) memory copy.");
-    heraAssert(memory.size() < (dstoffset + length), "Out of bounds (destination) memory copy.");
+    heraAssert(length > 0, "Length must be nonzero");
+    heraAssert((srcOffset + length) > srcOffset, "Out of bounds (source) memory copy.");
 
-    uint32_t i = srcoffset;
-    uint32_t j = dstoffset;
-
-    for (; i < (srcoffset + length); i++, j++) {
-      memory.set<uint8_t>(j, src[i]);
+    for (uint32_t i = 0; i < length; ++i) {
+      dst[length - (i + 1)] = memory.get<uint8_t>(srcOffset + i);
     }
   }
 
-  void EthereumInterface::copyAddressToMemory(struct evm_address const& address, uint32_t dstoffset)
+  void EthereumInterface::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
   {
-    heraAssert(memory.size() < (dstoffset + 20), "Out of bounds (destination) memory copy.");
-    for (uint32_t i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {
-      memory.set<uint8_t>(j, address.bytes[i]);
+    heraAssert(length > 0, "Length must be nonzero");
+    heraAssert((srcOffset + length) > srcOffset, "Out of bounds (source) memory copy.");
+    heraAssert(dst.size() >= length, "Out of bounds (destination) memory copy.");
+
+    for (uint32_t i = 0; i < length; ++i) {
+      dst[i] = memory.get<uint8_t>(srcOffset + i);
     }
+  }
+
+  void EthereumInterface::storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length)
+  {
+    heraAssert(length > 0, "Length must be nonzero");
+    heraAssert((dstOffset + length) > dstOffset, "Out of bounds (destination) memory copy.");
+    heraAssert(memory.size() < (dstOffset + length), "Out of bounds (destination) memory copy.");
+
+    for (uint32_t i = 0; i < length; ++i) {
+      memory.set<uint8_t>(dstOffset + length - (i + 1), src[i]);
+    }
+  }
+
+  void EthereumInterface::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
+  {
+    heraAssert(length > 0, "Length must be nonzero");
+    heraAssert((srcOffset + length) > srcOffset, "Out of bounds (source) memory copy.");
+    heraAssert(src.size() < (srcOffset + length), "Out of bounds (source) memory copy.");
+    heraAssert((dstOffset + length) > dstOffset, "Out of bounds (destination) memory copy.");
+    heraAssert(memory.size() < (dstOffset + length), "Out of bounds (destination) memory copy.");
+
+    for (uint32_t i = 0; i < length; i++) {
+      memory.set<uint8_t>(dstOffset + i, src[srcOffset + i]);
+    }
+  }
+
+  /*
+   * Memory Op Wrapper Functions
+   */
+
+  evm_uint256be EthereumInterface::loadUint256(uint32_t srcOffset)
+  {
+    evm_uint256be dst;
+    loadMemory(srcOffset, dst.bytes, 32);
+    return dst;
+  }
+
+  void EthereumInterface::storeUint256(evm_uint256be const& src, uint32_t dstOffset)
+  {
+    storeMemory(src.bytes, dstOffset, 32);
+  }
+
+  evm_address EthereumInterface::loadUint160(uint32_t srcOffset)
+  {
+    evm_address dst;
+    loadMemory(srcOffset, dst.bytes, 20);
+    return dst;
+  }
+
+  void EthereumInterface::storeUint160(evm_address const& src, uint32_t dstOffset)
+  {
+    storeMemory(src.bytes, dstOffset, 20);
+  }
+
+  evm_uint256be EthereumInterface::loadUint128(uint32_t srcOffset)
+  {
+    evm_uint256be dst;
+    loadMemory(srcOffset, dst.bytes, 16);
+    return dst;
+  }
+
+  void EthereumInterface::storeUint128(evm_uint256be const& src, uint32_t dstOffset)
+  {
+    heraAssert(!exceedsUint128(src), "Value at src cannot exceed 2^128-1");
+    storeMemory(src.bytes + 16, dstOffset, 16);
+  }
+
+  /*
+   * Utilities
+   */
+
+  /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
+  unsigned int EthereumInterface::exceedsUint128(evm_uint256be const& value)
+  {
+    for (unsigned i = 0; i < 16; ++i) {
+      if (value.bytes[i])
+        return 1;
+    }
+    return 0;
   }
 }
