@@ -33,6 +33,7 @@
 #include <wasm-interpreter.h>
 #include <wasm-printing.h>
 #include <wasm-validator.h>
+#include <shell-interface.h>
 
 #include "evm.h"
 #include "hera.h"
@@ -73,26 +74,19 @@ static struct evm_result evm_execute(
   ret.status_code = EVM_SUCCESS;
   try {
     hera->execute(call);
-  } catch (OutOfGasException) {
-    ret.status_code = EVM_OUT_OF_GAS;
-  } catch (InternalErrorException &e) {
-    ret.status_code = EVM_INTERNAL_ERROR;
-    std::cerr << "InternalError: " << e.what() << std::endl;
   } catch (std::exception &e) {
-    ret.status_code = EVM_INTERNAL_ERROR;
-    std::cerr << "Unknown exception: " << e.what() << std::endl;
+    // FIXME: `evm_result` should have a way to report this back
+    Fatal() << "Execution failed: " << e.what() << "\n";
   }
 
-  if (ret.status_code == EVM_SUCCESS) {
-    // copy call result
-    ret.output_size = call->returnValue.size();
-    ret.output_data = (const uint8_t *)malloc(ret.output_size);
-    // FIXME: properly handle memory allocation issues
-    if (ret.output_data) {
-      std::copy(call->returnValue.begin(), call->returnValue.end(), (char *)ret.output_data);
-    }
-    ret.gas_left = call->gas;
+  // copy call result
+  ret.output_size = call->returnValue.size();
+  ret.output_data = (const uint8_t *)malloc(ret.output_size);
+  // FIXME: properly handle memory allocation issues
+  if (ret.output_data) {
+    std::copy(call->returnValue.begin(), call->returnValue.end(), (char *)ret.output_data);
   }
+  ret.gas_left = call->gas;
 
   delete call;
   delete hera;
@@ -131,14 +125,8 @@ void Hera::execute(HeraCall *call) {
     WasmBinaryBuilder parser(*module, call->code, false);
     parser.read();
   } catch (ParseException &p) {
-    throw InternalErrorException(
-      "Error in parsing WASM binary: '" +
-      p.text +
-      "' at " +
-      std::to_string(p.line) +
-      ":" +
-      std::to_string(p.col)
-    );
+    throw std::invalid_argument("Error in parsing WASM binary: '" +
+      p.text + "' at " + std::to_string(p.line) + ":" + std::to_string(p.col));
   }
 
   // Print

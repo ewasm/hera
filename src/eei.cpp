@@ -51,7 +51,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       std::cout << resultOffset << "\n";
 
-      copyAddressToMemory(call->msg->address, resultOffset);
+      storeUint160(resultOffset, call->msg->address);
 
       return Literal();
     }
