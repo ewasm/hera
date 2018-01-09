@@ -31,22 +31,17 @@ namespace HeraVM {
 class HeraCall
 {
 public:
-  HeraCall(struct evm_env *_env, std::vector<char> _code, int64_t _gas, std::vector<char> _input, struct evm_uint256 _value)
+  HeraCall(std::vector<char> _code, const struct evm_message* _msg)
   {
-    env = _env;
     code = _code;
-    gas = _gas;
-    input = _input;
-    value = _value;
+    msg = _msg;
+    gas = msg->gas;
   }
 
 public:
-  struct evm_env *env;
-
   std::vector<char> code;
+  const struct evm_message* msg;
   int64_t gas;
-  std::vector<char> input;
-  struct evm_uint256 value;
 
   std::vector<char> returnValue;
 };
@@ -54,11 +49,9 @@ public:
 class Hera
 {
 public:
-  Hera(evm_query_fn query_fn, evm_update_fn update_fn, evm_call_fn call_fn)
+  Hera(struct evm_context* context)
   {
-    this->query_fn = query_fn;
-    this->update_fn = update_fn;
-    this->call_fn = call_fn;
+    this->context = context;
   }
 
   Hera() {}
@@ -66,9 +59,7 @@ public:
   void execute(HeraCall *call);
 
 public:
-  evm_query_fn query_fn = nullptr;
-  evm_update_fn update_fn = nullptr;
-  evm_call_fn call_fn = nullptr;
+  struct evm_context* context = nullptr;
 };
 
 }
