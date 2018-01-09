@@ -38,10 +38,12 @@ public:
   const char* what() const noexcept override { return "Out of gas."; }
 };
 
-class InternalErrorException : std::runtime_error {
+class InternalErrorException : std::exception {
 public:
-  InternalErrorException(std::string msg): std::runtime_error(msg) {}
-  const char* what() const noexcept override { return std::exception::what(); }
+  InternalErrorException(std::string _msg): msg(_msg) {}
+  const char* what() const noexcept override { return const_cast<char*>(msg.c_str()); }
+private:
+  std::string msg;
 };
 
 #define heraAssert(condition, msg) { \
