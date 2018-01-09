@@ -156,17 +156,14 @@ private:
    */
   
   /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
-  int exceedsUint128(struct evm_uint256be *value)
+  unsigned int exceedsUint128(struct evm_uint256be *value)
   {
-      int doesExceed = 0;
-
       assert(value != nullptr);
       for (int i = 0; i < 16; ++i) {
         if (value->bytes[i])
-	    doesExceed = 1;
+	    return 1;
       }
-
-      return doesExceed;
+      return 0;
   }
 
   /* Endianness Converter */
