@@ -50,6 +50,7 @@ struct ShellExternalInterface : ModuleInstance::ExternalInterface {
 
    public:
     Memory() {}
+    unsigned size() const { return memory.capacity(); }
     void resize(size_t newSize) {
       // Ensure the smallest allocation is large enough that most allocators
       // will provide page-aligned storage. This hopefully allows the
