@@ -156,7 +156,7 @@ private:
   {
       assert(src != nullptr);
       assert(!exceedsUint128(src->bytes));
-      endianSwap(src->bytes, 16);
+      endianSwap(src->bytes, 32);
       storeMemory(dstOffset, src->bytes, 16);
   }
 
