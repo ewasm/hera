@@ -73,6 +73,7 @@ private:
     heraAssert((srcoffset + length) > srcoffset, "Out of bounds (source) memory copy.");
     heraAssert(src.size() < (srcoffset + length), "Out of bounds (source) memory copy.");
     heraAssert((dstoffset + length) > dstoffset, "Out of bounds (destination) memory copy.");
+    heraAssert(memory.size() < (dstoffset + length), "Out of bounds (destination) memory copy.");
 
     uint32_t i = srcoffset;
     uint32_t j = dstoffset;

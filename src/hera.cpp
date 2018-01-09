@@ -70,6 +70,8 @@ static struct evm_result evm_execute(
   Hera *hera = new Hera(context);
   HeraCall *call = new HeraCall(_code, msg);
 
+  ret.gas_left = 0;
+  ret.status_code = EVM_SUCCESS;
   try {
     hera->execute(call);
   } catch (std::exception &e) {
