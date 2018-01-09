@@ -82,13 +82,6 @@ private:
     }
   }
 
-  void copyAddressToMemory(struct evm_address address, uint32_t dstoffset)
-  {
-    for (uint32_t i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {
-      memory.set<uint8_t>(j, address.bytes[i]);
-    }
-  }
-
   /*
    * Memory Operations
    */
