@@ -107,11 +107,13 @@ private:
   {
       assert(dst != nullptr);
       loadMemory(srcOffset, dst->bytes, 32);
+      endianSwap(dst->bytes, 32);
   }
 
   void storeUint256(uint32_t dstOffset, struct evm_uint256be *src)
   {
       assert(src != nullptr);
+      endianSwap(src->bytes, 32);
       storeMemory(dstOffset, src->bytes, 32);
   }
 
@@ -119,17 +121,48 @@ private:
   {
       assert(dst != nullptr);
       loadMemory(srcOffset, dst->bytes, 20);
+      endianSwap(dst->bytes, 20);
   }
 
   void storeUint160(uint32_t dstOffset, struct evm_address *src)
   {
       assert(src != nullptr);
+      endianSwap(src->bytes, 20);
       storeMemory(dstOffset, src->bytes, 20);
+  }
+
+  void loadUint128(uint32_t srcOffset, struct evm_uint256be *dst)
+  {
+      assert(dst != nullptr);
+      loadMemory(srcOffset, dst->bytes, 16);
+      endianSwap(dst->bytes, 32);
+  }
+
+  void storeUint128(uint32_t dstOffset, struct evm_uint256be *src)
+  {
+      assert(src != nullptr);
+      assert(!exceedsUint128(src->bytes));
+      endianSwap(src->bytes, 32);
+      storeMemory(dstOffset, src->bytes, 16);
   }
 
   /*
    * Utilities
    */
+  
+  /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
+  int exceedsUint128(struct evm_uint256be *value)
+  {
+      int doesExceed = 0;
+
+      assert(value != nullptr);
+      for (int i = 0; i < 16; ++i) {
+        if (value->bytes[i])
+	    doesExceed = 1;
+      }
+
+      return doesExceed;
+  }
 
   /* Endianness Converter */
   void endianSwap(uint8_t *bytes, size_t len)
