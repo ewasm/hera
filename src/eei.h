@@ -26,7 +26,7 @@
 
 #include <wasm.h>
 #include <wasm-binary.h>
-#include <shell-interface.h>
+#include "shell-interface.h"
 #include "hera.h"
 
 using namespace wasm;
