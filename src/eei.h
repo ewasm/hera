@@ -73,6 +73,7 @@ private:
     heraAssert((srcoffset + length) > srcoffset, "Out of bounds (source) memory copy.");
     heraAssert(src.size() < (srcoffset + length), "Out of bounds (source) memory copy.");
     heraAssert((dstoffset + length) > dstoffset, "Out of bounds (destination) memory copy.");
+    heraAssert(memory.size() < (dstoffset + length), "Out of bounds (destination) memory copy.");
 
     uint32_t i = srcoffset;
     uint32_t j = dstoffset;
@@ -84,6 +85,7 @@ private:
 
   void copyAddressToMemory(struct evm_hash160 hash160, uint32_t dstoffset)
   {
+    heraAssert(memory.size() < (dstoffset + 20), "Out of bounds (destination) memory copy.");
     for (uint32_t i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {
       memory.set<uint8_t>(j, hash160.bytes[i]);
     }
