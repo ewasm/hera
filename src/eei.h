@@ -75,6 +75,79 @@ private:
     }
   }
 
+  /*
+   * Memory Operations
+   */
+  
+  void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
+  {
+      assert(dst != nullptr);
+      assert(length);
+      
+      for (uint32_t i = 0; i < length; ++i) {
+          *(dst + i) = memory.get<uint8_t>(srcOffset + i);
+      }
+  }
+
+  void storeMemory(uint32_t dstOffset, uint8_t *src, size_t length)
+  {
+      assert(src != nullptr);
+      assert(length);
+
+      for (uint32_t i = 0; i < length; ++i) {
+          memory.set<uint8_t>(dstOffset + i, *(src + i));
+      }
+  }
+
+  /*
+   * Memory Op Wrapper Functions
+   */
+
+  void loadUint256(uint32_t srcOffset, struct evm_uint256be *dst)
+  {
+      assert(dst != nullptr);
+      loadMemory(srcOffset, dst->bytes, 32);
+  }
+
+  void storeUint256(uint32_t dstOffset, struct evm_uint256be *src)
+  {
+      assert(src != nullptr);
+      storeMemory(dstOffset, src->bytes, 32);
+  }
+
+  void loadUint160(uint32_t srcOffset, struct evm_address *dst)
+  {
+      assert(dst != nullptr);
+      loadMemory(srcOffset, dst->bytes, 20);
+  }
+
+  void storeUint160(uint32_t dstOffset, struct evm_address *src)
+  {
+      assert(src != nullptr);
+      storeMemory(dstOffset, src->bytes, 20);
+  }
+
+  /*
+   * Utilities
+   */
+
+  /* Endianness Converter */
+  void endianSwap(uint8_t *bytes, size_t len)
+  {
+  	assert(len);
+
+  	int i = 0;
+	int j = len - 1;
+
+	while (i < j) {
+		bytes[i] ^= bytes[j];
+		bytes[j] ^= bytes[i];
+		bytes[i] ^= bytes[j];
+
+		++i;
+		--j;
+	}
+  }
 private:
   Hera *hera;
   HeraCall *call;
