@@ -91,6 +91,37 @@ private:
     }
   }
 
+  void memRead(uint32_t offset, uint8_t *dst, size_t length)
+  {
+     uint32_t i;
+     for (i = offset; i < (offset + length); i++) {
+     	*(dst + i - offset) = memory.get<uint8_t>(i);
+     }
+  }
+
+  void memWrite(uint32_t dstoffset, uint8_t *src, size_t length)
+  {
+     uint32_t i;
+     for (i = dstoffset; i < (dstoffset + length); i++) {
+     	memory.set<uint8_t>(i, *(src + i - dstoffset));
+     }
+  }
+
+  void endianSwp(uint8_t *bytes, size_t len)
+  {
+    int i = 0;
+    int j = len - 1;
+
+    while (i < j) { /* XOR swap each byte of array */
+      bytes[i] ^= bytes[j];
+      bytes[j] ^= bytes[i];
+      bytes[i] ^= bytes[j];
+
+      ++i;
+      --j;
+    }
+  }
+
 private:
   Hera *hera;
   HeraCall *call;
