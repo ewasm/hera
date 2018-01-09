@@ -122,11 +122,11 @@ struct evm_instance* evm_create()
 void Hera::execute(HeraCall& call) {
   std::cout << "Executing...\n";
 
-  Module* module = new Module();
+  Module module;
 
   // Load module
   try {
-    WasmBinaryBuilder parser(*module, call.code, false);
+    WasmBinaryBuilder parser(module, call.code, false);
     parser.read();
   } catch (ParseException &p) {
     throw InternalErrorException(
@@ -143,7 +143,7 @@ void Hera::execute(HeraCall& call) {
   // WasmPrinter::printModule(module);
 
   // Validate
-  std::cout << "Validated: " << WasmValidator().validate(*module) << "\n";
+  std::cout << "Validated: " << WasmValidator().validate(module) << "\n";
 
   // Optimise
   // PassRunner passRunner(module);
@@ -151,13 +151,10 @@ void Hera::execute(HeraCall& call) {
   // passRunner.run();
 
   // Interpet
-  EthereumInterface *interface = new EthereumInterface(*this, call);
-  ModuleInstance instance(*module, interface);
+  EthereumInterface interface(*this, call);
+  ModuleInstance instance(module, &interface);
 
   Name main = Name("main");
   LiteralList args;
   instance.callExport(main, args);
-
-  delete interface;
-  delete module;
 }
