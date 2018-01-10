@@ -104,7 +104,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     call->gas -= gas;
   }
 
-  void EthereumInterface::memoryCopy(std::vector<char> src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length)
+  void EthereumInterface::memoryCopy(std::vector<char> const& src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length)
   {
     heraAssert((srcoffset + length) > srcoffset, "Out of bounds (source) memory copy.");
     heraAssert(src.size() < (srcoffset + length), "Out of bounds (source) memory copy.");
@@ -119,7 +119,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     }
   }
 
-  void EthereumInterface::copyAddressToMemory(struct evm_address address, uint32_t dstoffset)
+  void EthereumInterface::copyAddressToMemory(struct evm_address const& address, uint32_t dstoffset)
   {
     heraAssert(memory.size() < (dstoffset + 20), "Out of bounds (destination) memory copy.");
     for (uint32_t i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {

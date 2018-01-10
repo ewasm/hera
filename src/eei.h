@@ -61,8 +61,8 @@ struct EthereumInterface : ShellExternalInterface {
 
 private:
   void takeGas(uint32_t gas);
-  void memoryCopy(std::vector<char> src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length);
-  void copyAddressToMemory(struct evm_address address, uint32_t dstoffset);
+  void memoryCopy(std::vector<char> const& src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length);
+  void copyAddressToMemory(struct evm_address const& address, uint32_t dstoffset);
 
 private:
   Hera *hera;
