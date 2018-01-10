@@ -36,7 +36,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     if (import->base == Name("useGas")) {
       cout << "usegas ";
 
-      uint32_t gas = arguments[0].geti32();
+      uint64_t gas = arguments[0].geti64();
 
       cout << gas << "\n";
 
@@ -96,7 +96,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
   }
 
-  void EthereumInterface::takeGas(uint32_t gas)
+  void EthereumInterface::takeGas(uint64_t gas)
   {
     if (gas > call.gas) {
       throw OutOfGasException();
