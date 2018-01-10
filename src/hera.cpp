@@ -90,8 +90,11 @@ static struct evm_result evm_execute(
     // FIXME: properly handle memory allocation issues
     if (ret.output_data) {
       std::copy(call->returnValue.begin(), call->returnValue.end(), (char *)ret.output_data);
+      ret.gas_left = call->gas;
+    } else {
+      ret.status_code = EVM_INTERNAL_ERROR;
+      ret.gas_left = 0;
     }
-    ret.gas_left = call->gas;
   }
 
   delete call;
