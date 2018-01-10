@@ -60,38 +60,9 @@ struct EthereumInterface : ShellExternalInterface {
   }
 
 private:
-
-  void takeGas(uint32_t gas)
-  {
-      if (gas > call->gas) {
-        throw OutOfGasException();
-      }
-
-      call->gas -= gas;
-  }
-
-  void memoryCopy(std::vector<char> src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length)
-  {
-    heraAssert((srcoffset + length) > srcoffset, "Out of bounds (source) memory copy.");
-    heraAssert(src.size() < (srcoffset + length), "Out of bounds (source) memory copy.");
-    heraAssert((dstoffset + length) > dstoffset, "Out of bounds (destination) memory copy.");
-    heraAssert(memory.size() < (dstoffset + length), "Out of bounds (destination) memory copy.");
-
-    uint32_t i = srcoffset;
-    uint32_t j = dstoffset;
-
-    for (; i < (srcoffset + length); i++, j++) {
-      memory.set<uint8_t>(j, src[i]);
-    }
-  }
-
-  void copyAddressToMemory(struct evm_address address, uint32_t dstoffset)
-  {
-    heraAssert(memory.size() < (dstoffset + 20), "Out of bounds (destination) memory copy.");
-    for (uint32_t i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {
-      memory.set<uint8_t>(j, address.bytes[i]);
-    }
-  }
+  void takeGas(uint32_t gas);
+  void memoryCopy(std::vector<char> src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length);
+  void copyAddressToMemory(struct evm_address address, uint32_t dstoffset);
 
 private:
   Hera *hera;
