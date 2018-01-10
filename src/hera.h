@@ -56,7 +56,7 @@ public:
 
   Hera() {}
 
-  void execute(HeraCall *call);
+  void execute(HeraCall& call);
 
 public:
   struct evm_context* context = nullptr;

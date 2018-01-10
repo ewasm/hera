@@ -38,6 +38,7 @@
 #include "hera.h"
 #include "eei.h"
 
+using namespace std;
 using namespace wasm;
 using namespace HeraVM;
 
@@ -62,43 +63,38 @@ static struct evm_result evm_execute(
 
   memset(&ret, 0, sizeof(struct evm_result));
 
-  std::vector<char> _code(false);
-  _code.resize(code_size);
-  std::copy_n(code, code_size, _code.begin());
+  vector<char> _code(code, code + code_size);
 
-  Hera *hera = new Hera(context);
-  HeraCall *call = new HeraCall(_code, msg);
+  Hera hera(context);
+  HeraCall call(_code, msg);
 
   ret.gas_left = 0;
   ret.status_code = EVM_SUCCESS;
   try {
-    hera->execute(call);
+    hera.execute(call);
   } catch (OutOfGasException) {
     ret.status_code = EVM_OUT_OF_GAS;
   } catch (InternalErrorException &e) {
     ret.status_code = EVM_INTERNAL_ERROR;
-    std::cerr << "InternalError: " << e.what() << std::endl;
-  } catch (std::exception &e) {
+    cerr << "InternalError: " << e.what() << endl;
+  } catch (exception &e) {
     ret.status_code = EVM_INTERNAL_ERROR;
-    std::cerr << "Unknown exception: " << e.what() << std::endl;
+    cerr << "Unknown exception: " << e.what() << endl;
   }
 
   if (ret.status_code == EVM_SUCCESS) {
     // copy call result
-    ret.output_size = call->returnValue.size();
+    ret.output_size = call.returnValue.size();
     ret.output_data = (const uint8_t *)malloc(ret.output_size);
     // FIXME: properly handle memory allocation issues
     if (ret.output_data) {
-      std::copy(call->returnValue.begin(), call->returnValue.end(), (char *)ret.output_data);
-      ret.gas_left = call->gas;
+      copy(call.returnValue.begin(), call.returnValue.end(), (char *)ret.output_data);
+      ret.gas_left = call.gas;
     } else {
       ret.status_code = EVM_INTERNAL_ERROR;
       ret.gas_left = 0;
     }
   }
-
-  delete call;
-  delete hera;
 
   return ret;
 }
@@ -124,23 +120,23 @@ struct evm_instance* evm_create()
 
 }
 
-void Hera::execute(HeraCall *call) {
-  std::cout << "Executing...\n";
+void Hera::execute(HeraCall& call) {
+  cout << "Executing...\n";
 
-  Module* module = new Module();
+  Module module;
 
   // Load module
   try {
-    WasmBinaryBuilder parser(*module, call->code, false);
+    WasmBinaryBuilder parser(module, call.code, false);
     parser.read();
   } catch (ParseException &p) {
     throw InternalErrorException(
       "Error in parsing WASM binary: '" +
       p.text +
       "' at " +
-      std::to_string(p.line) +
+      to_string(p.line) +
       ":" +
-      std::to_string(p.col)
+      to_string(p.col)
     );
   }
 
@@ -148,7 +144,7 @@ void Hera::execute(HeraCall *call) {
   // WasmPrinter::printModule(module);
 
   // Validate
-  std::cout << "Validated: " << WasmValidator().validate(*module) << "\n";
+  cout << "Validated: " << WasmValidator().validate(module) << "\n";
 
   // Optimise
   // PassRunner passRunner(module);
@@ -156,13 +152,10 @@ void Hera::execute(HeraCall *call) {
   // passRunner.run();
 
   // Interpet
-  EthereumInterface *interface = new EthereumInterface(this, call);
-  ModuleInstance instance(*module, interface);
+  EthereumInterface interface(*this, call);
+  ModuleInstance instance(module, &interface);
 
   Name main = Name("main");
   LiteralList args;
   instance.callExport(main, args);
-
-  delete interface;
-  delete module;
 }
