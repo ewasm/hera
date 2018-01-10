@@ -61,6 +61,80 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("getBalance")) {
+      std::cout << "getbalance\n";
+
+      uint32_t addressOffset = arguments[0].geti32();
+      uint32_t resultOffset = arguments[1].geti32();
+
+      evm_address *address = new evm_address;
+      evm_uint256be *result = new evm_uint256be;
+
+      loadUint160(addressOffset, address);
+      hera->context->fn_table->get_balance(result, hera->context, address);
+      storeUint128(resultOffset, result);
+
+      delete address;
+      delete result;
+
+      return Literal();
+    }
+
+    if (import->base == Name("getBlockHash")) {
+      std::cout << "getblockhash " << number << "\n";
+
+      int64_t number = arguments[0].geti64();
+      uint32_t resultOffset = arguments[1].geti32();
+
+      evm_uint256be *blockhash = new evm_uint256be;
+      hera->context->fn_table->get_block_hash(blockhash, hera->context, number);
+      storeUint256(resultOffset, blockhash);
+
+      delete blockhash;
+
+      return Literal();
+    }
+
+    if (import->base == Name("call")) {
+      std::cout << "call\n";
+
+      int64_t gas = arguments[0].geti64();
+      uint32_t addressOffset = arguments[1].geti32();
+      uint32_t valueOffset = arguments[2].geti32();
+      uint32_t dataOffset = arguments[3].geti32();
+      int32_t dataLength = arguments[4].geti32();
+      uint32_t resultOffset = arguments[5].geti32();
+      int32_t resultLength = arguments[6].geti32();
+
+      evm_result *call_result = new evm_result;
+      evm_message *call_message = new evm_message;
+      call_message->input = new uint8_t[dataLength];
+      unsigned int vm_status = 0;
+      
+      loadUint160(addressOffset, call_message->address);
+      call_message->sender = call->address;
+      loadUint128(valueOffset, call_message->value);
+      loadMemory(dataOffset, call_message->input, dataLength);
+      call_message->input_size = dataLength;
+      std::memset(call_message->code_hash, 0, sizeof(struct evm_uint256be));
+      call_message->gas = gas;
+      call_message->depth = ++call->msg->depth;
+      call_message->kind = 0;
+      call_message->flags = 1;
+
+      hera->context->fn_table->call(call_result, hera->context, call_message);
+
+      storeMemory(resultOffset, call_result->output_data, resultLength);
+      vm_status = call_result->status_code;
+     
+      delete call_message->input;
+      delete call_message;
+      if (call_result->release != nullptr)
+        call_result->release(call_result);
+      
+      return Literal((int32_t)status_code);
+    }
+
     if (import->base == Name("getCallDataSize")) {
       cout << "calldatasize " << msg.input_size << "\n";
       return Literal((uint32_t)msg.input_size);
