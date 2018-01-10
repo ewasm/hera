@@ -11,9 +11,9 @@ matrix:
           sudo: required
           node_js:
               - "8"
-          env:
-              - ZIP_SUFFIX=ubuntu-trusty
 git:
     depth: 2
 script:
-    - make all
+    - mkdir build && cd build
+    - cmake ..
+    - cmake --build . -- -j4
