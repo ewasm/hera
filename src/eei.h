@@ -146,7 +146,7 @@ private:
   void storeUint128(uint32_t dstOffset, struct evm_uint256be *src)
   {
       assert(src != nullptr);
-      assert(!exceedsUint128(src->bytes));
+      assert(!exceedsUint128(src));
       endianSwap(src->bytes, 32);
       storeMemory(dstOffset, src->bytes, 16);
   }
