@@ -62,9 +62,7 @@ static struct evm_result evm_execute(
 
   memset(&ret, 0, sizeof(struct evm_result));
 
-  std::vector<char> _code(false);
-  _code.resize(code_size);
-  std::copy_n(code, code_size, _code.begin());
+  std::vector<char> _code(code, code + code_size);
 
   Hera *hera = new Hera(context);
   HeraCall *call = new HeraCall(_code, msg);
