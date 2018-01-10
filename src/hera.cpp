@@ -105,7 +105,7 @@ static void evm_destroy(struct evm_instance* instance)
   free(instance);
 }
 
-struct evm_instance* evm_create()
+struct evm_instance* hera_create()
 {
   struct evm_instance init = {
     .abi_version = EVM_ABI_VERSION,
