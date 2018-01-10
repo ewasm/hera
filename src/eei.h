@@ -60,7 +60,7 @@ struct EthereumInterface : ShellExternalInterface {
   }
 
 private:
-  void takeGas(uint32_t gas);
+  void takeGas(uint64_t gas);
   void memoryCopy(std::vector<char> const& src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length);
   void copyAddressToMemory(struct evm_address const& address, uint32_t dstoffset);
 
