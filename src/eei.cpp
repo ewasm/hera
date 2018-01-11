@@ -202,7 +202,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
   }
 
   /* Endianness Converter */
-  void EthereumInterface::endianSwap(uint8_t *bytes, size_t length)
+  void EthereumInterface::endianSwap(uint8_t *bytes, const size_t length)
   {
   	heraAssert(length > 0, "Length must be nonzero.");
 
