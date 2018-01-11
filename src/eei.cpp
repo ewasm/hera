@@ -110,16 +110,16 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       evm_result *call_result = new evm_result;
       evm_message *call_message = new evm_message;
-      call_message->input = new uint8_t[dataLength];
-      unsigned int vm_status = 0;
-      
+      int32_t vm_status = 0;
+      uint8_t *input_data = new uint8_t[dataLength];
+
       loadUint160(addressOffset, &call_message->address);
       call_message->sender = call.msg->address;
       loadUint128(valueOffset, &call_message->value);
-      loadMemory(dataOffset, call_message->input, dataLength);
+      loadMemory(dataOffset, input_data, dataLength);
+      call_message->input = input_data;
       call_message->input_size = dataLength;
-      /* std::memset((void *)call_message->code_hash, 0, sizeof(struct evm_uint256be)); */
-      call_message->code_hash = 0;
+      std::memset(&call_message->code_hash, 0, sizeof(evm_uint256be));
       call_message->gas = gas;
       call_message->depth = call.msg->depth + 1;
       call_message->kind = EVM_CALL;
