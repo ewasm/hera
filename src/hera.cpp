@@ -109,23 +109,27 @@ static struct evm_result evm_execute(
   size_t code_size)
 {
   struct evm_result ret;
-
   memset(&ret, 0, sizeof(struct evm_result));
 
-  vector<char> _code(code, code + code_size);
-
-  ExecutionResult result;
-
-  ret.gas_left = 0;
-  ret.status_code = EVM_SUCCESS;
   try {
     heraAssert(instance != NULL, "");
     heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");
     heraAssert(msg->gas >= 0, "Negative startgas?");
 
+    ExecutionResult result;
     result.gasLeft = (uint64_t)msg->gas;
 
+    vector<char> _code(code, code + code_size);
     execute(*context, _code, *msg, result);
+
+    // copy call result
+    if (result.returnValue.size() > 0) {
+      ret.output_size = result.returnValue.size();
+      ret.output_data = (const uint8_t *)malloc(ret.output_size);
+      heraAssert(ret.output_data != NULL, "Memory allocation failure.");
+      ret.release = evm_destroy_result;
+      copy(result.returnValue.begin(), result.returnValue.end(), (char *)ret.output_data);
+    }
 
     ret.gas_left = result.gasLeft;
   } catch (OutOfGasException) {
@@ -136,19 +140,6 @@ static struct evm_result evm_execute(
   } catch (exception &e) {
     ret.status_code = EVM_INTERNAL_ERROR;
     cerr << "Unknown exception: " << e.what() << endl;
-  }
-
-  if (ret.status_code == EVM_SUCCESS) {
-    // copy call result
-    ret.output_size = result.returnValue.size();
-    ret.output_data = (const uint8_t *)malloc(ret.output_size);
-    if (ret.output_data) {
-      ret.release = evm_destroy_result;
-      copy(result.returnValue.begin(), result.returnValue.end(), (char *)ret.output_data);
-    } else {
-      ret.status_code = EVM_INTERNAL_ERROR;
-      ret.gas_left = 0;
-    }
   }
 
   return ret;
