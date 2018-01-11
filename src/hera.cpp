@@ -65,8 +65,7 @@ static struct evm_result evm_execute(
 
   vector<char> _code(code, code + code_size);
 
-  Hera hera(context);
-  HeraCall call(_code, msg);
+  ExecutionResult result;
 
   ret.gas_left = 0;
   ret.status_code = EVM_SUCCESS;
@@ -75,7 +74,11 @@ static struct evm_result evm_execute(
     heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");
     heraAssert(msg->gas >= 0, "Negative startgas?");
 
-    hera.execute(call);
+    result.gasLeft = (uint64_t)msg->gas;
+
+    execute(*context, _code, *msg, result);
+
+    ret.gas_left = result.gasLeft;
   } catch (OutOfGasException) {
     ret.status_code = EVM_OUT_OF_GAS;
   } catch (InternalErrorException &e) {
@@ -88,12 +91,11 @@ static struct evm_result evm_execute(
 
   if (ret.status_code == EVM_SUCCESS) {
     // copy call result
-    ret.output_size = call.returnValue.size();
+    ret.output_size = result.returnValue.size();
     ret.output_data = (const uint8_t *)malloc(ret.output_size);
     if (ret.output_data) {
       ret.release = evm_destroy_result;
-      copy(call.returnValue.begin(), call.returnValue.end(), (char *)ret.output_data);
-      ret.gas_left = call.gas;
+      copy(result.returnValue.begin(), result.returnValue.end(), (char *)ret.output_data);
     } else {
       ret.status_code = EVM_INTERNAL_ERROR;
       ret.gas_left = 0;
@@ -127,14 +129,21 @@ struct evm_instance* hera_create()
 
 }
 
-void Hera::execute(HeraCall& call) {
+namespace {
+
+void execute(
+	struct evm_context const& context,
+	vector<char> & code,
+	struct evm_message const& msg,
+	ExecutionResult & result
+) {
   cout << "Executing...\n";
 
   Module module;
 
   // Load module
   try {
-    WasmBinaryBuilder parser(module, call.code, false);
+    WasmBinaryBuilder parser(module, code, false);
     parser.read();
   } catch (ParseException &p) {
     throw InternalErrorException(
@@ -159,10 +168,12 @@ void Hera::execute(HeraCall& call) {
   // passRunner.run();
 
   // Interpet
-  EthereumInterface interface(*this, call);
+  EthereumInterface interface(context, msg, result);
   ModuleInstance instance(module, &interface);
 
   Name main = Name("main");
   LiteralList args;
   instance.callExport(main, args);
+}
+
 }

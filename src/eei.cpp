@@ -52,14 +52,14 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       cout << resultOffset << "\n";
 
-      copyAddressToMemory(call.msg->address, resultOffset);
+      copyAddressToMemory(msg.address, resultOffset);
 
       return Literal();
     }
 
     if (import->base == Name("getCallDataSize")) {
-      cout << "calldatasize " << call.msg->input_size << "\n";
-      return Literal((uint32_t)call.msg->input_size);
+      cout << "calldatasize " << msg.input_size << "\n";
+      return Literal((uint32_t)msg.input_size);
     }
 
     if (import->base == Name("callDataCopy")) {
@@ -71,7 +71,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       cout << resultOffset << " " << dataOffset << " " << length << "\n";
 
-      vector<char> input(call.msg->input, call.msg->input + call.msg->input_size);
+      vector<char> input(msg.input, msg.input + msg.input_size);
       memoryCopy(input, dataOffset, resultOffset, length);
 
       return Literal();
@@ -85,9 +85,9 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       cout << offset << " " << size << "\n";
 
-      call.returnValue.clear();
+      result.returnValue.clear();
       for (uint32_t i = offset; i < offset + size; i++) {
-        call.returnValue.push_back(memory.get<uint8_t>(i));
+        result.returnValue.push_back(memory.get<uint8_t>(i));
       }
 
       return Literal();
@@ -98,11 +98,11 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
   void EthereumInterface::takeGas(uint64_t gas)
   {
-    if (gas > call.gas) {
+    if (gas > result.gasLeft) {
       throw OutOfGasException();
     }
 
-    call.gas -= gas;
+    result.gasLeft -= gas;
   }
 
   void EthereumInterface::memoryCopy(vector<char> const& src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length)
