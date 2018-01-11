@@ -137,7 +137,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       heraAssert((srcOffset + length) > srcOffset, "Out of bounds (source) memory copy.");
 
       for (uint32_t i = 0; i < length; ++i) {
-          *(dst + i) = memory.get<uint8_t>(srcOffset + i);
+          dst[length - (i + 1)] = memory.get<uint8_t>(srcOffset + i);
       }
   }
 
@@ -148,7 +148,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       heraAssert(memory.size() < (dstOffset + length), "Out of bounds (destination) memory copy.");
 
       for (uint32_t i = 0; i < length; ++i) {
-          memory.set<uint8_t>(dstOffset + i, *(src + i));
+          memory.set<uint8_t>(dstOffset + length - (i + 1), *(src + i));
       }
   }
 
