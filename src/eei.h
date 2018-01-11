@@ -80,109 +80,19 @@ private:
   void memoryCopy(std::vector<char> const& src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length);
   void copyAddressToMemory(struct evm_address const& address, uint32_t dstoffset);
 
-  /*
-   * Memory Operations
-   */
-  
-  void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
-  {
-      assert(dst != nullptr);
-      assert(length);
-      
-      for (uint32_t i = 0; i < length; ++i) {
-          *(dst + i) = memory.get<uint8_t>(srcOffset + i);
-      }
-  }
+  void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length);
+  void storeMemory(uint32_t dstOffset, uint8_t *src, size_t length);
 
-  void storeMemory(uint32_t dstOffset, uint8_t *src, size_t length)
-  {
-      assert(src != nullptr);
-      assert(length);
+  void loadUint256(uint32_t srcOffset, struct evm_uint256be *dst);
+  void storeUint256(uint32_t dstOffset, struct evm_uint256be *src);
+  void loadUint160(uint32_t srcOffset, struct evm_address *dst);
+  void storeUint160(uint32_t dstOffset, struct evm_address *src);
+  void loadUint128(uint32_t srcOffset, struct evm_uint256be *dst);
+  void storeUint128(uint32_t dstOffset, struct evm_uint256be *src);
 
-      for (uint32_t i = 0; i < length; ++i) {
-          memory.set<uint8_t>(dstOffset + i, *(src + i));
-      }
-  }
+  unsigned int exceedsUint128(struct evm_uint256be *value);
+  void endianSwap(uint8_t *bytes, size_t len);
 
-  /*
-   * Memory Op Wrapper Functions
-   */
-
-  void loadUint256(uint32_t srcOffset, struct evm_uint256be *dst)
-  {
-      assert(dst != nullptr);
-      loadMemory(srcOffset, dst->bytes, 32);
-      endianSwap(dst->bytes, 32);
-  }
-
-  void storeUint256(uint32_t dstOffset, struct evm_uint256be *src)
-  {
-      assert(src != nullptr);
-      endianSwap(src->bytes, 32);
-      storeMemory(dstOffset, src->bytes, 32);
-  }
-
-  void loadUint160(uint32_t srcOffset, struct evm_address *dst)
-  {
-      assert(dst != nullptr);
-      loadMemory(srcOffset, dst->bytes, 20);
-      endianSwap(dst->bytes, 20);
-  }
-
-  void storeUint160(uint32_t dstOffset, struct evm_address *src)
-  {
-      assert(src != nullptr);
-      endianSwap(src->bytes, 20);
-      storeMemory(dstOffset, src->bytes, 20);
-  }
-
-  void loadUint128(uint32_t srcOffset, struct evm_uint256be *dst)
-  {
-      assert(dst != nullptr);
-      loadMemory(srcOffset, dst->bytes, 16);
-      endianSwap(dst->bytes, 32);
-  }
-
-  void storeUint128(uint32_t dstOffset, struct evm_uint256be *src)
-  {
-      assert(src != nullptr);
-      assert(!exceedsUint128(src));
-      endianSwap(src->bytes, 32);
-      storeMemory(dstOffset, src->bytes, 16);
-  }
-
-  /*
-   * Utilities
-   */
-  
-  /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
-  unsigned int exceedsUint128(struct evm_uint256be *value)
-  {
-      assert(value != nullptr);
-      for (int i = 0; i < 16; ++i) {
-        if (value->bytes[i])
-	    return 1;
-      }
-      return 0;
-  }
-
-  /* Endianness Converter */
-  void endianSwap(uint8_t *bytes, size_t len)
-  {
-  	assert(len);
-
-  	int i = 0;
-	int j = len - 1;
-
-	while (i < j) {
-		bytes[i] ^= bytes[j];
-		bytes[j] ^= bytes[i];
-		bytes[i] ^= bytes[j];
-
-		++i;
-		--j;
-	}
-  }
 private:
   struct evm_context const& context;
   struct evm_message const& msg;
