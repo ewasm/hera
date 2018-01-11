@@ -42,6 +42,55 @@ using namespace std;
 using namespace wasm;
 using namespace HeraVM;
 
+namespace {
+
+void execute(
+	struct evm_context const& context,
+	vector<char> & code,
+	struct evm_message const& msg,
+	ExecutionResult & result
+) {
+  cout << "Executing...\n";
+
+  Module module;
+
+  // Load module
+  try {
+    WasmBinaryBuilder parser(module, code, false);
+    parser.read();
+  } catch (ParseException &p) {
+    throw InternalErrorException(
+      "Error in parsing WASM binary: '" +
+      p.text +
+      "' at " +
+      to_string(p.line) +
+      ":" +
+      to_string(p.col)
+    );
+  }
+
+  // Print
+  // WasmPrinter::printModule(module);
+
+  // Validate
+  cout << "Validated: " << WasmValidator().validate(module) << "\n";
+
+  // Optimise
+  // PassRunner passRunner(module);
+  // passRunner.addDefaultOptimizationPasses();
+  // passRunner.run();
+
+  // Interpet
+  EthereumInterface interface(context, msg, result);
+  ModuleInstance instance(module, &interface);
+
+  Name main = Name("main");
+  LiteralList args;
+  instance.callExport(main, args);
+}
+
+}
+
 extern "C" {
 
 static void evm_destroy_result(struct evm_result const* result)
@@ -125,55 +174,6 @@ struct evm_instance* hera_create()
   if (instance)
     memcpy(instance, &init, sizeof(init));
   return instance;
-}
-
-}
-
-namespace {
-
-void execute(
-	struct evm_context const& context,
-	vector<char> & code,
-	struct evm_message const& msg,
-	ExecutionResult & result
-) {
-  cout << "Executing...\n";
-
-  Module module;
-
-  // Load module
-  try {
-    WasmBinaryBuilder parser(module, code, false);
-    parser.read();
-  } catch (ParseException &p) {
-    throw InternalErrorException(
-      "Error in parsing WASM binary: '" +
-      p.text +
-      "' at " +
-      to_string(p.line) +
-      ":" +
-      to_string(p.col)
-    );
-  }
-
-  // Print
-  // WasmPrinter::printModule(module);
-
-  // Validate
-  cout << "Validated: " << WasmValidator().validate(module) << "\n";
-
-  // Optimise
-  // PassRunner passRunner(module);
-  // passRunner.addDefaultOptimizationPasses();
-  // passRunner.run();
-
-  // Interpet
-  EthereumInterface interface(context, msg, result);
-  ModuleInstance instance(module, &interface);
-
-  Name main = Name("main");
-  LiteralList args;
-  instance.callExport(main, args);
 }
 
 }
