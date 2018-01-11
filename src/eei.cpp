@@ -56,7 +56,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       cout << resultOffset << "\n";
 
-      copyAddressToMemory(msg.address, resultOffset);
+      storeUint160(resultOffset, msg.address);
 
       return Literal();
     }
@@ -124,14 +124,6 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
     for (; i < (srcoffset + length); i++, j++) {
       memory.set<uint8_t>(j, src[i]);
-    }
-  }
-
-  void EthereumInterface::copyAddressToMemory(struct evm_address const& address, uint32_t dstoffset)
-  {
-    heraAssert(memory.size() < (dstoffset + 20), "Out of bounds (destination) memory copy.");
-    for (uint32_t i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {
-      memory.set<uint8_t>(j, address.bytes[i]);
     }
   }
   
@@ -222,12 +214,12 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
   }
 
   /* Endianness Converter */
-  void EthereumInterface::endianSwap(uint8_t *bytes, size_t len)
+  void EthereumInterface::endianSwap(uint8_t *bytes, size_t length)
   {
-  	assert(len);
+  	assert(length > 0);
 
   	int i = 0;
-	int j = len - 1;
+	int j = length - 1;
 
 	while (i < j) {
 		bytes[i] ^= bytes[j];
