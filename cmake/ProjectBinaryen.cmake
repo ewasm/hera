@@ -1,3 +1,8 @@
+if(ProjectBinaryenIncluded)
+    return()
+endif()
+set(ProjectBinaryenIncluded TRUE)
+
 include(ExternalProject)
 
 if(MSVC)
