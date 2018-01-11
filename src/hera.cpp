@@ -71,6 +71,9 @@ static struct evm_result evm_execute(
   ret.gas_left = 0;
   ret.status_code = EVM_SUCCESS;
   try {
+    heraAssert(instance != NULL, "");
+    heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");
+
     hera.execute(call);
   } catch (OutOfGasException) {
     ret.status_code = EVM_OUT_OF_GAS;
