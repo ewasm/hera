@@ -98,12 +98,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
   void EthereumInterface::takeGas(uint64_t gas)
   {
-    // FIXME: this shouldn't be needed here
-    if (call.gas < 0) {
-      throw OutOfGasException();
-    }
-
-    if (gas > (uint64_t)call.gas) {
+    if (gas > call.gas) {
       throw OutOfGasException();
     }
 
