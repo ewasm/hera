@@ -51,7 +51,7 @@ private:
 }
 
 struct EthereumInterface : ShellExternalInterface {
-  EthereumInterface(Hera const& _hera, HeraCall & _call) : ShellExternalInterface(), hera(_hera), call(_call) { }
+  EthereumInterface(Hera const& _hera, HeraCall & _call) : ShellExternalInterface(), hera(_hera), call(_call) { (void)hera; }
 
   Literal callImport(Import *import, LiteralList& arguments) override;
 
