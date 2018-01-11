@@ -113,7 +113,10 @@ struct evm_instance* hera_create()
   struct evm_instance init = {
     .abi_version = EVM_ABI_VERSION,
     .destroy = evm_destroy,
-    .execute = evm_execute
+    .execute = evm_execute,
+    .get_code_status = (evm_get_code_status_fn)NULL,
+    .prepare_code = (evm_prepare_code_fn)NULL,
+    .set_option = (evm_set_option_fn)NULL
   };
   struct evm_instance* instance = (struct evm_instance*)calloc(1, sizeof(struct evm_instance));
   if (instance)
