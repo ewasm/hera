@@ -22,44 +22,19 @@
  * SOFTWARE.
  */
 
-#pragma once
+#ifndef __HERA_H
+#define __HERA_H
 
-#include "evm.h"
+#if __cplusplus
+extern "C" {
+#endif
 
-namespace HeraVM {
+struct evm_instance;
 
-class HeraCall
-{
-public:
-  HeraCall(std::vector<char> _code, const struct evm_message* _msg)
-  {
-    code = _code;
-    msg = _msg;
-    gas = (uint64_t)msg->gas;
-  }
+struct evm_instance* hera_create(void);
 
-public:
-  std::vector<char> code;
-  const struct evm_message* msg;
-  uint64_t gas;
-
-  std::vector<char> returnValue;
-};
-
-class Hera
-{
-public:
-  Hera(struct evm_context* context)
-  {
-    this->context = context;
-  }
-
-  Hera() {}
-
-  void execute(HeraCall& call);
-
-public:
-  struct evm_context* context = nullptr;
-};
-
+#if __cplusplus
 }
+#endif
+
+#endif

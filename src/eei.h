@@ -26,6 +26,7 @@
 
 #include <wasm.h>
 #include <wasm-binary.h>
+#include "evm.h"
 #include "shell-interface.h"
 #include "hera.h"
 
@@ -50,8 +51,22 @@ private:
   if (!(condition)) throw InternalErrorException(msg); \
 }
 
+struct ExecutionResult {
+  uint64_t gasLeft;
+  std::vector<char> returnValue;
+};
+
 struct EthereumInterface : ShellExternalInterface {
-  EthereumInterface(Hera const& _hera, HeraCall & _call) : ShellExternalInterface(), hera(_hera), call(_call) { (void)hera; }
+  EthereumInterface(
+    struct evm_context const& _context,
+    struct evm_message const& _msg,
+    ExecutionResult & _result
+  ):
+    ShellExternalInterface(),
+    context(_context),
+    msg(_msg),
+    result(_result)
+  { (void)context; }
 
   Literal callImport(Import *import, LiteralList& arguments) override;
 
@@ -65,8 +80,9 @@ private:
   void copyAddressToMemory(struct evm_address const& address, uint32_t dstoffset);
 
 private:
-  Hera const& hera;
-  HeraCall & call;
+  struct evm_context const& context;
+  struct evm_message const& msg;
+  ExecutionResult result;
 };
 
 }
