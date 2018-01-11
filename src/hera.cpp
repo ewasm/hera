@@ -44,10 +44,10 @@ using namespace HeraVM;
 
 extern "C" {
 
-static void evm_destroy_result(struct evm_result result)
+static void evm_destroy_result(struct evm_result const* result)
 {
-  if (result.output_data) {
-     free((void *)result.output_data);
+  if (result->output_data) {
+     free((void *)result->output_data);
   }
 }
 
@@ -86,8 +86,8 @@ static struct evm_result evm_execute(
     // copy call result
     ret.output_size = call.returnValue.size();
     ret.output_data = (const uint8_t *)malloc(ret.output_size);
-    // FIXME: properly handle memory allocation issues
     if (ret.output_data) {
+      ret.release = evm_destroy_result;
       copy(call.returnValue.begin(), call.returnValue.end(), (char *)ret.output_data);
       ret.gas_left = call.gas;
     } else {
