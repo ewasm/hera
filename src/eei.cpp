@@ -156,9 +156,11 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
    * Memory Op Wrapper Functions
    */
 
-  void EthereumInterface::loadUint256(const uint32_t srcOffset, evm_uint256be &dst)
+  evm_uint256be EthereumInterface::loadUint256(const uint32_t srcOffset)
   {
+      evm_uint256be dst;
       loadMemory(srcOffset, dst.bytes, 32);
+      return dst;
   }
 
   void EthereumInterface::storeUint256(const uint32_t dstOffset, const evm_uint256be &src)
@@ -166,9 +168,11 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       storeMemory(dstOffset, src.bytes, 32);
   }
 
-  void EthereumInterface::loadUint160(const uint32_t srcOffset, evm_address &dst)
+  evm_address EthereumInterface::loadUint160(const uint32_t srcOffset)
   {
+      evm_address dst;
       loadMemory(srcOffset, dst.bytes, 20);
+      return dst;
   }
 
   void EthereumInterface::storeUint160(const uint32_t dstOffset, const evm_address &src)
@@ -176,15 +180,17 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       storeMemory(dstOffset, src.bytes, 20);
   }
 
-  void EthereumInterface::loadUint128(const uint32_t srcOffset, evm_uint256be &dst)
+  evm_uint256be EthereumInterface::loadUint128(const uint32_t srcOffset)
   {
+      evm_uint256be dst;
       loadMemory(srcOffset, dst.bytes, 16);
+      return dst;
   }
 
   void EthereumInterface::storeUint128(const uint32_t dstOffset, const evm_uint256be &src)
   {
       heraAssert(!exceedsUint128(src), "Value at src cannot exceed 2^128-1");
-      storeMemory(dstOffset, src.bytes, 16);
+      storeMemory(dstOffset, &src.bytes[16], 16);
   }
 
   /*

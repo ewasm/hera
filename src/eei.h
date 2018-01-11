@@ -82,15 +82,15 @@ private:
   void loadMemory(const uint32_t srcOffset, uint8_t *dst, size_t length);
   void storeMemory(const uint32_t dstOffset, const uint8_t *src, size_t length);
 
-  void loadUint256(const uint32_t srcOffset, evm_uint256be &dst);
+  evm_uint256be loadUint256(const uint32_t srcOffset);
   void storeUint256(const uint32_t dstOffset, const evm_uint256be &src);
-  void loadUint160(const uint32_t srcOffset, evm_address &dst);
+  evm_address loadUint160(const uint32_t srcOffset);
   void storeUint160(const uint32_t dstOffset, const evm_address &src);
-  void loadUint128(const uint32_t srcOffset, evm_uint256be &dst);
+  evm_uint256be loadUint128(const uint32_t srcOffset);
   void storeUint128(const uint32_t dstOffset, const evm_uint256be &src);
 
   unsigned int exceedsUint128(const evm_uint256be &value);
-  void endianSwap(uint8_t *bytes, size_t length);
+  void endianSwap(uint8_t *bytes, const size_t length);
 
 private:
   struct evm_context const& context;
