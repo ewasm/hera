@@ -22,4 +22,19 @@
  * SOFTWARE.
  */
 
-#pragma once
+#ifndef __HERA_H
+#define __HERA_H
+
+#if __cplusplus
+extern "C" {
+#endif
+
+struct evm_instance;
+
+struct evm_instance* hera_create(void);
+
+#if __cplusplus
+}
+#endif
+
+#endif
