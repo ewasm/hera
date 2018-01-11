@@ -1,5 +1,5 @@
 
-set(hera_include_dir ${CMAKE_SOURCE_DIR})
+get_filename_component(hera_include_dir .. ABSOLUTE)
 
 add_library(hera
     eei.cpp eei.h
