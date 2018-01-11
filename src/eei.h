@@ -79,18 +79,18 @@ private:
   void takeGas(uint64_t gas);
   void memoryCopy(std::vector<char> const& src, uint32_t srcoffset, uint32_t dstoffset, uint32_t length);
 
-  void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length);
-  void storeMemory(uint32_t dstOffset, uint8_t *src, size_t length);
+  void loadMemory(const uint32_t srcOffset, uint8_t *dst, size_t length);
+  void storeMemory(const uint32_t dstOffset, const uint8_t *src, size_t length);
 
-  void loadUint256(uint32_t srcOffset, struct evm_uint256be *dst);
-  void storeUint256(uint32_t dstOffset, struct evm_uint256be *src);
-  void loadUint160(uint32_t srcOffset, struct evm_address *dst);
-  void storeUint160(uint32_t dstOffset, struct evm_address *src);
-  void loadUint128(uint32_t srcOffset, struct evm_uint256be *dst);
-  void storeUint128(uint32_t dstOffset, struct evm_uint256be *src);
+  void loadUint256(const uint32_t srcOffset, evm_uint256be &dst);
+  void storeUint256(const uint32_t dstOffset, const evm_uint256be &src);
+  void loadUint160(const uint32_t srcOffset, evm_address &dst);
+  void storeUint160(const uint32_t dstOffset, const evm_address &src);
+  void loadUint128(const uint32_t srcOffset, evm_uint256be &dst);
+  void storeUint128(const uint32_t dstOffset, const evm_uint256be &src);
 
-  unsigned int exceedsUint128(struct evm_uint256be *value);
-  void endianSwap(uint8_t *bytes, size_t len);
+  unsigned int exceedsUint128(const evm_uint256be &value);
+  void endianSwap(uint8_t *bytes, size_t length);
 
 private:
   struct evm_context const& context;
