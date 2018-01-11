@@ -71,7 +71,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       evm_uint256be *result = new evm_uint256be;
 
       loadUint160(addressOffset, address);
-      hera->context->fn_table->get_balance(result, hera->context, address);
+      hera.context->fn_table->get_balance(result, hera.context, address);
       storeUint128(resultOffset, result);
 
       delete address;
@@ -81,13 +81,15 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     }
 
     if (import->base == Name("getBlockHash")) {
-      std::cout << "getblockhash " << number << "\n";
+      std::cout << "getblockhash ";
 
       int64_t number = arguments[0].geti64();
       uint32_t resultOffset = arguments[1].geti32();
 
+      std::cout << number << "\n";
+
       evm_uint256be *blockhash = new evm_uint256be;
-      hera->context->fn_table->get_block_hash(blockhash, hera->context, number);
+      hera.context->fn_table->get_block_hash(blockhash, hera.context, number);
       storeUint256(resultOffset, blockhash);
 
       delete blockhash;
@@ -111,18 +113,19 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       call_message->input = new uint8_t[dataLength];
       unsigned int vm_status = 0;
       
-      loadUint160(addressOffset, call_message->address);
-      call_message->sender = call->address;
-      loadUint128(valueOffset, call_message->value);
+      loadUint160(addressOffset, &call_message->address);
+      call_message->sender = call.msg->address;
+      loadUint128(valueOffset, &call_message->value);
       loadMemory(dataOffset, call_message->input, dataLength);
       call_message->input_size = dataLength;
-      std::memset(call_message->code_hash, 0, sizeof(struct evm_uint256be));
+      /* std::memset((void *)call_message->code_hash, 0, sizeof(struct evm_uint256be)); */
+      call_message->code_hash = 0;
       call_message->gas = gas;
-      call_message->depth = ++call->msg->depth;
-      call_message->kind = 0;
-      call_message->flags = 1;
+      call_message->depth = call.msg->depth + 1;
+      call_message->kind = EVM_CALL;
+      call_message->flags = EVM_STATIC;
 
-      hera->context->fn_table->call(call_result, hera->context, call_message);
+      hera.context->fn_table->call(call_result, hera.context, call_message);
 
       storeMemory(resultOffset, call_result->output_data, resultLength);
       vm_status = call_result->status_code;
@@ -132,7 +135,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       if (call_result->release != nullptr)
         call_result->release(call_result);
       
-      return Literal((int32_t)status_code);
+      return Literal((int32_t)vm_status);
     }
 
     if (import->base == Name("getCallDataSize")) {
