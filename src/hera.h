@@ -35,13 +35,13 @@ public:
   {
     code = _code;
     msg = _msg;
-    gas = msg->gas;
+    gas = (uint64_t)msg->gas;
   }
 
 public:
   std::vector<char> code;
   const struct evm_message* msg;
-  int64_t gas;
+  uint64_t gas;
 
   std::vector<char> returnValue;
 };
