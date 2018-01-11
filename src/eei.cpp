@@ -67,15 +67,11 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       uint32_t addressOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
 
-      evm_address *address = new evm_address;
-      evm_uint256be *result = new evm_uint256be;
+      evm_uint256be result;
+      evm_address address = loadUint160(addressOffset);
 
-      loadUint160(addressOffset, address);
-      context.fn_table->get_balance(result, &context, address);
+      context.fn_table->get_balance(&result, &context, &address);
       storeUint128(resultOffset, result);
-
-      delete address;
-      delete result;
 
       return Literal();
     }
@@ -88,11 +84,9 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       std::cout << number << "\n";
 
-      evm_uint256be *blockhash = new evm_uint256be;
-      context.fn_table->get_block_hash(blockhash, &context, number);
+      evm_uint256be blockhash;
+      context.fn_table->get_block_hash(&blockhash, &context, number);
       storeUint256(resultOffset, blockhash);
-
-      delete blockhash;
 
       return Literal();
     }
@@ -108,30 +102,29 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       uint32_t resultOffset = arguments[5].geti32();
       int32_t resultLength = arguments[6].geti32();
 
-      evm_result *call_result = new evm_result;
-      evm_message *call_message = new evm_message;
+      evm_result *call_result;
+      evm_message call_message;
       int32_t vm_status = 0;
       uint8_t *input_data = new uint8_t[dataLength];
 
-      loadUint160(addressOffset, &call_message->address);
-      call_message->sender = msg.address;
-      loadUint128(valueOffset, &call_message->value);
+      call_message.address = loadUint160(addressOffset);
+      call_message.sender = msg.address;
+      call_message.value = loadUint128(valueOffset);
       loadMemory(dataOffset, input_data, dataLength);
-      call_message->input = input_data;
-      call_message->input_size = dataLength;
-      std::memset(&call_message->code_hash, 0, sizeof(evm_uint256be));
-      call_message->gas = gas;
-      call_message->depth = msg.depth + 1;
-      call_message->kind = EVM_CALL;
-      call_message->flags = EVM_STATIC;
+      call_message.input = input_data;
+      call_message.input_size = dataLength;
+      std::memset(&call_message.code_hash, 0, sizeof(evm_uint256be));
+      call_message.gas = gas;
+      call_message.depth = msg.depth + 1;
+      call_message.kind = EVM_CALL;
+      call_message.flags = EVM_STATIC;
 
-      context.fn_table->call(call_result, &context, call_message);
+      context.fn_table->call(call_result, &context, &call_message);
 
+      delete input_data; 
       storeMemory(resultOffset, call_result->output_data, resultLength);
       vm_status = call_result->status_code;
      
-      delete call_message->input;
-      delete call_message;
       if (call_result->release != nullptr)
         call_result->release(call_result);
       
