@@ -132,6 +132,8 @@ namespace hera {
       ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
 
       takeGas(gas);
+      // FIXME: this may overflow
+      takeGas(gas * memory.size() / GasSchedule::memoryPageSize * GasSchedule::memoryCostPerPage);
   }
 
   int64_t EthereumInterface::eeiGetGasLeft()
