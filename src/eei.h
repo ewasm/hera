@@ -59,9 +59,9 @@ struct ExecutionResult {
 
 struct EthereumInterface : ShellExternalInterface {
   EthereumInterface(
-    struct evm_context* _context,
+    evm_context* _context,
     std::vector<uint8_t> const& _code,
-    struct evm_message const& _msg,
+    evm_message const& _msg,
     ExecutionResult & _result
   ):
     ShellExternalInterface(),
@@ -108,9 +108,9 @@ private:
   /* Checks if 256 bit value is all zeroes */
   static bool isZeroUint256(evm_uint256be const& value);
 
-  struct evm_context* context = nullptr;
+  evm_context* context = nullptr;
   std::vector<uint8_t> const& code;
-  struct evm_message const& msg;
+  evm_message const& msg;
   std::vector<uint8_t> lastReturnData;
   ExecutionResult & result;
 };
