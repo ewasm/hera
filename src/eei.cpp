@@ -52,13 +52,83 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     if (import->base == Name("getAddress")) {
       cout << "getAddress ";
 
-      uint32_t resultOffset = arguments[0].geti32();
+      const uint32_t resultOffset = arguments[0].geti32();
 
       cout << resultOffset << "\n";
 
-      copyAddressToMemory(msg.address, resultOffset);
+      storeUint160(resultOffset, msg.address);
 
       return Literal();
+    }
+
+    if (import->base == Name("getBalance")) {
+      std::cout << "getbalance\n";
+
+      uint32_t addressOffset = arguments[0].geti32();
+      uint32_t resultOffset = arguments[1].geti32();
+
+      evm_uint256be result;
+      evm_address address = loadUint160(addressOffset);
+
+      context.fn_table->get_balance(&result, &context, &address);
+      storeUint128(resultOffset, result);
+
+      return Literal();
+    }
+
+    if (import->base == Name("getBlockHash")) {
+      std::cout << "getblockhash ";
+
+      int64_t number = arguments[0].geti64();
+      uint32_t resultOffset = arguments[1].geti32();
+
+      std::cout << number << "\n";
+
+      evm_uint256be blockhash;
+      context.fn_table->get_block_hash(&blockhash, &context, number);
+      storeUint256(resultOffset, blockhash);
+
+      return Literal();
+    }
+
+    if (import->base == Name("call")) {
+      std::cout << "call\n";
+
+      int64_t gas = arguments[0].geti64();
+      uint32_t addressOffset = arguments[1].geti32();
+      uint32_t valueOffset = arguments[2].geti32();
+      uint32_t dataOffset = arguments[3].geti32();
+      int32_t dataLength = arguments[4].geti32();
+      uint32_t resultOffset = arguments[5].geti32();
+      int32_t resultLength = arguments[6].geti32();
+
+      evm_result *call_result;
+      evm_message call_message;
+      int32_t vm_status = 0;
+      uint8_t *input_data = new uint8_t[dataLength];
+
+      call_message.address = loadUint160(addressOffset);
+      call_message.sender = msg.address;
+      call_message.value = loadUint128(valueOffset);
+      loadMemory(dataOffset, input_data, dataLength);
+      call_message.input = input_data;
+      call_message.input_size = dataLength;
+      std::memset(&call_message.code_hash, 0, sizeof(evm_uint256be));
+      call_message.gas = gas;
+      call_message.depth = msg.depth + 1;
+      call_message.kind = EVM_CALL;
+      call_message.flags = EVM_STATIC;
+
+      context.fn_table->call(call_result, &context, &call_message);
+
+      delete input_data; 
+      storeMemory(resultOffset, call_result->output_data, resultLength);
+      vm_status = call_result->status_code;
+     
+      if (call_result->release != nullptr)
+        call_result->release(call_result);
+      
+      return Literal((int32_t)vm_status);
     }
 
     if (import->base == Name("getCallDataSize")) {
@@ -69,9 +139,9 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     if (import->base == Name("callDataCopy")) {
       cout << "calldatacopy ";
 
-      uint32_t resultOffset = arguments[0].geti32();
-      uint32_t dataOffset = arguments[1].geti32();
-      uint32_t length = arguments[2].geti32();
+      const uint32_t resultOffset = arguments[0].geti32();
+      const uint32_t dataOffset = arguments[1].geti32();
+      const uint32_t length = arguments[2].geti32();
 
       cout << resultOffset << " " << dataOffset << " " << length << "\n";
 
@@ -84,8 +154,8 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     if (import->base == Name("return") || import->base == Name("revert")) {
       cout << "return ";
 
-      uint32_t offset = arguments[0].geti32();
-      uint32_t size = arguments[1].geti32();
+      const uint32_t offset = arguments[0].geti32();
+      const uint32_t size = arguments[1].geti32();
 
       cout << offset << " " << size << "\n";
 
@@ -100,7 +170,6 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       return Literal();
     }
-
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
   }
 
@@ -127,12 +196,102 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       memory.set<uint8_t>(j, src[i]);
     }
   }
+  
+  /*
+   * Memory Operations
+   */
 
-  void EthereumInterface::copyAddressToMemory(struct evm_address const& address, uint32_t dstoffset)
+  void EthereumInterface::loadMemory(const uint32_t srcOffset, uint8_t *dst, size_t length)
   {
-    heraAssert(memory.size() < (dstoffset + 20), "Out of bounds (destination) memory copy.");
-    for (uint32_t i = 0, j = dstoffset; j < (dstoffset + 20); i++, j++) {
-      memory.set<uint8_t>(j, address.bytes[i]);
-    }
+      heraAssert(length > 0, "Length must be nonzero");
+      heraAssert((srcOffset + length) > srcOffset, "Out of bounds (source) memory copy.");
+
+      for (uint32_t i = 0; i < length; ++i) {
+          dst[length - (i + 1)] = memory.get<uint8_t>(srcOffset + i);
+      }
+  }
+
+  void EthereumInterface::storeMemory(const uint32_t dstOffset, const uint8_t *src, size_t length)
+  {
+      heraAssert(length > 0, "Length must be nonzero");
+      heraAssert((dstOffset + length) > dstOffset, "Out of bounds (destination) memory copy.");
+      heraAssert(memory.size() < (dstOffset + length), "Out of bounds (destination) memory copy.");
+
+      for (uint32_t i = 0; i < length; ++i) {
+          memory.set<uint8_t>(dstOffset + length - (i + 1), *(src + i));
+      }
+  }
+
+  /*
+   * Memory Op Wrapper Functions
+   */
+
+  evm_uint256be EthereumInterface::loadUint256(const uint32_t srcOffset)
+  {
+      evm_uint256be dst;
+      loadMemory(srcOffset, dst.bytes, 32);
+      return dst;
+  }
+
+  void EthereumInterface::storeUint256(const uint32_t dstOffset, const evm_uint256be &src)
+  {
+      storeMemory(dstOffset, src.bytes, 32);
+  }
+
+  evm_address EthereumInterface::loadUint160(const uint32_t srcOffset)
+  {
+      evm_address dst;
+      loadMemory(srcOffset, dst.bytes, 20);
+      return dst;
+  }
+
+  void EthereumInterface::storeUint160(const uint32_t dstOffset, const evm_address &src)
+  {
+      storeMemory(dstOffset, src.bytes, 20);
+  }
+
+  evm_uint256be EthereumInterface::loadUint128(const uint32_t srcOffset)
+  {
+      evm_uint256be dst;
+      loadMemory(srcOffset, dst.bytes, 16);
+      return dst;
+  }
+
+  void EthereumInterface::storeUint128(const uint32_t dstOffset, const evm_uint256be &src)
+  {
+      heraAssert(!exceedsUint128(src), "Value at src cannot exceed 2^128-1");
+      storeMemory(dstOffset, &src.bytes[16], 16);
+  }
+
+  /*
+   * Utilities
+   */
+
+  /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
+  unsigned int EthereumInterface::exceedsUint128(const evm_uint256be &value)
+  {
+      for (int i = 0; i < 16; ++i) {
+        if (value.bytes[i])
+	    return 1;
+      }
+      return 0;
+  }
+
+  /* Endianness Converter */
+  void EthereumInterface::endianSwap(uint8_t *bytes, const size_t length)
+  {
+  	heraAssert(length > 0, "Length must be nonzero.");
+
+  	size_t i = 0;
+	size_t j = length - 1;
+
+	while (i < j) {
+		bytes[i] ^= bytes[j];
+		bytes[j] ^= bytes[i];
+		bytes[i] ^= bytes[j];
+
+		++i;
+		--j;
+	}
   }
 }
