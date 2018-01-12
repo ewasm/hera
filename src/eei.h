@@ -67,7 +67,7 @@ struct EthereumInterface : ShellExternalInterface {
     context(_context),
     msg(_msg),
     result(_result)
-  { (void)context; }
+  { }
 
   Literal callImport(Import *import, LiteralList& arguments) override;
 
