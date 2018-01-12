@@ -397,6 +397,88 @@ namespace HeraVM {
       return Literal();
     }
 
+    if (
+      import->base == Name("call") ||
+      import->base == Name("callCode") ||
+      import->base == Name("callDelegate") ||
+      import->base == Name("callStatic")
+    ) {
+      int64_t gas = arguments[0].geti64();
+      uint32_t addressOffset = arguments[1].geti32();
+      uint32_t valueOffset;
+      uint32_t dataOffset;
+      uint32_t dataLength;
+      uint32_t resultOffset;
+      uint32_t resultLength;
+
+      heraAssert((msg.flags & ~EVM_STATIC) == 0, "Unknown flags not supported.");
+
+      evm_message call_message;
+      call_message.address = loadUint160(addressOffset);
+      call_message.flags = msg.flags;
+      call_message.code_hash = {};
+      call_message.gas = gas;
+      call_message.depth = msg.depth + 1;
+
+      if (import->base == Name("call") || import->base == Name("callCode")) {
+        valueOffset = arguments[2].geti32();
+        dataOffset = arguments[3].geti32();
+        dataLength = arguments[4].geti32();
+        resultOffset = arguments[5].geti32();
+        resultLength = arguments[6].geti32();
+
+        call_message.sender = msg.address;
+        call_message.value = loadUint128(valueOffset);
+        call_message.kind = (import->base == Name("callCode")) ? EVM_CALLCODE : EVM_CALL;
+      } else {
+        valueOffset = 0;
+        dataOffset = arguments[2].geti32();
+        dataLength = arguments[3].geti32();
+        resultOffset = arguments[4].geti32();
+        resultLength = arguments[5].geti32();
+
+        if (import->base == Name("callDelegate")) {
+          call_message.sender = msg.sender;
+          call_message.value = msg.value;
+          call_message.kind = EVM_DELEGATECALL;
+        } else if (import->base == Name("callStatic")) {
+          call_message.sender = msg.address;
+          call_message.value = {};
+          call_message.kind = EVM_CALL;
+          call_message.flags |= EVM_STATIC;
+        }
+      }
+
+      HERA_DEBUG <<
+        import->base << " " << hex <<
+        gas << " " <<
+        addressOffset << " " <<
+        valueOffset << " " <<
+        dataOffset << " " <<
+        dataLength << " " <<
+        resultOffset << " " <<
+        resultLength << dec << "\n";
+
+      vector<uint8_t> input_data(dataLength);
+      loadMemory(dataOffset, input_data, dataLength);
+      call_message.input = input_data.data();
+      call_message.input_size = dataLength;
+
+      evm_result call_result;
+      context->fn_table->call(&call_result, context, &call_message);
+
+      if (call_result.output_data) {
+        vector<uint8_t> result(call_result.output_data, call_result.output_data + call_result.output_size);
+        result.resize(resultLength);
+        storeMemory(result, 0, resultOffset, resultLength);
+      }
+
+      if (call_result.release)
+        call_result.release(&call_result);
+
+      return Literal((call_result.status_code == EVM_SUCCESS) ? 1 : 0);
+    }
+
     if (import->base == Name("selfDestruct")) {
       uint32_t addressOffset = arguments[0].geti32();
 
