@@ -54,6 +54,7 @@ private:
 struct ExecutionResult {
   uint64_t gasLeft;
   std::vector<char> returnValue;
+  bool isRevert;
 };
 
 struct EthereumInterface : ShellExternalInterface {
