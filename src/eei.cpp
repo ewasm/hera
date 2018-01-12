@@ -69,7 +69,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       evm_address address = loadUint160(addressOffset);
       evm_uint256be result;
-      context.fn_table->get_balance(&result, &context, address);
+      context->fn_table->get_balance(&result, context, &address);
       storeUint128(result, resultOffset);
 
       return Literal();

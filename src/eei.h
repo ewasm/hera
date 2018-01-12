@@ -59,7 +59,7 @@ struct ExecutionResult {
 
 struct EthereumInterface : ShellExternalInterface {
   EthereumInterface(
-    struct evm_context const& _context,
+    struct evm_context* _context,
     struct evm_message const& _msg,
     ExecutionResult & _result
   ):
@@ -92,7 +92,7 @@ private:
 
   unsigned int exceedsUint128(evm_uint256be const& value);
 
-  struct evm_context const& context;
+  struct evm_context* context = nullptr;
   struct evm_message const& msg;
   ExecutionResult result;
 };
