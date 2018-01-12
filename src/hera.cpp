@@ -73,7 +73,7 @@ void execute(
   // WasmPrinter::printModule(module);
 
   // Validate
-  cout << "Validated: " << WasmValidator().validate(module) << "\n";
+  heraAssert(WasmValidator().validate(module), "Module is not valid.");
 
   // Optimise
   // PassRunner passRunner(module);
