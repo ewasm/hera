@@ -81,7 +81,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
-    if (import->base == Name("return")) {
+    if (import->base == Name("return") || import->base == Name("revert")) {
       cout << "return ";
 
       uint32_t offset = arguments[0].geti32();
@@ -92,6 +92,10 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       result.returnValue.clear();
       for (uint32_t i = offset; i < offset + size; i++) {
         result.returnValue.push_back(memory.get<uint8_t>(i));
+      }
+
+      if (import->base == Name("revert")) {
+        result.isRevert = true;
       }
 
       return Literal();

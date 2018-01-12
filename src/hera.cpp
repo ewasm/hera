@@ -131,6 +131,7 @@ static struct evm_result evm_execute(
       copy(result.returnValue.begin(), result.returnValue.end(), (char *)ret.output_data);
     }
 
+    ret.status_code = result.isRevert ? EVM_REVERT : EVM_SUCCESS;
     ret.gas_left = result.gasLeft;
   } catch (OutOfGasException) {
     ret.status_code = EVM_OUT_OF_GAS;
