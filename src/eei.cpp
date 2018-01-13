@@ -166,6 +166,18 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal((int64_t)tx_context.block_gas_limit);
     }
 
+    if (import->base == Name("getTxGasPrice")) {
+      cout << "gettxgasprice" << endl;
+
+      uint32_t valueOffset = arguments[0].geti32();
+
+      evm_tx_context tx_context;
+      context->fn_table->get_tx_context(&tx_context, context);
+      storeUint128(tx_context.tx_gas_price, valueOffset);
+
+      return Literal();
+    }
+
     if (import->base == Name("return") || import->base == Name("revert")) {
       cout << "return ";
 
