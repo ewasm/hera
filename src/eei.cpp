@@ -95,6 +95,11 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("getGasLeft")) {
+      cout << "getgasleft\n";
+      return Literal((uint64_t) result.gasLeft);
+    }
+
     if (import->base == Name("return") || import->base == Name("revert")) {
       cout << "return ";
 
