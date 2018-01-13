@@ -133,6 +133,18 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal((uint32_t)code.size());
     }
 
+    if (import->base == Name("getBlockCoinbase")) {
+      cout << "getblockcoinbase" << endl;
+
+      uint32_t resultOffset = arguments[0].geti32();
+
+      evm_tx_context tx_context;
+      context->fn_table->get_tx_context(&tx_context, context);
+      storeUint160(tx_context.block_coinbase, resultOffset);
+
+      return Literal();
+    }
+
     if (import->base == Name("return") || import->base == Name("revert")) {
       cout << "return ";
 
