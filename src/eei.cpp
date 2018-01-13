@@ -178,6 +178,15 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("getBlockNumber")) {
+      cout << "getblocknumber" << endl;
+
+      evm_tx_context tx_context;
+      context->fn_table->get_tx_context(&tx_context, context);
+
+      return Literal(tx_context.block_number);
+    }
+
     if (import->base == Name("return") || import->base == Name("revert")) {
       cout << "return ";
 
