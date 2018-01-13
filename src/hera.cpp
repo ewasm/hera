@@ -34,7 +34,9 @@
 #include <wasm-printing.h>
 #include <wasm-validator.h>
 
+#if HERA_EVM2WASM
 #include <evm2wasm.h>
+#endif
 
 #include "evm.h"
 #include "hera.h"
@@ -198,12 +200,15 @@ static evm_result evm_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
+#if HERA_EVM2WASM
       // Translate EVM bytecode to WASM
-      // string translated = evm2wasm(string{_code.data(), _code.size()});
-      // _code.assign(translated.begin(), translated.end());
+      string translated = evm2wasm(string(_code.begin(), _code.end()));
+      _code.assign(translated.begin(), translated.end());
+#else
       hera_instance* hera = static_cast<hera_instance*>(instance);
       ret.status_code = hera->fallback ? EVM_REJECTED : EVM_FAILURE;
       return ret;
+#endif
     }
 
     heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");

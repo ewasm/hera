@@ -11,7 +11,11 @@ add_compile_options(-Wall -Wextra -Wconversion -Wno-sign-conversion -Wno-unknown
 
 project(hera)
 
+option(HERA_EVM2WASM "Build with evm2wasm auto-translation" OFF)
+
 include(ProjectBinaryen)
 
-add_subdirectory(evm2wasm)
+if(HERA_EVM2WASM)
+    add_subdirectory(evm2wasm)
+endif()
 add_subdirectory(src)
