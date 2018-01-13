@@ -127,6 +127,12 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("getCodeSize")) {
+      cout << "codesize" << endl;
+
+      return Literal((uint32_t)code.size());
+    }
+
     if (import->base == Name("return") || import->base == Name("revert")) {
       cout << "return ";
 
