@@ -46,7 +46,7 @@ namespace {
 
 void execute(
 	struct evm_context* context,
-	vector<char> & code,
+	vector<uint8_t> & code,
 	struct evm_message const& msg,
 	ExecutionResult & result
 ) {
@@ -56,7 +56,8 @@ void execute(
 
   // Load module
   try {
-    WasmBinaryBuilder parser(module, code, false);
+    // FIXME: should get rid of this horrible typecast
+    WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> &>(code), false);
     parser.read();
   } catch (ParseException &p) {
     throw InternalErrorException(
@@ -81,7 +82,7 @@ void execute(
   // passRunner.run();
 
   // Interpet
-  EthereumInterface interface(context, msg, result);
+  EthereumInterface interface(context, code, msg, result);
   ModuleInstance instance(module, &interface);
 
   Name main = Name("main");
@@ -119,7 +120,7 @@ static struct evm_result evm_execute(
     ExecutionResult result;
     result.gasLeft = (uint64_t)msg->gas;
 
-    vector<char> _code(code, code + code_size);
+    vector<uint8_t> _code(code, code + code_size);
     execute(context, _code, *msg, result);
 
     // copy call result
