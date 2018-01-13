@@ -196,19 +196,21 @@ static evm_result evm_execute(
     ExecutionResult result;
     result.gasLeft = (uint64_t)msg->gas;
 
-    vector<uint8_t> _code(code, code + code_size);
+    vector<uint8_t> _code;
 
     // ensure we can only handle WebAssembly version 1
     if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
 #if HERA_EVM2WASM
       // Translate EVM bytecode to WASM
-      string translated = evm2wasm(string(_code.begin(), _code.end()));
+      string translated = evm2wasm(string(reinterpret_cast<const char*>(code), code_size));
       _code.assign(translated.begin(), translated.end());
 #else
       hera_instance* hera = static_cast<hera_instance*>(instance);
       ret.status_code = hera->fallback ? EVM_REJECTED : EVM_FAILURE;
       return ret;
 #endif
+    } else {
+      _code.assign(code, code + code_size);
     }
 
     heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");
