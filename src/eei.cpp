@@ -72,6 +72,8 @@ string toHex(evmc_uint256be const& value) {
     heraAssert(import->module == Name("debug"), "Import namespace error.");
 
     if (import->base == Name("print32")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t value = arguments[0].geti32();
 
       cerr << "DEBUG print32: " << value << " " << hex << "0x" << value << dec << endl;
@@ -80,6 +82,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("print64")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint64_t value = arguments[0].geti64();
 
       cerr << "DEBUG print64: " << value << " " << hex << "0x" << value << dec << endl;
@@ -88,6 +92,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("printMem") || import->base == Name("printMemHex")) {
+      heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t offset = arguments[0].geti32();
       uint32_t length = arguments[1].geti32();
 
@@ -117,6 +123,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("printStorage") || import->base == Name("printStorageHex")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t pathOffset = arguments[0].geti32();
 
       evmc_uint256be path = loadUint256(pathOffset);
@@ -152,6 +160,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("evmTrace")) {
+      heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t pc = static_cast<uint32_t>(arguments[0].geti32());
       int32_t opcode = arguments[1].geti32();
       uint32_t cost = static_cast<uint32_t>(arguments[2].geti32());
@@ -184,7 +194,7 @@ string toHex(evmc_uint256be const& value) {
       return Literal();
     }
 
-    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
+    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
   }
 #endif
 
@@ -198,6 +208,8 @@ string toHex(evmc_uint256be const& value) {
     heraAssert(import->module == Name("ethereum"), "Only imports from the 'ethereum' namespace are allowed.");
 
     if (import->base == Name("useGas")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint64_t gas = arguments[0].geti64();
 
       HERA_DEBUG << "useGas " << gas << "\n";
@@ -208,6 +220,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getGasLeft")) {
+      heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
+
       HERA_DEBUG << "getGasLeft\n";
 
       static_assert(is_same<decltype(result.gasLeft), uint64_t>::value, "uint64_t type expected");
@@ -218,6 +232,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getAddress")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t resultOffset = arguments[0].geti32();
 
       HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
@@ -230,6 +246,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getBalance")) {
+      heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t addressOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
 
@@ -246,6 +264,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getBlockHash")) {
+      heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
       int64_t number = arguments[0].geti64();
       uint32_t resultOffset = arguments[1].geti32();
 
@@ -261,6 +281,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getCallDataSize")) {
+      heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
+
       HERA_DEBUG << "callDataSize\n";
 
       takeGas(GasSchedule::base);
@@ -269,6 +291,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("callDataCopy")) {
+      heraAssert(arguments.size() == 3, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t resultOffset = arguments[0].geti32();
       uint32_t dataOffset = arguments[1].geti32();
       uint32_t length = arguments[2].geti32();
@@ -290,6 +314,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getCaller")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t resultOffset = arguments[0].geti32();
 
       HERA_DEBUG << "getCaller " << hex << resultOffset << dec << "\n";
@@ -301,6 +327,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getCallValue")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t resultOffset = arguments[0].geti32();
 
       HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
@@ -312,6 +340,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("codeCopy")) {
+      heraAssert(arguments.size() == 3, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t resultOffset = arguments[0].geti32();
       uint32_t codeOffset = arguments[1].geti32();
       uint32_t length = arguments[2].geti32();
@@ -331,6 +361,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getCodeSize")) {
+      heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
+
       HERA_DEBUG << "getCodeSize\n";
 
       takeGas(GasSchedule::base);
@@ -339,6 +371,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("externalCodeCopy")) {
+      heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t addressOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
       uint32_t codeOffset = arguments[2].geti32();
@@ -362,6 +396,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getExternalCodeSize")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t addressOffset = arguments[0].geti32();
 
       HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
@@ -374,6 +410,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getBlockCoinbase")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t resultOffset = arguments[0].geti32();
 
       HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
@@ -388,6 +426,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getBlockDifficulty")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t offset = arguments[0].geti32();
 
       HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
@@ -402,6 +442,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getBlockGasLimit")) {
+      heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
+
       HERA_DEBUG << "getBlockGasLimit\n";
 
       evmc_tx_context tx_context;
@@ -415,6 +457,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getTxGasPrice")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t valueOffset = arguments[0].geti32();
 
       HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
@@ -429,6 +473,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("log")) {
+      heraAssert(arguments.size() == 7, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t dataOffset = arguments[0].geti32();
       uint32_t length = arguments[1].geti32();
       uint32_t numberOfTopics = arguments[2].geti32();
@@ -461,6 +507,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getBlockNumber")) {
+      heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
+
       HERA_DEBUG << "getBlockNumber\n";
 
       evmc_tx_context tx_context;
@@ -474,6 +522,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getBlockTimestamp")) {
+      heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
+
       HERA_DEBUG << "getBlockTimestamp\n";
 
       evmc_tx_context tx_context;
@@ -487,6 +537,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getTxOrigin")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t resultOffset = arguments[0].geti32();
 
       HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
@@ -501,6 +553,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("storageStore")) {
+      heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t pathOffset = arguments[0].geti32();
       uint32_t valueOffset = arguments[1].geti32();
 
@@ -527,6 +581,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("storageLoad")) {
+      heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t pathOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
 
@@ -544,6 +600,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("return") || import->base == Name("revert")) {
+      heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t offset = arguments[0].geti32();
       uint32_t size = arguments[1].geti32();
 
@@ -558,6 +616,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("getReturnDataSize")) {
+      heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
+
       HERA_DEBUG << "getReturnDataSize\n";
 
       takeGas(GasSchedule::base);
@@ -566,6 +626,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("returnDataCopy")) {
+      heraAssert(arguments.size() == 3, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t dataOffset = arguments[0].geti32();
       uint32_t offset = arguments[1].geti32();
       uint32_t size = arguments[2].geti32();
@@ -584,6 +646,12 @@ string toHex(evmc_uint256be const& value) {
       import->base == Name("callDelegate") ||
       import->base == Name("callStatic")
     ) {
+      if (import->base == Name("call") || import->base == Name("callCode")) {
+        heraAssert(arguments.size() == 5, string("Argument count mismatch in: ") + import->base.str);
+      } else {
+        heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
+      }
+
       int64_t gas = arguments[0].geti64();
       uint32_t addressOffset = arguments[1].geti32();
       uint32_t valueOffset;
@@ -681,6 +749,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("create")) {
+      heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t valueOffset = arguments[0].geti32();
       uint32_t dataOffset = arguments[1].geti32();
       uint32_t length = arguments[2].geti32();
@@ -743,6 +813,8 @@ string toHex(evmc_uint256be const& value) {
     }
 
     if (import->base == Name("selfDestruct")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
       uint32_t addressOffset = arguments[0].geti32();
 
       HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
@@ -759,7 +831,7 @@ string toHex(evmc_uint256be const& value) {
       return Literal();
     }
 
-    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
+    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
   }
 
   void EthereumInterface::takeGas(uint64_t gas)
