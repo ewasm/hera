@@ -105,6 +105,16 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("getCallValue")) {
+      cout << "getcallvalue" << endl;
+
+      uint32_t resultOffset = arguments[0].geti32();
+
+      storeUint128(msg.value, resultOffset);
+
+      return Literal();
+    }
+
     if (import->base == Name("return") || import->base == Name("revert")) {
       cout << "return ";
 
