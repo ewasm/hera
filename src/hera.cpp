@@ -45,7 +45,7 @@ using namespace HeraVM;
 namespace {
 
 void execute(
-	struct evm_context const& context,
+	struct evm_context* context,
 	vector<char> & code,
 	struct evm_message const& msg,
 	ExecutionResult & result
@@ -120,7 +120,7 @@ static struct evm_result evm_execute(
     result.gasLeft = (uint64_t)msg->gas;
 
     vector<char> _code(code, code + code_size);
-    execute(*context, _code, *msg, result);
+    execute(context, _code, *msg, result);
 
     // copy call result
     if (result.returnValue.size() > 0) {

@@ -61,6 +61,20 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("getBalance")) {
+      std::cout << "getbalance\n";
+
+      uint32_t addressOffset = arguments[0].geti32();
+      uint32_t resultOffset = arguments[1].geti32();
+
+      evm_address address = loadUint160(addressOffset);
+      evm_uint256be result;
+      context->fn_table->get_balance(&result, context, &address);
+      storeUint128(result, resultOffset);
+
+      return Literal();
+    }
+
     if (import->base == Name("getCallDataSize")) {
       cout << "calldatasize " << msg.input_size << "\n";
       return Literal((uint32_t)msg.input_size);
@@ -79,6 +93,11 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       storeMemory(input, dataOffset, resultOffset, length);
 
       return Literal();
+    }
+
+    if (import->base == Name("getGasLeft")) {
+      cout << "getgasleft\n";
+      return Literal((uint64_t) result.gasLeft);
     }
 
     if (import->base == Name("return") || import->base == Name("revert")) {
