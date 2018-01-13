@@ -248,6 +248,22 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("storageLoad")) {
+      cout << "storageload" << endl;
+
+      uint32_t pathOffset = arguments[0].geti32();
+      uint32_t resultOffset = arguments[1].geti32();
+
+      evm_uint256be path = loadUint256(pathOffset);
+
+      evm_uint256be result;
+      context->fn_table->get_storage(&result, context, &msg.address, &path);
+
+      storeUint256(result, resultOffset);
+
+      return Literal();
+    }
+
     if (import->base == Name("return") || import->base == Name("revert")) {
       cout << "return ";
 
