@@ -13,6 +13,7 @@ matrix:
               - "8"
           env:
               - DEBUG=ON
+              - EVM2WASM=0
         - os: linux
           dist: trusty
           sudo: required
@@ -20,9 +21,18 @@ matrix:
               - "8"
           env:
               - DEBUG=OFF
+              - EVM2WASM=0
+        - os: linux
+          dist: trusty
+          sudo: required
+          node_js:
+              - "8"
+          env:
+              - DEBUG=OFF
+              - EVM2WASM=1
 git:
     depth: 2
 script:
     - mkdir build && cd build
-    - cmake -DHERA_DEBUGGING=$DEBUG ..
+    - cmake -DHERA_DEBUGGING=$DEBUG -DHERA_EVM2WASM=$EVM2WASM ..
     - cmake --build . -- -j4
