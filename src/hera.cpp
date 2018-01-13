@@ -34,6 +34,8 @@
 #include <wasm-printing.h>
 #include <wasm-validator.h>
 
+#include <evm2wasm.h>
+
 #include "evm.h"
 #include "hera.h"
 #include "eei.h"
@@ -194,6 +196,8 @@ static evm_result evm_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
+      // Translate EVM bytecode to WASM
+      // code = evm2wasm(code);
       hera_instance* hera = static_cast<hera_instance*>(instance);
       ret.status_code = hera->fallback ? EVM_REJECTED : EVM_FAILURE;
       return ret;

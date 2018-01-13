@@ -1,0 +1,3 @@
+[submodule "evm2wasm"]
+	path = evm2wasm
+	url = https://github.com/ewasm/evm2wasm
