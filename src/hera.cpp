@@ -44,6 +44,14 @@ using namespace HeraVM;
 
 namespace {
 
+vector<uint8_t> sentinel(vector<uint8_t> const& input)
+{
+#if HERA_DEBUGGING
+  cerr << "Metering... (not really)" << endl;
+#endif
+  return input;
+}
+
 void execute(
 	struct evm_context* context,
 	vector<uint8_t> & code,
@@ -130,15 +138,32 @@ static struct evm_result evm_execute(
     heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");
 
     vector<uint8_t> _code(code, code + code_size);
+
+    if (msg->kind == EVM_CREATE) {
+      // Meter the deployment (constructor) code
+      _code = sentinel(_code);
+      heraAssert(_code.size() > 5, "Invalid contract or metering failed.");
+    }
+
     execute(context, _code, *msg, result);
 
     // copy call result
     if (result.returnValue.size() > 0) {
-      uint8_t* output_data = (uint8_t*)malloc(result.returnValue.size());
-      heraAssert(output_data != NULL, "Memory allocation failure.");
-      copy(result.returnValue.begin(), result.returnValue.end(), output_data);
+      vector<uint8_t> returnValue;
 
-      ret.output_size = result.returnValue.size();
+      if (msg->kind == EVM_CREATE && !result.isRevert) {
+        // Meter the deployed code
+        returnValue = sentinel(result.returnValue);
+        heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
+      } else {
+        returnValue = move(result.returnValue);
+      }
+
+      uint8_t* output_data = (uint8_t*)malloc(returnValue.size());
+      heraAssert(output_data != NULL, "Memory allocation failure.");
+      copy(returnValue.begin(), returnValue.end(), output_data);
+
+      ret.output_size = returnValue.size();
       ret.output_data = output_data;
       ret.release = evm_destroy_result;
     }
