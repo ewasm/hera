@@ -157,6 +157,15 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("getBlockGasLimit")) {
+      cout << "getblockgaslimit" << endl;
+
+      evm_tx_context tx_context;
+      context->fn_table->get_tx_context(&tx_context, context);
+
+      return Literal((int64_t)tx_context.block_gas_limit);
+    }
+
     if (import->base == Name("return") || import->base == Name("revert")) {
       cout << "return ";
 
