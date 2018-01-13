@@ -170,9 +170,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
         result.returnValue.push_back(memory.get<uint8_t>(i));
       }
 
-      if (import->base == Name("revert")) {
-        result.isRevert = true;
-      }
+      result.isRevert = import->base == Name("revert");
 
       return Literal();
     }
