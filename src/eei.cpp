@@ -227,7 +227,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
   {
     evm_message result;
 
-    result.address = loadUint256(addressOffset);
+    result.address = loadUint160(addressOffset);
     result.sender = callingMsg.address;
     result.value = loadUint128(valueOffset);
     result.input = input_data;
@@ -236,7 +236,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     result.gas = gas;
     result.depth = callingMsg.depth + 1;
     result.kind = callKind;
-    result.flags = (depth) ? EVM_STATIC : 0;
+    result.flags = (result.depth) ? EVM_STATIC : 0;
 
     return result; 
   }

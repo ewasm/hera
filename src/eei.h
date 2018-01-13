@@ -97,7 +97,7 @@ private:
 			     const uint8_t *input_data,
 			     const int32_t dataLength,
 			     const int64_t gas,
-			     const enum evm_call_kind callKind)
+			     const enum evm_call_kind callKind);
 
   struct evm_context const& context;
   struct evm_message const& msg;
