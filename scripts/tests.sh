@@ -13,4 +13,4 @@ cd build
 cmake -DHERA=ON ..
 make
 
-test/testeth -- --vm hera
+test/testeth -t GeneralStateTests/stEWASMTests -- --filltests --vm hera --singlenet "Byzantium"
