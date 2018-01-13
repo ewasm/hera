@@ -50,7 +50,7 @@ struct hera_instance : evm_instance {
 
 namespace {
 
-#if HERA_METERING_CONTRACT
+#if HERA_METERING_CONTRACT || HERA_EVM2WASM
 vector<uint8_t> callSystemContract(
   evm_context* context,
   evm_address const& address,
@@ -112,6 +112,29 @@ vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
   return input;
 #endif
 }
+
+#if HERA_EVM2WASM
+vector<uint8_t> evm2wasm(evm_context* context, vector<uint8_t> const& input) {
+#if HERA_DEBUGGING
+  cerr << "Calling evm2wasm (input " << input.size() << " bytes)..." << endl;
+#endif
+
+  int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
+  int64_t gas = startgas;
+  vector<uint8_t> ret = callSystemContract(
+    context,
+    { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } }, // precompile address 0x00...0b
+    gas,
+    input
+  );
+
+#if HERA_DEBUGGING
+  cerr << "evm2wasm done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)" << endl;
+#endif
+
+  return ret;
+}
+#endif
 
 void execute(
 	evm_context* context,
@@ -184,16 +207,25 @@ evm_result evm_execute(
     ExecutionResult result;
     result.gasLeft = (uint64_t)msg->gas;
 
+    vector<uint8_t> _code;
+
     // ensure we can only handle WebAssembly version 1
     if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
+#if HERA_EVM2WASM
+      (void)instance;
+      // Translate EVM bytecode to WASM
+      _code = evm2wasm(context, vector<uint8_t>(code, code + code_size));
+      heraAssert(_code.size() != 0, "Transcompiling via evm2wasm failed");
+#else
       hera_instance* hera = static_cast<hera_instance*>(instance);
       ret.status_code = hera->fallback ? EVM_REJECTED : EVM_FAILURE;
       return ret;
+#endif
+    } else {
+      _code.assign(code, code + code_size);
     }
 
     heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");
-
-    vector<uint8_t> _code(code, code + code_size);
 
     if (msg->kind == EVM_CREATE) {
       // Meter the deployment (constructor) code
