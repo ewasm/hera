@@ -13,4 +13,6 @@ cd build
 cmake -DHERA=ON ..
 make
 
-test/testeth -t GeneralStateTests/stEWASMTests -- --filltests --vm hera --singlenet "Byzantium"
+git clone --recursive https://github.com/ewasm/tests -b wasm-tests
+
+ETHEREUM_TEST_PATH='`pwd`/tests`' test/testeth -t GeneralStateTests/stEWASMTests -- --filltests --vm hera --singlenet "Byzantium"
