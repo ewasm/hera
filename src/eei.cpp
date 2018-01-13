@@ -115,6 +115,18 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("codeCopy")) {
+      cout << "codecopy" << endl;
+
+      uint32_t resultOffset = arguments[0].geti32();
+      uint32_t codeOffset = arguments[1].geti32();
+      uint32_t length = arguments[2].geti32();
+
+      storeMemory(code, codeOffset, resultOffset, length);
+
+      return Literal();
+    }
+
     if (import->base == Name("return") || import->base == Name("revert")) {
       cout << "return ";
 
