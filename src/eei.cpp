@@ -237,6 +237,17 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("selfDestruct")) {
+      cout << "selfdestruct" << endl;
+
+      uint32_t addressOffset = arguments[0].geti32();
+
+      evm_address address = loadUint160(addressOffset);
+      context->fn_table->selfdestruct(context, &msg.address, &address);
+
+      return Literal();
+    }
+
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
   }
 
