@@ -75,6 +75,21 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("getBlockHash")) {
+      std::cout << "getblockhash ";
+
+      int64_t number = arguments[0].geti64();
+      uint32_t resultOffset = arguments[1].geti32();
+
+      std::cout << number << endl;
+
+      evm_uint256be blockhash;
+      context->fn_table->get_block_hash(&blockhash, context, number);
+      storeUint256(blockhash, resultOffset);
+
+      return Literal();
+    }
+
     if (import->base == Name("getCallDataSize")) {
       cout << "calldatasize " << msg.input_size << "\n";
       return Literal((uint32_t)msg.input_size);
