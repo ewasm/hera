@@ -133,6 +133,17 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal((uint32_t)code.size());
     }
 
+    if (import->base == Name("getExternalCodeSize")) {
+      cout << "getexternalcodesize" << endl;
+
+      uint32_t addressOffset = arguments[0].geti32();
+
+      evm_address address = loadUint160(addressOffset);
+      size_t code_size = context->fn_table->get_code(NULL, context, &address);
+
+      return Literal((uint32_t) code_size);
+    }
+
     if (import->base == Name("getBlockCoinbase")) {
       cout << "getblockcoinbase" << endl;
 
