@@ -148,6 +148,26 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal((uint32_t)code.size());
     }
 
+    if (import->base == Name("externalCodeCopy")) {
+      cout << "externalcodecopy" << endl;
+
+      uint32_t addressOffset = arguments[0].geti32();
+      uint32_t resultOffset = arguments[1].geti32();
+      uint32_t codeOffset = arguments[2].geti32();
+      uint32_t length = arguments[3].geti32();
+
+      evm_address address = loadUint160(addressOffset);
+      const uint8_t *code;
+      size_t code_size = context->fn_table->get_code(&code, context, &address);
+
+      // NOTE: code will be freed by the callee (client)
+
+      // FIXME: optimise this so not vector needs to be created
+      storeMemory(vector<uint8_t>(code, code + code_size), codeOffset, resultOffset, length);
+
+      return Literal();
+    }
+
     if (import->base == Name("getExternalCodeSize")) {
       cout << "getexternalcodesize" << endl;
 
