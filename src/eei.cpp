@@ -56,6 +56,12 @@ string toHex(evm_uint256be const& value) {
 
 }
 
+  void EthereumInterface::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
+    (void)globals;
+    (void)wasm;
+    HERA_DEBUG << "importGlobals\n";
+  }
+
 #if HERA_DEBUGGING
   Literal EthereumInterface::callDebugImport(Import *import, LiteralList& arguments) {
     heraAssert(import->module == Name("debug"), "Import namespace error.");
