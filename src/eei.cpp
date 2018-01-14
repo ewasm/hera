@@ -187,6 +187,15 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal(tx_context.block_number);
     }
 
+    if (import->base == Name("getBlockTimestamp")) {
+      cout << "getblocktimestamp" << endl;
+
+      evm_tx_context tx_context;
+      context->fn_table->get_tx_context(&tx_context, context);
+
+      return Literal(tx_context.block_timestamp);
+    }
+
     if (import->base == Name("getTxOrigin")) {
       cout << "gettxorigin" << endl;
 
