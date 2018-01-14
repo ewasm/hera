@@ -334,7 +334,7 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
   {
     heraAssert(length > 0, "Length must be nonzero");
     heraAssert((dstOffset + length) > dstOffset, "Out of bounds (destination) memory copy.");
-    heraAssert(memory.size() < (dstOffset + length), "Out of bounds (destination) memory copy.");
+    heraAssert(memory.size() >= (dstOffset + length), "Out of bounds (destination) memory copy.");
 
     for (uint32_t i = 0; i < length; ++i) {
       memory.set<uint8_t>(dstOffset + length - (i + 1), src[i]);
@@ -345,9 +345,9 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
   {
     heraAssert(length > 0, "Length must be nonzero");
     heraAssert((srcOffset + length) > srcOffset, "Out of bounds (source) memory copy.");
-    heraAssert(src.size() < (srcOffset + length), "Out of bounds (source) memory copy.");
+    heraAssert(src.size() >= (srcOffset + length), "Out of bounds (source) memory copy.");
     heraAssert((dstOffset + length) > dstOffset, "Out of bounds (destination) memory copy.");
-    heraAssert(memory.size() < (dstOffset + length), "Out of bounds (destination) memory copy.");
+    heraAssert(memory.size() >= (dstOffset + length), "Out of bounds (destination) memory copy.");
 
     for (uint32_t i = 0; i < length; i++) {
       memory.set<uint8_t>(dstOffset + i, src[srcOffset + i]);
