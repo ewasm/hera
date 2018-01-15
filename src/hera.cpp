@@ -50,7 +50,9 @@ void execute(
 	struct evm_message const& msg,
 	ExecutionResult & result
 ) {
-  cout << "Executing...\n";
+#if HERA_DEBUGGING
+  cout << "Executing..." << endl;
+#endif
 
   Module module;
 
@@ -144,10 +146,14 @@ static struct evm_result evm_execute(
     ret.status_code = EVM_OUT_OF_GAS;
   } catch (InternalErrorException &e) {
     ret.status_code = EVM_INTERNAL_ERROR;
+#if HERA_DEBUGGING
     cerr << "InternalError: " << e.what() << endl;
+#endif
   } catch (exception &e) {
     ret.status_code = EVM_INTERNAL_ERROR;
+#if HERA_DEBUGGING
     cerr << "Unknown exception: " << e.what() << endl;
+#endif
   }
 
   return ret;
