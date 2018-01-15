@@ -7,5 +7,10 @@ add_library(hera
     ${evm_include_dir}/evm.h
 )
 
+option(HERA_DEBUGGING "Display debugging messages during execution." ON)
+if(HERA_DEBUGGING)
+  target_compile_definitions(hera PRIVATE HERA_DEBUGGING=1)
+endif()
+
 target_include_directories(hera PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} PRIVATE ${evm_include_dir})
 target_link_libraries(hera PRIVATE binaryen::binaryen)
