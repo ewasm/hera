@@ -37,7 +37,7 @@ string to_string(evm_address const& address)
   stringstream s;
   s << hex;
   for (unsigned i = 0; i < 20; i++)
-    s << address.bytes[i];
+    s << static_cast<int>(address.bytes[i]);
   return s.str();
 }
 
@@ -46,7 +46,7 @@ string to_string(evm_uint256be const& value)
   stringstream s;
   s << hex;
   for (unsigned i = 0; i < 32; i++)
-    s << value.bytes[i];
+    s << static_cast<int>(value.bytes[i]);
   return s.str();
 }
 
