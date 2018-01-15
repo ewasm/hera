@@ -449,4 +449,28 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     }
     return 0;
   }
+
+  evm_message EthereumInterface::genMessageCall(const evm_message &callingMsg,
+                                                const uint32_t addressOffset,
+						const uint32_t valueOffset,
+						const uint8_t *input_data,
+						const int32_t dataLength,
+						const int64_t gas,
+						const enum evm_call_kind callKind)
+  {
+    evm_message result;
+
+    result.address = loadUint160(addressOffset);
+    result.sender = callingMsg.address;
+    result.value = loadUint128(valueOffset);
+    result.input = input_data;
+    result.input_size = dataLength;
+    result.code_hash = { }; 
+    result.gas = gas;
+    result.depth = callingMsg.depth + 1;
+    result.kind = callKind;
+    result.flags = (result.depth) ? EVM_STATIC : 0;
+
+    return result; 
+  }
 }

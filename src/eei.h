@@ -93,6 +93,13 @@ private:
   void storeUint128(evm_uint256be const& src, uint32_t dstOffset);
 
   unsigned int exceedsUint128(evm_uint256be const& value);
+  evm_message genMessageCall(const evm_message &callingMsg,
+                             const uint32_t addressOffset,
+			     const uint32_t valueOffset,
+			     const uint8_t *input_data,
+			     const int32_t dataLength,
+			     const int64_t gas,
+			     const enum evm_call_kind callKind);
 
   struct evm_context* context = nullptr;
   std::vector<uint8_t> const& code;
