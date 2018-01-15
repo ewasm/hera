@@ -71,7 +71,6 @@ string to_string_hex(uint64_t const& value)
   s << hex << value;
   return s.str();
 }
-
 }
 
 #define HERA_DEBUG(msg) do { cout << msg << endl; } while(0)
@@ -138,7 +137,7 @@ namespace HeraVM {
     if (import->base == Name("useGas")) {
       uint64_t gas = arguments[0].geti64();
 
-      HERA_DEBUG(string("useGas ") + to_string(gas));
+      HERA_DEBUG(string("useGas < ") + to_string(gas));
 
       takeGas(gas);
 
@@ -146,15 +145,19 @@ namespace HeraVM {
     }
 
     if (import->base == Name("getGasLeft")) {
+      HERA_DEBUG(string("getGasLeft out:") + to_string(result.gasLeft));
+    
       return Literal(result.gasLeft);
     }
 
     if (import->base == Name("getAddress")) {
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG(string("getAddress ") + to_string(resultOffset));
+      HERA_DEBUG(string("getAddress < ") + to_string(resultOffset));
 
       storeUint160(msg.address, resultOffset);
+
+      HERA_DEBUG(string("getAddress > ") + to_string(msg.address));
 
       return Literal();
     }
@@ -163,14 +166,14 @@ namespace HeraVM {
       uint32_t addressOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
 
-      HERA_DEBUG(string("getBalance ") + to_string(addressOffset) + " " + to_string(resultOffset));
+      HERA_DEBUG(string("getBalance < ") + to_string(addressOffset) + " " + to_string(resultOffset));
 
       evm_address address = loadUint160(addressOffset);
       evm_uint256be result;
       context->fn_table->get_balance(&result, context, &address);
       storeUint128(result, resultOffset);
 
-      HERA_DEBUG(string("getBalance ") + to_string(address) + " " + to_string(result));
+      HERA_DEBUG(string("getBalance > ") + to_string(address) + " " + to_string(result));
 
       return Literal();
     }
@@ -320,6 +323,27 @@ namespace HeraVM {
       evm_tx_context tx_context;
       context->fn_table->get_tx_context(&tx_context, context);
       storeUint128(tx_context.tx_gas_price, valueOffset);
+
+      return Literal();
+    }
+
+    if (import->base == Name("log")) {
+      cout << "log" << endl;
+
+      uint32_t dataOffset = arguments[0].geti32();
+      uint32_t length = arguments[1].geti32();
+      uint32_t numberOfTopics = arguments[2].geti32();
+
+      evm_uint256be topics[numberOfTopics];
+      for (size_t i = 0; i < numberOfTopics; ++i) {
+        uint32_t topicOffset = arguments[3 + i].geti32();
+        topics[i] = loadUint256(topicOffset);
+      }
+
+      vector<uint8_t> data(length);
+      loadMemory(dataOffset, data, length);
+
+      context->fn_table->log(context, &msg.address, data.data(), length, topics, numberOfTopics);
 
       return Literal();
     }
