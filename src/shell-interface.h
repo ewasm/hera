@@ -52,6 +52,10 @@ struct ShellExternalInterface : ModuleInstance::ExternalInterface {
 
    public:
     Memory() {}
+    // Gives no guarantee about the length of the memory. Caller needs to ensure that.
+    char* rawpointer(size_t offset) {
+      return &memory[offset];
+    }
     size_t size() const { return memory.size(); }
     void resize(size_t newSize) {
       // Ensure the smallest allocation is large enough that most allocators

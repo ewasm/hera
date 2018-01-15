@@ -64,6 +64,10 @@ private:
   size_t memorySize() const override { return memory.size(); }
   void memorySet(size_t offset, uint8_t value) override { memory.set<uint8_t>(offset, value); }
   uint8_t memoryGet(size_t offset) override { return memory.get<uint8_t>(offset); }
+  uint8_t* memoryPointer(size_t offset, size_t length) override {
+    ensureCondition(memorySize() >= (offset + length), InvalidMemoryAccess, "Memory is shorter than requested segment");
+    return reinterpret_cast<uint8_t*>(memory.rawpointer(offset));
+  }
 };
 
   void BinaryenEthereumInterface::importGlobals(map<wasm::Name, wasm::Literal>& globals, wasm::Module& wasm) {
