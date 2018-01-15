@@ -224,6 +224,27 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       return Literal();
     }
 
+    if (import->base == Name("log")) {
+      cout << "log" << endl;
+
+      uint32_t dataOffset = arguments[0].geti32();
+      uint32_t length = arguments[1].geti32();
+      uint32_t numberOfTopics = arguments[2].geti32();
+
+      evm_uint256be topics[numberOfTopics];
+      for (size_t i = 0; i < numberOfTopics; ++i) {
+        uint32_t topicOffset = arguments[3 + i].geti32();
+        topics[i] = loadUint256(topicOffset);
+      }
+
+      vector<uint8_t> data(length);
+      loadMemory(dataOffset, data, length);
+
+      context->fn_table->log(context, &msg.address, data.data(), length, topics, numberOfTopics);
+
+      return Literal();
+    }
+
     if (import->base == Name("getBlockNumber")) {
       cout << "getblocknumber" << endl;
 
