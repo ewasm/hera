@@ -284,6 +284,16 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       evm_uint256be path = loadUint256(pathOffset);
       evm_uint256be value = loadUint256(valueOffset);
 
+      evm_uint256be current;
+      context->fn_table->get_storage(&current, context, &msg.address, &path);
+
+      // We do not need to take care about the delete case (gas refund), the client does it.
+      takeGas(
+        (isZeroUint256(current) && !isZeroUint256(value)) ?
+        GasSchedule::storageStoreCreate :
+        GasSchedule::storageStoreChange
+      );
+
       context->fn_table->set_storage(context, &msg.address, &path, &value);
 
       return Literal();
@@ -440,13 +450,21 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
    * Utilities
    */
 
-  /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
-  unsigned int EthereumInterface::exceedsUint128(evm_uint256be const& value)
+  bool EthereumInterface::exceedsUint128(evm_uint256be const& value)
   {
-    for (unsigned i = 0; i < 16; ++i) {
+    for (unsigned i = 0; i < 16; i++) {
       if (value.bytes[i])
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
+  }
+
+  bool EthereumInterface::isZeroUint256(evm_uint256be const& value)
+  {
+    for (unsigned i = 0; i < 32; i++) {
+      if (value.bytes[i] != 0)
+        return true;
+    }
+    return false;
   }
 }

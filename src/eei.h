@@ -92,12 +92,21 @@ private:
   evm_uint256be loadUint128(uint32_t srcOffset);
   void storeUint128(evm_uint256be const& src, uint32_t dstOffset);
 
-  unsigned int exceedsUint128(evm_uint256be const& value);
+  /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
+  static bool exceedsUint128(evm_uint256be const& value);
+
+  /* Checks if 256 bit value is all zeroes */
+  static bool isZeroUint256(evm_uint256be const& value);
 
   struct evm_context* context = nullptr;
   std::vector<uint8_t> const& code;
   struct evm_message const& msg;
   ExecutionResult result;
+};
+
+struct GasSchedule {
+  static constexpr unsigned storageStoreCreate = 20000;
+  static constexpr unsigned storageStoreChange = 5000;
 };
 
 }
