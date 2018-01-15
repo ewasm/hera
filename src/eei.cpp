@@ -284,6 +284,16 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
       evm_uint256be path = loadUint256(pathOffset);
       evm_uint256be value = loadUint256(valueOffset);
 
+      evm_uint256be current;
+      context->fn_table->get_storage(&current, context, &msg.address, &path);
+
+      // We do not need to take care about the delete case (gas refund), the client does it.
+      takeGas(
+        (isZeroUint256(current) && !isZeroUint256(value)) ?
+        GasSchedule::storageStoreCreate :
+        GasSchedule::storageStoreChange
+      );
+
       context->fn_table->set_storage(context, &msg.address, &path, &value);
 
       return Literal();

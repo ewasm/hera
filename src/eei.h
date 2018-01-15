@@ -104,4 +104,9 @@ private:
   ExecutionResult result;
 };
 
+struct GasSchedule {
+  static constexpr unsigned storageStoreCreate = 20000;
+  static constexpr unsigned storageStoreChange = 5000;
+};
+
 }
