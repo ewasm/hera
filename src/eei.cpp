@@ -28,6 +28,8 @@
 using namespace std;
 using namespace wasm;
 
+#if HERA_DEBUGGING
+
 namespace {
 
 string to_string(evm_address const& address)
@@ -50,17 +52,20 @@ string to_string(evm_uint256be const& value)
 
 }
 
+#define HERA_DEBUG(msg) do { cout << msg << endl; } while(0)
+#else
+#define HERA_DEBUG(msg) do{ } while(0)
+#endif
+
 namespace HeraVM {
 
 Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     heraAssert(import->module == Name("ethereum"), "Only imports from the 'ethereum' namespace are allowed.");
 
     if (import->base == Name("useGas")) {
-      cout << "usegas ";
-
       uint64_t gas = arguments[0].geti64();
 
-      cout << gas << "\n";
+      HERA_DEBUG(string("useGas < ") + to_string(gas));
 
       takeGas(gas);
 
@@ -68,42 +73,44 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     }
 
     if (import->base == Name("getGasLeft")) {
+      HERA_DEBUG(string("getGasLeft out:") + to_string(result.gasLeft));
+    
       return Literal(result.gasLeft);
     }
 
     if (import->base == Name("getAddress")) {
-      cout << "getAddress ";
-
       uint32_t resultOffset = arguments[0].geti32();
 
-      cout << resultOffset << "\n";
+      HERA_DEBUG(string("getAddress < ") + to_string(resultOffset));
 
       storeUint160(msg.address, resultOffset);
+
+      HERA_DEBUG(string("getAddress > ") + to_string(msg.address));
 
       return Literal();
     }
 
     if (import->base == Name("getBalance")) {
-      std::cout << "getbalance\n";
-
       uint32_t addressOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
+
+      HERA_DEBUG(string("getBalance < ") + to_string(addressOffset) + " " + to_string(resultOffset));
 
       evm_address address = loadUint160(addressOffset);
       evm_uint256be result;
       context->fn_table->get_balance(&result, context, &address);
       storeUint128(result, resultOffset);
 
+      HERA_DEBUG(string("getBalance > ") + to_string(address) + " " + to_string(result));
+
       return Literal();
     }
 
     if (import->base == Name("getBlockHash")) {
-      std::cout << "getblockhash ";
-
       int64_t number = arguments[0].geti64();
       uint32_t resultOffset = arguments[1].geti32();
 
-      std::cout << number << endl;
+      HERA_DEBUG(string("getBlockHash ") + to_string(number));
 
       evm_uint256be blockhash;
       context->fn_table->get_block_hash(&blockhash, context, number);
@@ -191,12 +198,14 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     }
 
     if (import->base == Name("getExternalCodeSize")) {
-      cout << "getexternalcodesize" << endl;
-
       uint32_t addressOffset = arguments[0].geti32();
+
+      HERA_DEBUG(string("getExternalCodeSize ") + to_string(addressOffset));
 
       evm_address address = loadUint160(addressOffset);
       size_t code_size = context->fn_table->get_code(NULL, context, &address);
+
+      HERA_DEBUG(string("getExternalCodeSize ") + to_string(address));
 
       return Literal((uint32_t) code_size);
     }
