@@ -43,8 +43,65 @@ struct NullStream {
 #endif
 
 namespace HeraVM {
+#if HERA_DEBUGGING
+  Literal EthereumInterface::callDebugImport(Import *import, LiteralList& arguments) {
+    heraAssert(import->module == Name("debug"), "Import namespace error.");
 
-Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
+    if (import->base == Name("print32")) {
+      uint32_t value = arguments[0].geti32();
+
+      cout << "DEBUG print32: " << value << " " << hex << "0x" << value << dec << endl;
+
+      return Literal();
+    }
+
+    if (import->base == Name("print64")) {
+      uint64_t value = arguments[0].geti64();
+
+      cout << "DEBUG print64: " << value << " " << hex << "0x" << value << dec << endl;
+
+      return Literal();
+    }
+
+    if (import->base == Name("printMem") || import->base == Name("printMemHex")) {
+      uint32_t offset = arguments[0].geti32();
+      uint32_t length = arguments[1].geti32();
+
+      heraAssert(memory.size() >= (offset + length), "Out of memory bounds.");
+
+      bool useHex = import->base == Name("printMemHex");
+
+      cout << "DEBUG printMem" << (useHex ? "Hex(" : "(") << hex << "0x" << offset << ":0x" << length << "): " << dec;
+      if (useHex)
+      {
+        cout << hex;
+        for (uint32_t i = offset; i < length; i++) {
+          cout << static_cast<int>(memory.get<uint8_t>(i)) << " ";
+        }
+        cout << dec;
+      }
+      else
+      {
+        for (uint32_t i = offset; i < length; i++) {
+          cout << memory.get<uint8_t>(i) << " ";
+        }
+      }
+      cout << endl;
+
+      return Literal();
+    }
+
+    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
+  }
+#endif
+
+  Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
+#if HERA_DEBUGGING
+    if (import->module == Name("debug"))
+      // Reroute to debug namespace
+      return callDebugImport(import, arguments);
+#endif
+
     heraAssert(import->module == Name("ethereum"), "Only imports from the 'ethereum' namespace are allowed.");
 
     if (import->base == Name("useGas")) {
