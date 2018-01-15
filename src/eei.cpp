@@ -80,9 +80,8 @@ string to_string_hex(uint64_t const& value)
 #endif
 
 namespace HeraVM {
-
-Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
-    heraAssert(import->module == Name("ethereum"), "Only imports from the 'ethereum' namespace are allowed.");
+  Literal EthereumInterface::callDebugImport(Import *import, LiteralList& arguments) {
+    heraAssert(import->module == Name("debug"), "Import namespace error.");
 
     if (import->base == Name("print32")) {
       uint32_t val = arguments[0].geti32();
@@ -125,6 +124,16 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
 
       return Literal();
     }
+
+    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
+  }
+
+  Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
+    if (import->module == Name("debug"))
+      // Reroute to debug namespace
+      return callDebugImport(import, arguments);
+
+    heraAssert(import->module == Name("ethereum"), "Only imports from the 'ethereum' and 'debug' namespaces are allowed.");
 
     if (import->base == Name("useGas")) {
       uint64_t gas = arguments[0].geti64();

@@ -72,6 +72,7 @@ struct EthereumInterface : ShellExternalInterface {
   { }
 
   Literal callImport(Import *import, LiteralList& arguments) override;
+  Literal callDebugImport(Import *import, LiteralList& arguments);
 
   void trap(const char* why) override {
     throw InternalErrorException(std::string("Trap condition: ") + why);
