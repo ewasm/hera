@@ -50,6 +50,27 @@ string to_string(evm_uint256be const& value)
   return s.str();
 }
 
+string to_string_printable(evm_uint256be const& value)
+{
+  stringstream s;
+  for (unsigned i = 0; i < 32; i++)
+    s << value.bytes[i];
+  return s.str();
+}
+
+string to_string_hex(uint32_t const& value)
+{
+  stringstream s;
+  s << hex << value;
+  return s.str();
+}
+
+string to_string_hex(uint64_t const& value)
+{
+  stringstream s;
+  s << hex << value;
+  return s.str();
+}
 }
 
 #define HERA_DEBUG(msg) do { cout << msg << endl; } while(0)
@@ -58,9 +79,60 @@ string to_string(evm_uint256be const& value)
 #endif
 
 namespace HeraVM {
+  Literal EthereumInterface::callDebugImport(Import *import, LiteralList& arguments) {
+    heraAssert(import->module == Name("debug"), "Import namespace error.");
 
-Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
-    heraAssert(import->module == Name("ethereum"), "Only imports from the 'ethereum' namespace are allowed.");
+    if (import->base == Name("print32")) {
+      uint32_t val = arguments[0].geti32();
+      HERA_DEBUG(string("<DEBUG(str32): ") + to_string(val) + string(">"));
+      HERA_DEBUG(string("<DEBUG(hex32): ") + to_string_hex(val) + string(">"));
+
+      return Literal();
+    }
+
+    if (import->base == Name("print64")) {
+      uint64_t val = arguments[0].geti64();
+      HERA_DEBUG(string("<DEBUG(str64): ") + to_string(val) + string(">"));
+      HERA_DEBUG(string("<DEBUG(hex64): ") + to_string_hex(val) + string(">"));
+
+      return Literal();
+    }
+
+    if (import->base == Name("printMem")) {
+      uint32_t offset = arguments[0].geti32();
+      uint32_t len = arguments[1].geti32();
+
+      for (uint32_t i = 0; i < len; i++) {
+        evm_uint256be dst;
+        loadMemory(offset + i * 32, dst.bytes, 16);
+        HERA_DEBUG(string("<DEBUG(str) page ") + to_string(i) + string(": ") + to_string_printable(dst) + string(">"));
+      }
+
+      return Literal();
+    }
+
+    if (import->base == Name("printMemHex")) {
+      uint32_t offset = arguments[0].geti32();
+      uint32_t len = arguments[1].geti32();
+
+      for (uint32_t i = 0; i < len; i++) {
+        evm_uint256be dst;
+        loadMemory(offset + i * 32, dst.bytes, 16);
+        HERA_DEBUG(string("<DEBUG(hex) page ") + to_string(i) + string(": ") + to_string(dst) + string(">"));
+      }
+
+      return Literal();
+    }
+
+    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
+  }
+
+  Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
+    if (import->module == Name("debug"))
+      // Reroute to debug namespace
+      return callDebugImport(import, arguments);
+
+    heraAssert(import->module == Name("ethereum"), "Only imports from the 'ethereum' and 'debug' namespaces are allowed.");
 
     if (import->base == Name("useGas")) {
       uint64_t gas = arguments[0].geti64();
