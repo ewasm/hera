@@ -448,4 +448,13 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
     }
     return false;
   }
+
+  bool EthereumInterface::isZeroUint256(evm_uint256be const& value)
+  {
+    for (unsigned i = 0; i < 32; i++) {
+      if (value.bytes[i] != 0)
+        return true;
+    }
+    return false;
+  }
 }

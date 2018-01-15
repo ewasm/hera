@@ -95,6 +95,9 @@ private:
   /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
   static bool exceedsUint128(evm_uint256be const& value);
 
+  /* Checks if 256 bit value is all zeroes */
+  static bool isZeroUint256(evm_uint256be const& value);
+
   struct evm_context* context = nullptr;
   std::vector<uint8_t> const& code;
   struct evm_message const& msg;
