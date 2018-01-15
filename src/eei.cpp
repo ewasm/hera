@@ -440,13 +440,12 @@ Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
    * Utilities
    */
 
-  /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
-  unsigned int EthereumInterface::exceedsUint128(evm_uint256be const& value)
+  bool EthereumInterface::exceedsUint128(evm_uint256be const& value)
   {
-    for (unsigned i = 0; i < 16; ++i) {
+    for (unsigned i = 0; i < 16; i++) {
       if (value.bytes[i])
-        return 1;
+        return true;
     }
-    return 0;
+    return false;
   }
 }
