@@ -17,6 +17,8 @@ Hera implements two interfaces: [EEI](https://github.com/ewasm/design/blob/maste
 - `debug::printMem(offset: i32, len: i32)` - print memory segment as printable characters
 - `debug::printMemHex(offset: i32, len: i32)` - print memory segment as a hex
 
+These are only enabled if Hera is compiled with debugging on: `-DHERA_DEBUGGING=ON`.
+
 ## Caveats
 
 Although Hera enables the execution of eWASM bytecode, there are more elements to eWASM an Ethereum node must be aware of:
