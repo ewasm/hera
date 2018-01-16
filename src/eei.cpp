@@ -118,6 +118,7 @@ namespace HeraVM {
     if (import->base == Name("getGasLeft")) {
       HERA_DEBUG << "getGasLeft\n";
 
+      static_assert(is_same<decltype(result.gasLeft), uint64_t>::value, "uint64_t type expected");
       return Literal(result.gasLeft);
     }
 
@@ -275,7 +276,8 @@ namespace HeraVM {
       evm_tx_context tx_context;
       context->fn_table->get_tx_context(&tx_context, context);
 
-      return Literal((int64_t)tx_context.block_gas_limit);
+      static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
+      return Literal(tx_context.block_gas_limit);
     }
 
     if (import->base == Name("getTxGasPrice")) {
@@ -317,6 +319,7 @@ namespace HeraVM {
       evm_tx_context tx_context;
       context->fn_table->get_tx_context(&tx_context, context);
 
+      static_assert(is_same<decltype(tx_context.block_number), int64_t>::value, "int64_t type expected");
       return Literal(tx_context.block_number);
     }
 
@@ -326,6 +329,7 @@ namespace HeraVM {
       evm_tx_context tx_context;
       context->fn_table->get_tx_context(&tx_context, context);
 
+      static_assert(is_same<decltype(tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
       return Literal(tx_context.block_timestamp);
     }
 
@@ -476,7 +480,7 @@ namespace HeraVM {
       if (call_result.release)
         call_result.release(&call_result);
 
-      return Literal((call_result.status_code == EVM_SUCCESS) ? 1 : 0);
+      return Literal((call_result.status_code == EVM_SUCCESS) ? uint32_t(1) : uint32_t(0));
     }
 
     if (import->base == Name("create")) {
