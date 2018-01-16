@@ -95,6 +95,13 @@ private:
   evm_uint256be loadUint128(uint32_t srcOffset);
   void storeUint128(evm_uint256be const& src, uint32_t dstOffset);
 
+  void ensureSenderBalance(evm_uint256be const& value);
+
+  static uint64_t safeLoadUint64(evm_uint256be const& value);
+
+  /* Checks if host supplied 256 bit value exceeds UINT64_MAX */
+  static bool exceedsUint64(evm_uint256be const& value);
+
   /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
   static bool exceedsUint128(evm_uint256be const& value);
 
