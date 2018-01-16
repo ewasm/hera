@@ -67,6 +67,7 @@ namespace HeraVM {
       uint32_t offset = arguments[0].geti32();
       uint32_t length = arguments[1].geti32();
 
+      heraAssert((offset + length) > offset, "Overflow.");
       heraAssert(memory.size() >= (offset + length), "Out of memory bounds.");
 
       bool useHex = import->base == Name("printMemHex");
@@ -75,14 +76,14 @@ namespace HeraVM {
       if (useHex)
       {
         cout << hex;
-        for (uint32_t i = offset; i < length; i++) {
+        for (uint32_t i = offset; i < (offset + length); i++) {
           cout << static_cast<int>(memory.get<uint8_t>(i)) << " ";
         }
         cout << dec;
       }
       else
       {
-        for (uint32_t i = offset; i < length; i++) {
+        for (uint32_t i = offset; i < (offset + length); i++) {
           cout << memory.get<uint8_t>(i) << " ";
         }
       }
