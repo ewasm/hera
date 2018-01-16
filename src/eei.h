@@ -104,7 +104,7 @@ private:
   struct evm_context* context = nullptr;
   std::vector<uint8_t> const& code;
   struct evm_message const& msg;
-  ExecutionResult result;
+  ExecutionResult & result;
 };
 
 struct GasSchedule {
