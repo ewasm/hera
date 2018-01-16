@@ -92,6 +92,41 @@ namespace HeraVM {
       return Literal();
     }
 
+    if (import->base == Name("printStorage") || import->base == Name("printStorageHex")) {
+      uint32_t pathOffset = arguments[0].geti32();
+
+      evm_uint256be path = loadUint256(pathOffset);
+
+      bool useHex = import->base == Name("printStorageHex");
+
+      HERA_DEBUG << "DEBUG printStorage" << (useHex ? "Hex" : "") << "(0x" << hex;
+
+      // Print out the path
+      for (uint8_t b: path.bytes)
+        cout << static_cast<int>(b);
+
+      HERA_DEBUG << "): " << dec;
+
+      evm_uint256be result;
+      context->fn_table->get_storage(&result, context, &msg.address, &path);
+
+      if (useHex)
+      {
+        cout << hex;
+        for (uint8_t b: result.bytes)
+          cout << static_cast<int>(b) << " ";
+        cout << dec;
+      }
+      else
+      {
+        for (uint8_t b: result.bytes)
+          cout << b << " ";
+      }
+      cout << endl;
+
+      return Literal();
+    }
+
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
   }
 #endif
