@@ -108,7 +108,7 @@ namespace HeraVM {
     if (import->base == Name("useGas")) {
       uint64_t gas = arguments[0].geti64();
 
-      HERA_DEBUG << "useGas " << hex << gas << "\n";
+      HERA_DEBUG << "useGas " << hex << gas << dec << "\n";
 
       takeGas(gas);
 
@@ -125,7 +125,7 @@ namespace HeraVM {
     if (import->base == Name("getAddress")) {
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getAddress " << hex << resultOffset << "\n";
+      HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
 
       storeUint160(msg.address, resultOffset);
 
@@ -136,7 +136,7 @@ namespace HeraVM {
       uint32_t addressOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
 
-      HERA_DEBUG << "getBalance " << hex << addressOffset << " " << resultOffset << "\n";
+      HERA_DEBUG << "getBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
 
       evm_address address = loadUint160(addressOffset);
       evm_uint256be result;
@@ -150,7 +150,7 @@ namespace HeraVM {
       int64_t number = arguments[0].geti64();
       uint32_t resultOffset = arguments[1].geti32();
 
-      HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << "\n";
+      HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
 
       evm_uint256be blockhash;
       context->fn_table->get_block_hash(&blockhash, context, number);
@@ -169,7 +169,7 @@ namespace HeraVM {
       uint32_t dataOffset = arguments[1].geti32();
       uint32_t length = arguments[2].geti32();
 
-      HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << "\n";
+      HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
 
       vector<uint8_t> input(msg.input, msg.input + msg.input_size);
       storeMemory(input, dataOffset, resultOffset, length);
@@ -180,7 +180,7 @@ namespace HeraVM {
     if (import->base == Name("getCaller")) {
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getCaller " << resultOffset << "\n";
+      HERA_DEBUG << "getCaller " << hex << resultOffset << dec << "\n";
 
       storeUint160(msg.sender, resultOffset);
 
@@ -190,7 +190,7 @@ namespace HeraVM {
     if (import->base == Name("getCallValue")) {
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getCallValue " << resultOffset << "\n";
+      HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
 
       storeUint128(msg.value, resultOffset);
 
@@ -202,7 +202,7 @@ namespace HeraVM {
       uint32_t codeOffset = arguments[1].geti32();
       uint32_t length = arguments[2].geti32();
 
-      HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << "\n";
+      HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
       storeMemory(code, codeOffset, resultOffset, length);
 
@@ -221,7 +221,7 @@ namespace HeraVM {
       uint32_t codeOffset = arguments[2].geti32();
       uint32_t length = arguments[3].geti32();
 
-      HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << "\n";
+      HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
       evm_address address = loadUint160(addressOffset);
       const uint8_t *code;
@@ -238,7 +238,7 @@ namespace HeraVM {
     if (import->base == Name("getExternalCodeSize")) {
       uint32_t addressOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << "\n";
+      HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
 
       evm_address address = loadUint160(addressOffset);
       size_t code_size = context->fn_table->get_code(NULL, context, &address);
@@ -249,7 +249,7 @@ namespace HeraVM {
     if (import->base == Name("getBlockCoinbase")) {
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << "\n";
+      HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
 
       evm_tx_context tx_context;
       context->fn_table->get_tx_context(&tx_context, context);
@@ -261,7 +261,7 @@ namespace HeraVM {
     if (import->base == Name("getBlockDifficulty")) {
       uint32_t offset = arguments[0].geti32();
 
-      HERA_DEBUG << "getBlockDifficulty " << hex << offset << "\n";
+      HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
 
       evm_tx_context tx_context;
       context->fn_table->get_tx_context(&tx_context, context);
@@ -283,7 +283,7 @@ namespace HeraVM {
     if (import->base == Name("getTxGasPrice")) {
       uint32_t valueOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << "\n";
+      HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
 
       evm_tx_context tx_context;
       context->fn_table->get_tx_context(&tx_context, context);
@@ -297,7 +297,7 @@ namespace HeraVM {
       uint32_t length = arguments[1].geti32();
       uint32_t numberOfTopics = arguments[2].geti32();
 
-      HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << "\n";
+      HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
 
       evm_uint256be topics[numberOfTopics];
       for (size_t i = 0; i < numberOfTopics; ++i) {
@@ -336,7 +336,7 @@ namespace HeraVM {
     if (import->base == Name("getTxOrigin")) {
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getTxOrigin " << hex << resultOffset << "\n";
+      HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
 
       evm_tx_context tx_context;
       context->fn_table->get_tx_context(&tx_context, context);
@@ -349,7 +349,7 @@ namespace HeraVM {
       uint32_t pathOffset = arguments[0].geti32();
       uint32_t valueOffset = arguments[1].geti32();
 
-      HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << "\n";
+      HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
 
       evm_uint256be path = loadUint256(pathOffset);
       evm_uint256be value = loadUint256(valueOffset);
@@ -373,7 +373,7 @@ namespace HeraVM {
       uint32_t pathOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
 
-      HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << "\n";
+      HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
 
       evm_uint256be path = loadUint256(pathOffset);
 
@@ -389,7 +389,7 @@ namespace HeraVM {
       uint32_t offset = arguments[0].geti32();
       uint32_t size = arguments[1].geti32();
 
-      HERA_DEBUG << (import->base == Name("revert") ? "revert " : "return ") << hex << offset << " " << size << "\n";
+      HERA_DEBUG << (import->base == Name("revert") ? "revert " : "return ") << hex << offset << " " << size << dec << "\n";
 
       result.returnValue.clear();
       for (uint32_t i = offset; i < offset + size; i++) {
@@ -521,7 +521,7 @@ namespace HeraVM {
     if (import->base == Name("selfDestruct")) {
       uint32_t addressOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "selfDestruct " << hex << addressOffset << "\n";
+      HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
 
       evm_address address = loadUint160(addressOffset);
 
