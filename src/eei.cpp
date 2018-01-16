@@ -475,7 +475,7 @@ namespace HeraVM {
 
   evm_uint256be EthereumInterface::loadUint256(uint32_t srcOffset)
   {
-    evm_uint256be dst;
+    evm_uint256be dst = {};
     loadMemory(srcOffset, dst.bytes, 32);
     return dst;
   }
@@ -487,7 +487,7 @@ namespace HeraVM {
 
   evm_address EthereumInterface::loadUint160(uint32_t srcOffset)
   {
-    evm_address dst;
+    evm_address dst = {};
     loadMemory(srcOffset, dst.bytes, 20);
     return dst;
   }
@@ -499,7 +499,7 @@ namespace HeraVM {
 
   evm_uint256be EthereumInterface::loadUint128(uint32_t srcOffset)
   {
-    evm_uint256be dst;
+    evm_uint256be dst = {};
     loadMemory(srcOffset, dst.bytes, 16);
     return dst;
   }
