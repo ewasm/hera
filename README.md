@@ -6,6 +6,17 @@ It can be used with [cpp-ethereum](https://github.com/ethereum/cpp-ethereum) and
 
 Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpreter for running WebAssembly bytecode and it should be improved to support the [WAVM](https://github.com/AndrewScheidecker/WAVM) as a backend.
 
+## Interfaces
+
+Hera implements two interfaces: [EEI](https://github.com/ewasm/design/blob/master/eth_interface.md) and a debugging module.
+
+### Debugging module
+
+- `debug::print32(value: i32)` - print value
+- `debug::print64(value: i64)` - print value
+- `debug::printMem(offset: i32, len: i32)` - print memory segment as printable characters
+- `debug::printMemHex(offset: i32, len: i32)` - print memory segment as a hex
+
 ## Caveats
 
 Although Hera enables the execution of eWASM bytecode, there are more elements to eWASM an Ethereum node must be aware of:
