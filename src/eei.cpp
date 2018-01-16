@@ -468,8 +468,6 @@ namespace HeraVM {
       uint32_t valueOffset;
       uint32_t dataOffset;
       uint32_t dataLength;
-      uint32_t resultOffset;
-      uint32_t resultLength;
 
       heraAssert((msg.flags & ~EVM_STATIC) == 0, "Unknown flags not supported.");
 
@@ -484,8 +482,6 @@ namespace HeraVM {
         valueOffset = arguments[2].geti32();
         dataOffset = arguments[3].geti32();
         dataLength = arguments[4].geti32();
-        resultOffset = arguments[5].geti32();
-        resultLength = arguments[6].geti32();
 
         call_message.sender = msg.address;
         call_message.value = loadUint128(valueOffset);
@@ -499,8 +495,6 @@ namespace HeraVM {
         valueOffset = 0;
         dataOffset = arguments[2].geti32();
         dataLength = arguments[3].geti32();
-        resultOffset = arguments[4].geti32();
-        resultLength = arguments[5].geti32();
 
         if (import->base == Name("callDelegate")) {
           call_message.sender = msg.sender;
@@ -520,9 +514,7 @@ namespace HeraVM {
         addressOffset << " " <<
         valueOffset << " " <<
         dataOffset << " " <<
-        dataLength << " " <<
-        resultOffset << " " <<
-        resultLength << dec << "\n";
+        dataLength << dec << "\n";
 
       if (dataLength) {
         vector<uint8_t> input_data(dataLength);
@@ -538,10 +530,6 @@ namespace HeraVM {
       context->fn_table->call(&call_result, context, &call_message);
 
       if (call_result.output_data) {
-        vector<uint8_t> result(call_result.output_data, call_result.output_data + call_result.output_size);
-        result.resize(resultLength);
-        storeMemory(result, 0, resultOffset, resultLength);
-
         lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
       } else {
         lastReturnData.clear();
