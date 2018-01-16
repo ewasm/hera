@@ -111,6 +111,7 @@ private:
   struct evm_context* context = nullptr;
   std::vector<uint8_t> const& code;
   struct evm_message const& msg;
+  std::vector<uint8_t> lastReturnData;
   ExecutionResult & result;
 };
 
