@@ -108,7 +108,7 @@ namespace HeraVM {
     if (import->base == Name("useGas")) {
       uint64_t gas = arguments[0].geti64();
 
-      HERA_DEBUG << "useGas " << hex << gas << dec << "\n";
+      HERA_DEBUG << "useGas " << gas << "\n";
 
       takeGas(gas);
 
@@ -536,6 +536,7 @@ namespace HeraVM {
   void EthereumInterface::takeGas(uint64_t gas)
   {
     if (gas > result.gasLeft) {
+      HERA_DEBUG << "Out of gas :(\n";
       throw OutOfGasException();
     }
 
