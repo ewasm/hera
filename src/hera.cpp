@@ -116,7 +116,6 @@ static struct evm_result evm_execute(
 
   try {
     heraAssert(instance != NULL, "");
-    heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");
     heraAssert(msg->gas >= 0, "Negative startgas?");
 
     ExecutionResult result;
@@ -127,6 +126,8 @@ static struct evm_result evm_execute(
       ret.status_code = EVM_UNSUPPORTED_CODE_TYPE;
       return ret;
     }
+
+    heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");
 
     vector<uint8_t> _code(code, code + code_size);
     execute(context, _code, *msg, result);
