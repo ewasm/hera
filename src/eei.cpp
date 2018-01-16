@@ -554,7 +554,8 @@ namespace HeraVM {
 
       evm_result create_result;
       context->fn_table->call(&create_result, context, &create_message);
-      storeUint160(create_result.create_address, resultOffset);
+      if (create_result.status_code == EVM_SUCCESS)
+        storeUint160(create_result.create_address, resultOffset);
 
       if (create_result.output_data) {
         lastReturnData.assign(create_result.output_data, create_result.output_data + create_result.output_size);
