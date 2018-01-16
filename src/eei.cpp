@@ -479,6 +479,41 @@ namespace HeraVM {
       return Literal((call_result.status_code == EVM_SUCCESS) ? 1 : 0);
     }
 
+    if (import->base == Name("create")) {
+      uint32_t valueOffset = arguments[0].geti32();
+      uint32_t dataOffset = arguments[1].geti32();
+      uint32_t length = arguments[2].geti32();
+      uint32_t resultOffset = arguments[3].geti32();
+
+      HERA_DEBUG << "create" << hex << valueOffset << " " << dataOffset << " " << resultOffset << dec << " " << length << dec << "\n";
+
+      evm_message create_message;
+            
+      create_message.address = {};
+      create_message.sender = msg.address;
+      create_message.value = loadUint128(valueOffset);
+
+      vector<uint8_t> contract_code(length);
+      loadMemory(dataOffset, contract_code, length);
+      create_message.input = contract_code.data();
+      create_message.input_size = length;
+
+      create_message.code_hash = {};
+      create_message.gas = result.gasLeft - (result.gasLeft / 64);
+      create_message.depth = msg.depth + 1;
+      create_message.kind = EVM_CREATE;
+      create_message.flags = 0;
+
+      evm_result create_result;
+      context->fn_table->call(&create_result, context, &create_message);
+      storeUint160(create_result.create_address, resultOffset);
+
+      if (create_result.release)
+        create_result.release(&create_result);
+
+      return Literal((create_result.status_code == EVM_SUCCESS) ? uint32_t(1) : uint32_t(0));
+    }
+
     if (import->base == Name("selfDestruct")) {
       uint32_t addressOffset = arguments[0].geti32();
 
