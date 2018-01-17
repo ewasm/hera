@@ -34,7 +34,7 @@ defaults:
   save-deps-cache: &save-deps-cache
     cache-save:
       name: "Save dependencies cache"
-      key: &deps-cache-key deps-1-{{arch}}-{{checksum "compiler.version"}}-{{checksum "cmake/ProjectBinaryen.cmake"}}
+      key: &deps-cache-key deps-4-{{arch}}-{{checksum "compiler.version"}}-{{checksum "cmake/ProjectBinaryen.cmake"}}
       paths:
         - ~/build/deps
 
@@ -61,7 +61,7 @@ jobs:
       - BUILD_TYPE: Release
       - CXX: clang++-5.0
       - CC:  clang-5.0
-      - GENERATOR: Unix Makefiles
+      - GENERATOR: Ninja
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF
     docker:
