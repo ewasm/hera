@@ -44,12 +44,45 @@ using namespace HeraVM;
 
 namespace {
 
-vector<uint8_t> sentinel(vector<uint8_t> const& input)
+vector<uint8_t> sentinel(struct evm_context* context, vector<uint8_t> const& input)
 {
 #if HERA_DEBUGGING
-  cerr << "Metering... (not really)" << endl;
+  cerr << "Metering (input " << input.size() << " bytes)..." << endl;
 #endif
+
+#if HERA_METERING_CONTRACT
+  evm_message metering_message = {
+    .address = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } }, // precompile address 0x00...0a
+    .sender = {},
+    .value = {},
+    .input = input.data(),
+    .input_size = input.size(),
+    .code_hash = {},
+    .gas = -1, // do not charge for metering yet (give unlimited gas)
+    .depth = 0,
+    .kind = EVM_CALL,
+    .flags = EVM_STATIC
+  };
+
+  evm_result metering_result;
+  context->fn_table->call(&metering_result, context, &metering_message);
+
+  vector<uint8_t> ret;
+  if (metering_result.status_code == EVM_SUCCESS && metering_result.output_data)
+    ret.assign(metering_result.output_data, metering_result.output_data + metering_result.output_size);
+
+  if (metering_result.release)
+    metering_result.release(&metering_result);
+
+#if HERA_DEBUGGING
+  cerr << "Metering done (output " << ret.size() << " bytes)" << endl;
+#endif
+
+  return ret;
+#else
+  (void)context;
   return input;
+#endif
 }
 
 void execute(
@@ -141,7 +174,7 @@ static struct evm_result evm_execute(
 
     if (msg->kind == EVM_CREATE) {
       // Meter the deployment (constructor) code
-      _code = sentinel(_code);
+      _code = sentinel(context, _code);
       heraAssert(_code.size() > 5, "Invalid contract or metering failed.");
     }
 
@@ -153,7 +186,7 @@ static struct evm_result evm_execute(
 
       if (msg->kind == EVM_CREATE && !result.isRevert) {
         // Meter the deployed code
-        returnValue = sentinel(result.returnValue);
+        returnValue = sentinel(context, result.returnValue);
         heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
       } else {
         returnValue = move(result.returnValue);
