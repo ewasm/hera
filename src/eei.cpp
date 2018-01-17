@@ -614,7 +614,7 @@ namespace HeraVM {
 
   void EthereumInterface::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
   {
-    heraAssert((srcOffset + length) > srcOffset, "Out of bounds (source) memory copy.");
+    heraAssert((srcOffset + length) >= srcOffset, "Out of bounds (source) memory copy.");
     heraAssert(dst.size() >= length, "Out of bounds (destination) memory copy.");
 
     if (!length)
@@ -627,7 +627,7 @@ namespace HeraVM {
 
   void EthereumInterface::storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length)
   {
-    heraAssert((dstOffset + length) > dstOffset, "Out of bounds (destination) memory copy.");
+    heraAssert((dstOffset + length) >= dstOffset, "Out of bounds (destination) memory copy.");
     heraAssert(memory.size() >= (dstOffset + length), "Out of bounds (destination) memory copy.");
 
     if (!length)
@@ -640,9 +640,9 @@ namespace HeraVM {
 
   void EthereumInterface::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
   {
-    heraAssert((srcOffset + length) > srcOffset, "Out of bounds (source) memory copy.");
+    heraAssert((srcOffset + length) >= srcOffset, "Out of bounds (source) memory copy.");
     heraAssert(src.size() >= (srcOffset + length), "Out of bounds (source) memory copy.");
-    heraAssert((dstOffset + length) > dstOffset, "Out of bounds (destination) memory copy.");
+    heraAssert((dstOffset + length) >= dstOffset, "Out of bounds (destination) memory copy.");
     heraAssert(memory.size() >= (dstOffset + length), "Out of bounds (destination) memory copy.");
 
     if (!length)
