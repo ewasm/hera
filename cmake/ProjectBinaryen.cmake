@@ -9,6 +9,13 @@ if(MSVC)
     # Overwrite build and install commands to force Release build on MSVC.
     set(build_command BUILD_COMMAND cmake --build <BINARY_DIR> --config Release)
     set(install_command INSTALL_COMMAND cmake --build <BINARY_DIR> --config Release --target install)
+elseif(CMAKE_GENERATOR STREQUAL Ninja)
+    # For Ninja we have to pass the number of jobs from CI environment.
+    # Otherwise it will go crazy and run out of memory.
+    if($ENV{BUILD_PARALLEL_JOBS})
+        set(build_command BUILD_COMMAND cmake --build <BINARY_DIR> -- -j $ENV{BUILD_PARALLEL_JOBS})
+        message(STATUS "Ninja $ENV{BUILD_PARALLEL_JOBS}") 
+    endif()
 endif()
 
 set(prefix ${CMAKE_BINARY_DIR}/deps)
