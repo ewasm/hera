@@ -1,0 +1,88 @@
+defaults:
+
+  update-submodules: &update-submodules
+    run:
+      name: "Update git submodules"
+      command: |
+        git submodule update --init
+
+  environment-info: &environment-info
+    run:
+      name: "Environment info"
+      command: |
+        echo CXX: $CXX
+        echo Generator: $GENERATOR
+        echo CMake options: $CMAKE_OPTIONS
+        $CXX --version
+        $CXX --version > compiler.version
+
+  configure: &configure
+    run:
+      name: "Configure"
+      # Build "out-of-source" to have better coverage report
+      # (ninja is using relative paths otherwise).
+      working_directory: ~/build
+      command: |
+        cmake ../project -G "$GENERATOR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE $CMAKE_OPTIONS
+
+  build: &build
+    run:
+      name: "Build"
+      working_directory: ~/build
+      command: cmake --build . -- -j $BUILD_PARALLEL_JOBS
+
+  save-deps-cache: &save-deps-cache
+    cache-save:
+      name: "Save dependencies cache"
+      key: &deps-cache-key deps-1-{{arch}}-{{checksum "compiler.version"}}-{{checksum "cmake/ProjectBinaryen.cmake"}}
+      paths:
+        - ~/build/deps
+
+  restore-deps-cache: &restore-deps-cache
+    cache-restore:
+      name: "Restore dependencies cache"
+      key: *deps-cache-key
+
+  linux-steps: &linux-steps
+    - checkout
+    - *update-submodules
+    - *environment-info
+    - *restore-deps-cache
+    - *configure
+    - *build
+    - *save-deps-cache
+
+
+version: 2
+jobs:
+
+  Linux-Clang5:
+    environment:
+      - BUILD_TYPE: Release
+      - CXX: clang++-5.0
+      - CC:  clang-5.0
+      - GENERATOR: Unix Makefiles
+      - BUILD_PARALLEL_JOBS: 4
+      - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF
+    docker:
+      - image: ethereum/cpp-build-env
+    steps: *linux-steps
+
+  Linux-GCC6-Debug:
+    environment:
+      - BUILD_TYPE: Debug
+      - CXX: g++-6
+      - CC:  gcc-6
+      - GENERATOR: Unix Makefiles
+      - BUILD_PARALLEL_JOBS: 4
+      - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON
+    docker:
+      - image: ethereum/cpp-build-env
+    steps: *linux-steps
+
+workflows:
+  version: 2
+  cpp-ethereum:
+    jobs:
+      - Linux-Clang5
+      - Linux-GCC6-Debug
