@@ -463,10 +463,15 @@ namespace HeraVM {
         resultOffset << " " <<
         resultLength << dec << "\n";
 
-      vector<uint8_t> input_data(dataLength);
-      loadMemory(dataOffset, input_data, dataLength);
-      call_message.input = input_data.data();
-      call_message.input_size = dataLength;
+      if (dataLength) {
+        vector<uint8_t> input_data(dataLength);
+        loadMemory(dataOffset, input_data, dataLength);
+        call_message.input = input_data.data();
+        call_message.input_size = dataLength;
+      } else {
+        call_message.input = nullptr;
+        call_message.input_size = 0;
+      }
 
       evm_result call_result;
       context->fn_table->call(&call_result, context, &call_message);
@@ -492,15 +497,20 @@ namespace HeraVM {
       HERA_DEBUG << "create" << hex << valueOffset << " " << dataOffset << " " << resultOffset << dec << " " << length << dec << "\n";
 
       evm_message create_message;
-            
+
       create_message.address = {};
       create_message.sender = msg.address;
       create_message.value = loadUint128(valueOffset);
 
-      vector<uint8_t> contract_code(length);
-      loadMemory(dataOffset, contract_code, length);
-      create_message.input = contract_code.data();
-      create_message.input_size = length;
+      if (length) {
+        vector<uint8_t> contract_code(length);
+        loadMemory(dataOffset, contract_code, length);
+        create_message.input = contract_code.data();
+        create_message.input_size = length;
+      } else {
+        create_message.input = nullptr;
+        create_message.input_size = 0;
+      }
 
       create_message.code_hash = {};
       create_message.gas = result.gasLeft - (result.gasLeft / 64);
