@@ -434,6 +434,8 @@ namespace HeraVM {
         call_message.sender = msg.address;
         call_message.value = loadUint128(valueOffset);
         call_message.kind = (import->base == Name("callCode")) ? EVM_CALLCODE : EVM_CALL;
+
+        ensureSenderBalance(call_message.value);
       } else {
         valueOffset = 0;
         dataOffset = arguments[2].geti32();
@@ -501,6 +503,8 @@ namespace HeraVM {
       create_message.address = {};
       create_message.sender = msg.address;
       create_message.value = loadUint128(valueOffset);
+
+      ensureSenderBalance(create_message.value);
 
       if (length) {
         vector<uint8_t> contract_code(length);
@@ -654,6 +658,33 @@ namespace HeraVM {
   /*
    * Utilities
    */
+  void EthereumInterface::ensureSenderBalance(evm_uint256be const& value)
+  {
+    evm_uint256be balance;
+    context->fn_table->get_balance(&balance, context, &msg.address);
+    if (safeLoadUint64(balance) < safeLoadUint64(value))
+      throw new OutOfGasException();
+  }
+
+  uint64_t EthereumInterface::safeLoadUint64(evm_uint256be const& value)
+  {
+    heraAssert(!exceedsUint64(value), "Value exceeds 64 bits.");
+    uint64_t ret = 0;
+    for (unsigned i = 24; i < 32; i++) {
+      ret <<= 8;
+      ret |= value.bytes[i];
+    }
+    return ret;
+  }
+
+  bool EthereumInterface::exceedsUint64(evm_uint256be const& value)
+  {
+    for (unsigned i = 0; i < 24; i++) {
+      if (value.bytes[i])
+        return true;
+    }
+    return false;
+  }
 
   bool EthereumInterface::exceedsUint128(evm_uint256be const& value)
   {
