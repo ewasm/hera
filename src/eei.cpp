@@ -415,9 +415,9 @@ namespace HeraVM {
       uint32_t offset = arguments[1].geti32();
       uint32_t size = arguments[2].geti32();
 
-      HERA_DEBUG << "returnDataCopy " << hex << offset << " " << size << dec << "\n";
+      HERA_DEBUG << "returnDataCopy " << hex << dataOffset << " " << offset << " " << size << dec << "\n";
 
-      storeMemory(lastReturnData, dataOffset, offset, size);
+      storeMemory(lastReturnData, offset, dataOffset, size);
 
       return Literal();
     }
