@@ -161,7 +161,7 @@ namespace HeraVM {
 
     if (import->base == Name("getCallDataSize")) {
       HERA_DEBUG << "callDataSize\n";
-      return Literal((uint32_t)msg.input_size);
+      return Literal(static_cast<uint32_t>(msg.input_size));
     }
 
     if (import->base == Name("callDataCopy")) {
@@ -212,7 +212,7 @@ namespace HeraVM {
     if (import->base == Name("getCodeSize")) {
       HERA_DEBUG << "getCodeSize\n";
 
-      return Literal((uint32_t)code.size());
+      return Literal(static_cast<uint32_t>(code.size()));
     }
 
     if (import->base == Name("externalCodeCopy")) {
@@ -243,7 +243,7 @@ namespace HeraVM {
       evm_address address = loadUint160(addressOffset);
       size_t code_size = context->fn_table->get_code(NULL, context, &address);
 
-      return Literal((uint32_t)code_size);
+      return Literal(static_cast<uint32_t>(code_size));
     }
 
     if (import->base == Name("getBlockCoinbase")) {
@@ -405,6 +405,23 @@ namespace HeraVM {
       return Literal();
     }
 
+    if (import->base == Name("getReturnDataSize")) {
+      HERA_DEBUG << "getReturnDataSize\n";
+      return Literal(static_cast<uint32_t>(lastReturnData.size()));
+    }
+
+    if (import->base == Name("returnDataCopy")) {
+      uint32_t dataOffset = arguments[0].geti32();
+      uint32_t offset = arguments[1].geti32();
+      uint32_t size = arguments[2].geti32();
+
+      HERA_DEBUG << "returnDataCopy " << hex << offset << " " << size << dec << "\n";
+
+      storeMemory(lastReturnData, dataOffset, offset, size);
+
+      return Literal();
+    }
+
     if (
       import->base == Name("call") ||
       import->base == Name("callCode") ||
@@ -489,6 +506,10 @@ namespace HeraVM {
         vector<uint8_t> result(call_result.output_data, call_result.output_data + call_result.output_size);
         result.resize(resultLength);
         storeMemory(result, 0, resultOffset, resultLength);
+
+        lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
+      } else {
+        lastReturnData.clear();
       }
 
       if (call_result.release)
@@ -533,7 +554,14 @@ namespace HeraVM {
 
       evm_result create_result;
       context->fn_table->call(&create_result, context, &create_message);
-      storeUint160(create_result.create_address, resultOffset);
+      if (create_result.status_code == EVM_SUCCESS)
+        storeUint160(create_result.create_address, resultOffset);
+
+      if (create_result.output_data) {
+        lastReturnData.assign(create_result.output_data, create_result.output_data + create_result.output_size);
+      } else {
+        lastReturnData.clear();
+      }
 
       if (create_result.release)
         create_result.release(&create_result);
