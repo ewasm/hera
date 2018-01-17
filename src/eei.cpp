@@ -299,6 +299,8 @@ namespace HeraVM {
 
       HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
 
+      heraAssert(!(msg.flags & EVM_STATIC), "\"log\" attempted in static mode");
+
       evm_uint256be topics[numberOfTopics];
       for (size_t i = 0; i < numberOfTopics; ++i) {
         uint32_t topicOffset = arguments[3 + i].geti32();
@@ -350,6 +352,8 @@ namespace HeraVM {
       uint32_t valueOffset = arguments[1].geti32();
 
       HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
+
+      heraAssert(!(msg.flags & EVM_STATIC), "\"storageStore\" attempted in static mode");
 
       evm_uint256be path = loadUint256(pathOffset);
       evm_uint256be value = loadUint256(valueOffset);
@@ -435,6 +439,9 @@ namespace HeraVM {
         call_message.value = loadUint128(valueOffset);
         call_message.kind = (import->base == Name("callCode")) ? EVM_CALLCODE : EVM_CALL;
 
+        if (import->base == Name("call") && !isZeroUint256(call_message.value))
+          heraAssert(!(msg.flags & EVM_STATIC), "\"call\" with value transfer attempted in static mode");
+
         ensureSenderBalance(call_message.value);
       } else {
         valueOffset = 0;
@@ -498,6 +505,8 @@ namespace HeraVM {
 
       HERA_DEBUG << "create" << hex << valueOffset << " " << dataOffset << " " << resultOffset << dec << " " << length << dec << "\n";
 
+      heraAssert(!(msg.flags & EVM_STATIC), "\"create\" attempted in static mode");
+
       evm_message create_message;
 
       create_message.address = {};
@@ -536,6 +545,8 @@ namespace HeraVM {
       uint32_t addressOffset = arguments[0].geti32();
 
       HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
+
+      heraAssert(!(msg.flags & EVM_STATIC), "\"selfDestruct\" attempted in static mode");
 
       evm_address address = loadUint160(addressOffset);
 
