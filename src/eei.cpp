@@ -30,7 +30,7 @@ using namespace wasm;
 
 #if HERA_DEBUGGING
 
-#define HERA_DEBUG cout
+#define HERA_DEBUG cerr
 
 #else
 
@@ -50,7 +50,7 @@ namespace HeraVM {
     if (import->base == Name("print32")) {
       uint32_t value = arguments[0].geti32();
 
-      cout << "DEBUG print32: " << value << " " << hex << "0x" << value << dec << endl;
+      cerr << "DEBUG print32: " << value << " " << hex << "0x" << value << dec << endl;
 
       return Literal();
     }
@@ -58,7 +58,7 @@ namespace HeraVM {
     if (import->base == Name("print64")) {
       uint64_t value = arguments[0].geti64();
 
-      cout << "DEBUG print64: " << value << " " << hex << "0x" << value << dec << endl;
+      cerr << "DEBUG print64: " << value << " " << hex << "0x" << value << dec << endl;
 
       return Literal();
     }
@@ -72,22 +72,22 @@ namespace HeraVM {
 
       bool useHex = import->base == Name("printMemHex");
 
-      cout << "DEBUG printMem" << (useHex ? "Hex(" : "(") << hex << "0x" << offset << ":0x" << length << "): " << dec;
+      cerr << "DEBUG printMem" << (useHex ? "Hex(" : "(") << hex << "0x" << offset << ":0x" << length << "): " << dec;
       if (useHex)
       {
-        cout << hex;
+        cerr << hex;
         for (uint32_t i = offset; i < (offset + length); i++) {
-          cout << static_cast<int>(memory.get<uint8_t>(i)) << " ";
+          cerr << static_cast<int>(memory.get<uint8_t>(i)) << " ";
         }
-        cout << dec;
+        cerr << dec;
       }
       else
       {
         for (uint32_t i = offset; i < (offset + length); i++) {
-          cout << memory.get<uint8_t>(i) << " ";
+          cerr << memory.get<uint8_t>(i) << " ";
         }
       }
-      cout << endl;
+      cerr << endl;
 
       return Literal();
     }
@@ -103,7 +103,7 @@ namespace HeraVM {
 
       // Print out the path
       for (uint8_t b: path.bytes)
-        cout << static_cast<int>(b);
+        cerr << static_cast<int>(b);
 
       HERA_DEBUG << "): " << dec;
 
@@ -112,17 +112,17 @@ namespace HeraVM {
 
       if (useHex)
       {
-        cout << hex;
+        cerr << hex;
         for (uint8_t b: result.bytes)
-          cout << static_cast<int>(b) << " ";
-        cout << dec;
+          cerr << static_cast<int>(b) << " ";
+        cerr << dec;
       }
       else
       {
         for (uint8_t b: result.bytes)
-          cout << b << " ";
+          cerr << b << " ";
       }
-      cout << endl;
+      cerr << endl;
 
       return Literal();
     }

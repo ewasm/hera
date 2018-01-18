@@ -51,7 +51,7 @@ void execute(
 	ExecutionResult & result
 ) {
 #if HERA_DEBUGGING
-  cout << "Executing..." << endl;
+  cerr << "Executing..." << endl;
 #endif
 
   Module module;
