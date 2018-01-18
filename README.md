@@ -15,7 +15,9 @@ Hera implements two interfaces: [EEI](https://github.com/ewasm/design/blob/maste
 - `debug::print32(value: i32)` - print value
 - `debug::print64(value: i64)` - print value
 - `debug::printMem(offset: i32, len: i32)` - print memory segment as printable characters
-- `debug::printMemHex(offset: i32, len: i32)` - print memory segment as a hex
+- `debug::printMemHex(offset: i32, len: i32)` - print memory segment as hex
+- `debug::printStorage(pathOffset: i32)` - print storage value as printable characters
+- `debug::printStorageHex(pathOffset: i32)` - print storage value as hex
 
 These are only enabled if Hera is compiled with debugging on: `-DHERA_DEBUGGING=ON`.
 
