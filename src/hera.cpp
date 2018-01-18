@@ -44,21 +44,20 @@ using namespace HeraVM;
 
 namespace {
 
-vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
-{
-#if HERA_DEBUGGING
-  cerr << "Metering (input " << input.size() << " bytes)..." << endl;
-#endif
-
-#if HERA_METERING_CONTRACT
+vector<uint8_t> callSystemContract(
+  evm_context* context,
+  evm_address const& address,
+  int64_t & gas,
+  vector<uint8_t> const& input
+) {
   evm_message metering_message = {
-    .destination = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } }, // precompile address 0x00...0a
+    .destination = address,
     .sender = {},
     .value = {},
     .input_data = input.data(),
     .input_size = input.size(),
     .code_hash = {},
-    .gas = -1, // do not charge for metering yet (give unlimited gas)
+    .gas = gas,
     .depth = 0,
     .kind = EVM_CALL,
     .flags = EVM_STATIC
@@ -71,11 +70,32 @@ vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
   if (metering_result.status_code == EVM_SUCCESS && metering_result.output_data)
     ret.assign(metering_result.output_data, metering_result.output_data + metering_result.output_size);
 
+  gas = metering_result.gas_left;
+
   if (metering_result.release)
     metering_result.release(&metering_result);
 
+  return ret;
+}
+
+vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
+{
 #if HERA_DEBUGGING
-  cerr << "Metering done (output " << ret.size() << " bytes)" << endl;
+  cerr << "Metering (input " << input.size() << " bytes)..." << endl;
+#endif
+
+#if HERA_METERING_CONTRACT
+  int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
+  int64_t gas = startgas;
+  vector<uint8_t> ret = callSystemContract(
+    context,
+    { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } }, // precompile address 0x00...0a
+    gas,
+    input
+  );
+
+#if HERA_DEBUGGING
+  cerr << "Metering done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)" << endl;
 #endif
 
   return ret;
