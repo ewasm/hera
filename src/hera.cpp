@@ -157,6 +157,11 @@ static struct evm_result evm_execute(
 #if HERA_DEBUGGING
     cerr << "Unknown exception: " << e.what() << endl;
 #endif
+  } catch (...) {
+    ret.status_code = EVM_INTERNAL_ERROR;
+#if HERA_DEBUGGING
+    cerr << "Totally unknown exception" << endl;
+#endif
   }
 
   return ret;
