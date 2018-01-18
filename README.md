@@ -6,6 +6,11 @@ It can be used with [cpp-ethereum](https://github.com/ethereum/cpp-ethereum) and
 
 Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpreter for running WebAssembly bytecode and it should be improved to support the [WAVM](https://github.com/AndrewScheidecker/WAVM) as a backend.
 
+## Build options
+
+- `-DHERA_DEBUGGING=ON` will turn on debugging features and messages
+- `-DHERA_METERING_CONTRACT=ON` will pass contract creation data through the metering contract residing at 0x00..0a
+
 ## Interfaces
 
 Hera implements two interfaces: [EEI](https://github.com/ewasm/design/blob/master/eth_interface.md) and a debugging module.
@@ -19,7 +24,7 @@ Hera implements two interfaces: [EEI](https://github.com/ewasm/design/blob/maste
 - `debug::printStorage(pathOffset: i32)` - print storage value as printable characters
 - `debug::printStorageHex(pathOffset: i32)` - print storage value as hex
 
-These are only enabled if Hera is compiled with debugging on: `-DHERA_DEBUGGING=ON`.
+These are only enabled if Hera is compiled with debugging on.
 
 ## Caveats
 

@@ -44,6 +44,47 @@ using namespace HeraVM;
 
 namespace {
 
+vector<uint8_t> sentinel(struct evm_context* context, vector<uint8_t> const& input)
+{
+#if HERA_DEBUGGING
+  cerr << "Metering (input " << input.size() << " bytes)..." << endl;
+#endif
+
+#if HERA_METERING_CONTRACT
+  evm_message metering_message = {
+    .address = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } }, // precompile address 0x00...0a
+    .sender = {},
+    .value = {},
+    .input = input.data(),
+    .input_size = input.size(),
+    .code_hash = {},
+    .gas = -1, // do not charge for metering yet (give unlimited gas)
+    .depth = 0,
+    .kind = EVM_CALL,
+    .flags = EVM_STATIC
+  };
+
+  evm_result metering_result;
+  context->fn_table->call(&metering_result, context, &metering_message);
+
+  vector<uint8_t> ret;
+  if (metering_result.status_code == EVM_SUCCESS && metering_result.output_data)
+    ret.assign(metering_result.output_data, metering_result.output_data + metering_result.output_size);
+
+  if (metering_result.release)
+    metering_result.release(&metering_result);
+
+#if HERA_DEBUGGING
+  cerr << "Metering done (output " << ret.size() << " bytes)" << endl;
+#endif
+
+  return ret;
+#else
+  (void)context;
+  return input;
+#endif
+}
+
 void execute(
 	struct evm_context* context,
 	vector<uint8_t> & code,
@@ -130,15 +171,32 @@ static struct evm_result evm_execute(
     heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");
 
     vector<uint8_t> _code(code, code + code_size);
+
+    if (msg->kind == EVM_CREATE) {
+      // Meter the deployment (constructor) code
+      _code = sentinel(context, _code);
+      heraAssert(_code.size() > 5, "Invalid contract or metering failed.");
+    }
+
     execute(context, _code, *msg, result);
 
     // copy call result
     if (result.returnValue.size() > 0) {
-      uint8_t* output_data = (uint8_t*)malloc(result.returnValue.size());
-      heraAssert(output_data != NULL, "Memory allocation failure.");
-      copy(result.returnValue.begin(), result.returnValue.end(), output_data);
+      vector<uint8_t> returnValue;
 
-      ret.output_size = result.returnValue.size();
+      if (msg->kind == EVM_CREATE && !result.isRevert) {
+        // Meter the deployed code
+        returnValue = sentinel(context, result.returnValue);
+        heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
+      } else {
+        returnValue = move(result.returnValue);
+      }
+
+      uint8_t* output_data = (uint8_t*)malloc(returnValue.size());
+      heraAssert(output_data != NULL, "Memory allocation failure.");
+      copy(returnValue.begin(), returnValue.end(), output_data);
+
+      ret.output_size = returnValue.size();
       ret.output_data = output_data;
       ret.release = evm_destroy_result;
     }
