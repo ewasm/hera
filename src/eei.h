@@ -53,7 +53,7 @@ private:
 
 struct ExecutionResult {
   uint64_t gasLeft = 0;
-  std::vector<char> returnValue;
+  std::vector<uint8_t> returnValue;
   bool isRevert = false;
 };
 

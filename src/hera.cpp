@@ -134,11 +134,13 @@ static struct evm_result evm_execute(
 
     // copy call result
     if (result.returnValue.size() > 0) {
+      uint8_t* output_data = (uint8_t*)malloc(result.returnValue.size());
+      heraAssert(output_data != NULL, "Memory allocation failure.");
+      copy(result.returnValue.begin(), result.returnValue.end(), output_data);
+
       ret.output_size = result.returnValue.size();
-      ret.output_data = (const uint8_t *)malloc(ret.output_size);
-      heraAssert(ret.output_data != NULL, "Memory allocation failure.");
+      ret.output_data = output_data;
       ret.release = evm_destroy_result;
-      copy(result.returnValue.begin(), result.returnValue.end(), (char *)ret.output_data);
     }
 
     ret.status_code = result.isRevert ? EVM_REVERT : EVM_SUCCESS;
@@ -154,6 +156,11 @@ static struct evm_result evm_execute(
     ret.status_code = EVM_INTERNAL_ERROR;
 #if HERA_DEBUGGING
     cerr << "Unknown exception: " << e.what() << endl;
+#endif
+  } catch (...) {
+    ret.status_code = EVM_INTERNAL_ERROR;
+#if HERA_DEBUGGING
+    cerr << "Totally unknown exception" << endl;
 #endif
   }
 
