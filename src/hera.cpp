@@ -50,7 +50,7 @@ vector<uint8_t> callSystemContract(
   int64_t & gas,
   vector<uint8_t> const& input
 ) {
-  evm_message metering_message = {
+  evm_message message = {
     .destination = address,
     .sender = {},
     .value = {},
@@ -63,17 +63,17 @@ vector<uint8_t> callSystemContract(
     .flags = EVM_STATIC
   };
 
-  evm_result metering_result;
-  context->fn_table->call(&metering_result, context, &metering_message);
+  evm_result result;
+  context->fn_table->call(&result, context, &message);
 
   vector<uint8_t> ret;
-  if (metering_result.status_code == EVM_SUCCESS && metering_result.output_data)
-    ret.assign(metering_result.output_data, metering_result.output_data + metering_result.output_size);
+  if (result.status_code == EVM_SUCCESS && result.output_data)
+    ret.assign(result.output_data, result.output_data + result.output_size);
 
-  gas = metering_result.gas_left;
+  gas = result.gas_left;
 
-  if (metering_result.release)
-    metering_result.release(&metering_result);
+  if (result.release)
+    result.release(&result);
 
   return ret;
 }
