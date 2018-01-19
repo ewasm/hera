@@ -119,6 +119,10 @@ void execute(
   // Validate
   heraAssert(WasmValidator().validate(module), "Module is not valid.");
 
+  // This should be caught during deployment time by the Sentinel.
+  // TODO: validate for other conditions too?
+  heraAssert(module.getExportOrNull(Name("main")) != nullptr, "Contract entry point (\"main\") missing.");
+
   // Optimise
   // PassRunner passRunner(module);
   // passRunner.addDefaultOptimizationPasses();
