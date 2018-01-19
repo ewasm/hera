@@ -433,9 +433,7 @@ namespace HeraVM {
       HERA_DEBUG << (import->base == Name("revert") ? "revert " : "return ") << hex << offset << " " << size << dec << "\n";
 
       result.returnValue.clear();
-      for (uint32_t i = offset; i < offset + size; i++) {
-        result.returnValue.push_back(memory.get<uint8_t>(i));
-      }
+      loadMemory(offset, result.returnValue, size);
 
       result.isRevert = import->base == Name("revert");
 
