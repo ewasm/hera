@@ -131,7 +131,8 @@ void execute(
     WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> &>(code), false);
     parser.read();
   } catch (ParseException &p) {
-    throw InternalErrorException(
+    heraAssert(
+      false,
       "Error in parsing WASM binary: '" +
       p.text +
       "' at " +
