@@ -203,6 +203,7 @@ static evm_result evm_execute(
 #if HERA_EVM2WASM
       // Translate EVM bytecode to WASM
       string translated = evm2wasm(string(reinterpret_cast<const char*>(code), code_size));
+      heraAssert(translated.size() != 0, "Transcompiling via evm2wasm failed");
       _code.assign(translated.begin(), translated.end());
 #else
       hera_instance* hera = static_cast<hera_instance*>(instance);
