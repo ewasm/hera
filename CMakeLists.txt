@@ -12,9 +12,11 @@ add_compile_options(-Wall -Wextra -Wconversion -Wno-sign-conversion -Wno-unknown
 project(hera)
 
 option(HERA_EVM2WASM "Build with evm2wasm auto-translation" OFF)
+option(HERA_EVM2WASM_JS "Build with evm2wasm.js auto-translation" OFF)
 
 include(ProjectBinaryen)
 
+# FIXME: make HERA_EVM2WASM and HERA_EVM2WASM_JS mutually exclusive
 if(HERA_EVM2WASM)
     add_subdirectory(evm2wasm)
 endif()

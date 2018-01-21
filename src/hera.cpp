@@ -54,6 +54,33 @@ struct hera_instance : evm_instance {
 
 namespace {
 
+#if HERA_EVM2WASM_JS
+string evm2wasm(string const& input) {
+  const char *fileEVM = mktemp("/tmp/hera.evm2wasm.evm.XXXXXXXX");
+  const char *fileWASM = mktemp("/tmp/hera.evm2wasm.wasm.XXXXXXXX");
+
+  ofstream os;
+  is.open(fileEVM);
+  is << input;
+  is.close();
+
+  if (system(string("evm2wasm " + fileEVM + " " + fileWASM).c_str()) != 0) {
+    unlink(fileEVM);
+    unlink(fileEWASM);
+    return string();
+  }
+
+  ifstream is(fileWASM);
+  string str((istreambuf_iterator<char>(is)),
+                 istreambuf_iterator<char>());
+
+  unlink(fileEVM);
+  unlink(fileEWASM);
+
+  return str;
+}
+#endif
+
 #if HERA_METERING_CONTRACT
 vector<uint8_t> callSystemContract(
   evm_context* context,
@@ -200,7 +227,7 @@ static evm_result evm_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
-#if HERA_EVM2WASM
+#if HERA_EVM2WASM_JS || HERA_EVM2WASM
       // Translate EVM bytecode to WASM
       string translated = evm2wasm(string(reinterpret_cast<const char*>(code), code_size));
       heraAssert(translated.size() != 0, "Transcompiling via evm2wasm failed");
