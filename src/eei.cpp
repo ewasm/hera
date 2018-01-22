@@ -336,6 +336,8 @@ namespace HeraVM {
 
       heraAssert(!(msg.flags & EVM_STATIC), "\"log\" attempted in static mode");
 
+      heraAssert(numberOfTopics <= 4, "Too many topics specified");
+
       evm_uint256be topics[numberOfTopics];
       for (size_t i = 0; i < numberOfTopics; ++i) {
         uint32_t topicOffset = arguments[3 + i].geti32();
