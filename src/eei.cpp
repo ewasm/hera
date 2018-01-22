@@ -477,7 +477,7 @@ namespace HeraVM {
       call_message.address = loadUint160(addressOffset);
       call_message.flags = msg.flags;
       call_message.code_hash = {};
-      call_message.gas = gas;
+      call_message.gas = gas - (gas / 64);
       call_message.depth = msg.depth + 1;
 
       if (import->base == Name("call") || import->base == Name("callCode")) {
