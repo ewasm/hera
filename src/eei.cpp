@@ -127,6 +127,19 @@ namespace HeraVM {
       return Literal();
     }
 
+    if (import->base == Name("evmTrace")) {
+      uint32_t pc = arguments[0].geti32();
+      uint32_t opcode = arguments[1].geti32();
+      uint32_t cost = arguments[2].geti32();
+      uint32_t sp = arguments[3].geti32();
+
+      heraAssert(sp <= (1024 * 32), "EVM stack pointer out of bounds.");
+
+      // FIXME: implement
+
+      return Literal();
+    }
+
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str);
   }
 #endif
