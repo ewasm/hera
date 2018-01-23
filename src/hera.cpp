@@ -52,10 +52,10 @@ vector<uint8_t> sentinel(struct evm_context* context, vector<uint8_t> const& inp
 
 #if HERA_METERING_CONTRACT
   evm_message metering_message = {
-    .address = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } }, // precompile address 0x00...0a
+    .destination = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } }, // precompile address 0x00...0a
     .sender = {},
     .value = {},
-    .input = input.data(),
+    .input_data = input.data(),
     .input_size = input.size(),
     .code_hash = {},
     .gas = -1, // do not charge for metering yet (give unlimited gas)
@@ -164,7 +164,7 @@ static struct evm_result evm_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
-      ret.status_code = EVM_UNSUPPORTED_CODE_TYPE;
+      ret.status_code = EVM_REJECTED;
       return ret;
     }
 
@@ -237,8 +237,6 @@ struct evm_instance* hera_create()
     .abi_version = EVM_ABI_VERSION,
     .destroy = evm_destroy,
     .execute = evm_execute,
-    .get_code_status = (evm_get_code_status_fn)NULL,
-    .prepare_code = (evm_prepare_code_fn)NULL,
     .set_option = (evm_set_option_fn)NULL
   };
   struct evm_instance* instance = (struct evm_instance*)calloc(1, sizeof(struct evm_instance));

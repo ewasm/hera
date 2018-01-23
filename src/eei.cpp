@@ -108,7 +108,7 @@ namespace HeraVM {
       HERA_DEBUG << "): " << dec;
 
       evm_uint256be result;
-      context->fn_table->get_storage(&result, context, &msg.address, &path);
+      context->fn_table->get_storage(&result, context, &msg.destination, &path);
 
       if (useHex)
       {
@@ -162,7 +162,7 @@ namespace HeraVM {
 
       HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
 
-      storeUint160(msg.address, resultOffset);
+      storeUint160(msg.destination, resultOffset);
 
       return Literal();
     }
@@ -206,7 +206,7 @@ namespace HeraVM {
 
       HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
 
-      vector<uint8_t> input(msg.input, msg.input + msg.input_size);
+      vector<uint8_t> input(msg.input_data, msg.input_data + msg.input_size);
       storeMemory(input, dataOffset, resultOffset, length);
 
       return Literal();
@@ -347,7 +347,7 @@ namespace HeraVM {
       vector<uint8_t> data(length);
       loadMemory(dataOffset, data, length);
 
-      context->fn_table->log(context, &msg.address, data.data(), length, topics, numberOfTopics);
+      context->fn_table->emit_log(context, &msg.destination, data.data(), length, topics, numberOfTopics);
 
       return Literal();
     }
@@ -396,7 +396,7 @@ namespace HeraVM {
       evm_uint256be value = loadUint256(valueOffset);
 
       evm_uint256be current;
-      context->fn_table->get_storage(&current, context, &msg.address, &path);
+      context->fn_table->get_storage(&current, context, &msg.destination, &path);
 
       // We do not need to take care about the delete case (gas refund), the client does it.
       takeGas(
@@ -405,7 +405,7 @@ namespace HeraVM {
         GasSchedule::storageStoreChange
       );
 
-      context->fn_table->set_storage(context, &msg.address, &path, &value);
+      context->fn_table->set_storage(context, &msg.destination, &path, &value);
 
       return Literal();
     }
@@ -419,7 +419,7 @@ namespace HeraVM {
       evm_uint256be path = loadUint256(pathOffset);
 
       evm_uint256be result;
-      context->fn_table->get_storage(&result, context, &msg.address, &path);
+      context->fn_table->get_storage(&result, context, &msg.destination, &path);
 
       storeUint256(result, resultOffset);
 
@@ -474,7 +474,7 @@ namespace HeraVM {
       heraAssert((msg.flags & ~EVM_STATIC) == 0, "Unknown flags not supported.");
 
       evm_message call_message;
-      call_message.address = loadUint160(addressOffset);
+      call_message.destination = loadUint160(addressOffset);
       call_message.flags = msg.flags;
       call_message.code_hash = {};
       call_message.gas = gas - (gas / 64);
@@ -485,7 +485,7 @@ namespace HeraVM {
         dataOffset = arguments[3].geti32();
         dataLength = arguments[4].geti32();
 
-        call_message.sender = msg.address;
+        call_message.sender = msg.destination;
         call_message.value = loadUint128(valueOffset);
         call_message.kind = (import->base == Name("callCode")) ? EVM_CALLCODE : EVM_CALL;
 
@@ -503,7 +503,7 @@ namespace HeraVM {
           call_message.value = msg.value;
           call_message.kind = EVM_DELEGATECALL;
         } else if (import->base == Name("callStatic")) {
-          call_message.sender = msg.address;
+          call_message.sender = msg.destination;
           call_message.value = {};
           call_message.kind = EVM_CALL;
           call_message.flags |= EVM_STATIC;
@@ -521,10 +521,10 @@ namespace HeraVM {
       if (dataLength) {
         vector<uint8_t> input_data(dataLength);
         loadMemory(dataOffset, input_data, dataLength);
-        call_message.input = input_data.data();
+        call_message.input_data = input_data.data();
         call_message.input_size = dataLength;
       } else {
-        call_message.input = nullptr;
+        call_message.input_data = nullptr;
         call_message.input_size = 0;
       }
 
@@ -555,8 +555,8 @@ namespace HeraVM {
 
       evm_message create_message;
 
-      create_message.address = {};
-      create_message.sender = msg.address;
+      create_message.destination = {};
+      create_message.sender = msg.destination;
       create_message.value = loadUint128(valueOffset);
 
       ensureSenderBalance(create_message.value);
@@ -564,10 +564,10 @@ namespace HeraVM {
       if (length) {
         vector<uint8_t> contract_code(length);
         loadMemory(dataOffset, contract_code, length);
-        create_message.input = contract_code.data();
+        create_message.input_data = contract_code.data();
         create_message.input_size = length;
       } else {
-        create_message.input = nullptr;
+        create_message.input_data = nullptr;
         create_message.input_size = 0;
       }
 
@@ -603,7 +603,7 @@ namespace HeraVM {
 
       evm_address address = loadUint160(addressOffset);
 
-      context->fn_table->selfdestruct(context, &msg.address, &address);
+      context->fn_table->selfdestruct(context, &msg.destination, &address);
 
       return Literal();
     }
@@ -725,7 +725,7 @@ namespace HeraVM {
   void EthereumInterface::ensureSenderBalance(evm_uint256be const& value)
   {
     evm_uint256be balance;
-    context->fn_table->get_balance(&balance, context, &msg.address);
+    context->fn_table->get_balance(&balance, context, &msg.destination);
     if (safeLoadUint64(balance) < safeLoadUint64(value))
       throw new OutOfGasException();
   }

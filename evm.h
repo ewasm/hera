@@ -69,14 +69,21 @@ enum evm_flags {
 /// The message describing an EVM call,
 /// including a zero-depth calls from a transaction origin.
 struct evm_message {
-    struct evm_address address;  ///< The destination of the message.
-    struct evm_address sender;   ///< The sender of the message.
+    struct evm_address destination;  ///< The destination of the message.
+    struct evm_address sender;       ///< The sender of the message.
 
     /// The amount of Ether transferred with the message.
     struct evm_uint256be value;
 
-    const uint8_t* input;        ///< The message input data.
-    size_t input_size;           ///< The size of the message input data.
+    /// The message input data.
+    ///
+    /// This MAY be NULL.
+    const uint8_t* input_data;
+
+    /// The size of the message input data.
+    ///
+    /// If input_data is NULL this MUST be 0.
+    size_t input_size;
 
     /// The optional hash of the code of the destination account.
     /// The null hash MUST be used when not specified.
@@ -88,8 +95,8 @@ struct evm_message {
     /// The kind of the call. For zero-depth calls ::EVM_CALL SHOULD be used.
     enum evm_call_kind kind;
 
-    ///< Additional flags modifying the call execution behavior.
-    ///< In the current version the only valid values are ::EVM_STATIC or 0.
+    /// Additional flags modifying the call execution behavior.
+    /// In the current version the only valid values are ::EVM_STATIC or 0.
     uint32_t flags;
 };
 
@@ -107,9 +114,27 @@ struct evm_tx_context {
 
 struct evm_context;
 
+/// Get transaction context callback function.
+///
+/// This callback function is used by an EVM to retrieve the transaction and
+/// block context.
+///
+/// @param[out] result   The returned transaction context.
+///                      @see ::evm_tx_context.
+/// @param      context  The pointer to the Host execution context.
+///                      @see ::evm_context.
 typedef void (*evm_get_tx_context_fn)(struct evm_tx_context* result,
                                       struct evm_context* context);
 
+/// Get block hash callback function..
+///
+/// This callback function is used by an EVM to query the block hash of
+/// a given block.
+///
+/// @param[out] result   The returned block hash value.
+/// @param      context  The pointer to the Host execution context.
+/// @param      number   The block number. Must be a value between
+//                       (and including) 0 and 255.
 typedef void (*evm_get_block_hash_fn)(struct evm_uint256be* result,
                                       struct evm_context* context,
                                       int64_t number);
@@ -124,17 +149,18 @@ enum evm_status_code {
     EVM_STACK_OVERFLOW = 5,
     EVM_STACK_UNDERFLOW = 6,
     EVM_REVERT = 7,                ///< Execution terminated with REVERT opcode.
+    /// Tried to execute an operation which is restricted in static mode.
+    EVM_STATIC_MODE_ERROR = 8,
 
-    /// The given type of executable code is not supported by the EVM.
+    /// The EVM rejected the execution of the given code or message.
     ///
-    /// This error SHOULD be used to signal that the EVM is not able to execute
-    /// given code type. If an EVM implementing _higher_ revision of the EVM
-    /// specification returns the ::EVM_UNSUPPORTED_CODE_TYPE status code,
-    /// the Client MAY try to fallback to other EVM implementing a _lower_
-    /// revision of the EVM specification.
+    /// This error SHOULD be used to signal that the EVM is not able to or
+    /// willing to execute the given code type or message.
+    /// If an EVM returns the ::EVM_REJECTED status code,
+    /// the Client MAY try to execute it in other EVM implementation.
     /// For example, the Client tries running a code in the EVM 1.5. If the
-    /// code is not supported there, the execution fallbacks to the EVM 1.0.
-    EVM_UNSUPPORTED_CODE_TYPE = -1,
+    /// code is not supported there, the execution falls back to the EVM 1.0.
+    EVM_REJECTED = -1,
 
     /// EVM implementation internal error.
     ///
@@ -174,10 +200,12 @@ struct evm_result {
     /// The memory containing the output data is owned by EVM and has to be
     /// freed with evm_result::release().
     ///
-    /// @todo Inconsistent name: output_data vs msg.input.
-    uint8_t const* output_data;
+    /// This MAY be NULL.
+    const uint8_t* output_data;
 
     /// The size of the output data.
+    ///
+    /// If output_data is NULL this MUST be 0.
     size_t output_size;
 
     /// The pointer to a function releasing all resources associated with
@@ -308,9 +336,10 @@ typedef void (*evm_get_balance_fn)(struct evm_uint256be* result,
 ///
 /// This callback function is used by an EVM to get the code of a contract of
 /// given address.
+///
 /// @param[out] result_code  The pointer to the contract code. This argument is
 ///                          optional. If NULL is provided, the host MUST only
-///                          return the code size.
+///                          return the code size. It will be freed by the Client.
 /// @param      context      The pointer to the Host execution context.
 ///                          @see ::evm_context.
 /// @param      address      The address of the contract.
@@ -322,6 +351,8 @@ typedef size_t (*evm_get_code_fn)(const uint8_t** result_code,
 /// Selfdestruct callback function.
 ///
 /// This callback function is used by an EVM to SELFDESTRUCT given contract.
+/// The execution of the contract will not be stopped, that is up to the EVM.
+///
 /// @param context      The pointer to the Host execution context.
 ///                     @see ::evm_context.
 /// @param address      The address of the contract to be selfdestructed.
@@ -343,12 +374,12 @@ typedef void (*evm_selfdestruct_fn)(struct evm_context* context,
 /// @param topics        The pointer to the array of topics attached to the log.
 /// @param topics_count  The number of the topics. Valid values are between
 ///                      0 and 4 inclusively.
-typedef void (*evm_log_fn)(struct evm_context* context,
-                           const struct evm_address* address,
-                           const uint8_t* data,
-                           size_t data_size,
-                           const struct evm_uint256be topics[],
-                           size_t topics_count);
+typedef void (*evm_emit_log_fn)(struct evm_context* context,
+                                const struct evm_address* address,
+                                const uint8_t* data,
+                                size_t data_size,
+                                const struct evm_uint256be topics[],
+                                size_t topics_count);
 
 /// Pointer to the callback function supporting EVM calls.
 ///
@@ -357,7 +388,7 @@ typedef void (*evm_log_fn)(struct evm_context* context,
 ///                     initialize all expected fields of the structure.
 /// @param      context The pointer to the Host execution context.
 ///                     @see ::evm_context.
-/// @param      msg     Call parameters.
+/// @param      msg     Call parameters. @see ::evm_message.
 typedef void (*evm_call_fn)(struct evm_result* result,
                             struct evm_context* context,
                             const struct evm_message* msg);
@@ -378,7 +409,7 @@ struct evm_context_fn_table {
     evm_call_fn call;
     evm_get_tx_context_fn get_tx_context;
     evm_get_block_hash_fn get_block_hash;
-    evm_log_fn log;
+    evm_emit_log_fn emit_log;
 };
 
 
@@ -443,16 +474,9 @@ enum evm_revision {
 /// @param context     The pointer to the Host execution context to be passed
 ///                    to callback functions. @see ::evm_context.
 /// @param rev         Requested EVM specification revision.
-/// @param code_hash   A hash of the bytecode, usually Keccak. The EVM uses it
-///                    as the code identifier. A EVM implementation is able to
-///                    hash the code itself if it requires it, but the host
-///                    application usually has the hash already.
+/// @param msg         Call parameters. @see ::evm_message.
 /// @param code        Reference to the bytecode to be executed.
 /// @param code_size   The length of the bytecode.
-/// @param gas         Gas for execution. Min 0, max 2^63-1.
-/// @param input       Reference to the input data.
-/// @param input_size  The size of the input data.
-/// @param value       Call value.
 /// @return            All execution results.
 typedef struct evm_result (*evm_execute_fn)(struct evm_instance* instance,
                                             struct evm_context* context,
@@ -461,36 +485,6 @@ typedef struct evm_result (*evm_execute_fn)(struct evm_instance* instance,
                                             uint8_t const* code,
                                             size_t code_size);
 
-
-/// Status of a code in VM. Useful for JIT-like implementations.
-enum evm_code_status {
-    /// The code is uknown to the VM.
-    EVM_UNKNOWN,
-
-    /// The code has been compiled and is available in memory.
-    EVM_READY,
-
-    /// The compiled version of the code is available in on-disk cache.
-    EVM_CACHED,
-};
-
-
-/// Get information the status of the code in the VM.
-typedef enum evm_code_status
-(*evm_get_code_status_fn)(struct evm_instance* instance,
-                          enum evm_revision rev,
-                          uint32_t flags,
-                          struct evm_uint256be code_hash);
-
-/// Request preparation of the code for faster execution. It is not required
-/// to execute the code but allows compilation of the code ahead of time in
-/// JIT-like VMs.
-typedef void (*evm_prepare_code_fn)(struct evm_instance* instance,
-                                    enum evm_revision rev,
-                                    uint32_t flags,
-                                    struct evm_uint256be code_hash,
-                                    uint8_t const* code,
-                                    size_t code_size);
 
 /// The EVM instance.
 ///
@@ -510,16 +504,6 @@ struct evm_instance {
 
     /// Pointer to function executing a code by the EVM instance.
     evm_execute_fn execute;
-
-    /// Optional pointer to function returning a status of a code.
-    ///
-    /// If the VM does not support this feature the pointer can be NULL.
-    evm_get_code_status_fn get_code_status;
-
-    /// Optional pointer to function compiling  a code.
-    ///
-    /// If the VM does not support this feature the pointer can be NULL.
-    evm_prepare_code_fn prepare_code;
 
     /// Optional pointer to function modifying VM's options.
     ///
