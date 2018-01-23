@@ -107,6 +107,10 @@ private:
 
   /* Checks if 256 bit value is all zeroes */
   static bool isZeroUint256(evm_uint256be const& value);
+  
+  /* Returns the position of the highest one bit of a value */
+  size_t highestBitPosition(uint32_t value);
+  size_t highestBitPosition(uint64_t value);
 
   struct evm_context* context = nullptr;
   std::vector<uint8_t> const& code;

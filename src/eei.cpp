@@ -781,4 +781,18 @@ namespace HeraVM {
     }
     return false;
   }
+  size_t EthereumInterface::highestBitPosition(uint32_t value)
+  {
+    size_t i = 0;
+    while ((value >> i) && i < 32)
+      ++i;
+    return i;
+  }
+  size_t EthereumInterface::highestBitPosition(uint64_t value)
+  {
+    size_t i = 0;
+    while ((value >> i) && i < 64)
+      ++i;
+    return i;
+  }
 }
