@@ -274,6 +274,10 @@ inline int64_t maxCallGas(int64_t gas) {
 
       takeInterfaceGas(GasSchedule::blockhash);
       context->fn_table->get_block_hash(&blockhash, context, number);
+
+      for (uint8_t b: blockhash.bytes)
+        HERA_DEBUG << hex << static_cast<int>(b);
+
       storeUint256(blockhash, resultOffset);
 
       return Literal();
