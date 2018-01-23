@@ -139,9 +139,7 @@ extern "C" {
 
 static void evm_destroy_result(struct evm_result const* result)
 {
-  if (result->output_data) {
-     free((void *)result->output_data);
-  }
+  delete[] result->output_data;
 }
 
 static struct evm_result evm_execute(
@@ -192,8 +190,7 @@ static struct evm_result evm_execute(
         returnValue = move(result.returnValue);
       }
 
-      uint8_t* output_data = (uint8_t*)malloc(returnValue.size());
-      heraAssert(output_data != NULL, "Memory allocation failure.");
+      uint8_t* output_data = new uint8_t[returnValue.size()];
       copy(returnValue.begin(), returnValue.end(), output_data);
 
       ret.output_size = returnValue.size();
