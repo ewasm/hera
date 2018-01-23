@@ -44,6 +44,8 @@ using namespace HeraVM;
 
 struct hera_instance : evm_instance {
   bool fallback = false;
+
+  hera_instance() : evm_instance({EVM_ABI_VERSION, nullptr, nullptr, nullptr}) {}
 };
 
 namespace {
@@ -268,22 +270,17 @@ static int evm_set_option(
 
 static void evm_destroy(evm_instance* instance)
 {
-  free(instance);
+  hera_instance* hera = static_cast<hera_instance*>(instance);
+  delete hera;
 }
 
 evm_instance* hera_create()
 {
-  evm_instance init = {
-    .abi_version = EVM_ABI_VERSION,
-    .destroy = evm_destroy,
-    .execute = evm_execute,
-    .set_option = evm_set_option
-  };
-  // NOTE: allocating `hera_instance` size here
-  evm_instance* instance = (evm_instance*)calloc(1, sizeof(hera_instance));
-  if (instance)
-    memcpy(instance, &init, sizeof(init));
-  return instance;
+  hera_instance* instance = new hera_instance;
+  instance->destroy = evm_destroy;
+  instance->execute = evm_execute;
+  instance->set_option = evm_set_option;
+  return static_cast<evm_instance*>(instance);
 }
 
 }
