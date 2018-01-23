@@ -271,12 +271,22 @@ inline int64_t maxCallGas(int64_t gas) {
       HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
 
       evmc_uint256be blockhash;
+      evmc_uint256be nullBlockhash;
 
       takeInterfaceGas(GasSchedule::blockhash);
       context->fn_table->get_block_hash(&blockhash, context, number);
+      memset(&nullBlockHash.bytes, 0, 32);
 
+      HERA_DEBUG << "Hash: ";
       for (uint8_t b: blockhash.bytes)
         HERA_DEBUG << hex << static_cast<int>(b);
+
+      HERA_DEBUG << "\n";
+
+      if (std::set<uint8_t>(std::begin(nullBlockHash.bytes), std::end(nullBlockHash.bytes)) == std::set<uint8_t>(std::begin(blockhash.bytes), std::end(blockhash.bytes))) {
+        HERA_DEBUG << "NULL BLOCKHASH\n";
+        return Literal(uint32_t(1));
+      }
 
       storeUint256(blockhash, resultOffset);
 
