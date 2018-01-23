@@ -540,7 +540,14 @@ namespace HeraVM {
       if (call_result.release)
         call_result.release(&call_result);
 
-      return Literal((call_result.status_code == EVM_SUCCESS) ? uint32_t(1) : uint32_t(0));
+      switch (call_result.status_code) {
+      case EVM_SUCCESS:
+        return Literal(uint32_t(0));
+      case EVM_REVERT:
+        return Literal(uint32_t(2));
+      default:
+        return Literal(uint32_t(1));
+      }
     }
 
     if (import->base == Name("create")) {
@@ -591,7 +598,14 @@ namespace HeraVM {
       if (create_result.release)
         create_result.release(&create_result);
 
-      return Literal((create_result.status_code == EVM_SUCCESS) ? uint32_t(1) : uint32_t(0));
+      switch (create_result.status_code) {
+      case EVM_SUCCESS:
+        return Literal(uint32_t(0));
+      case EVM_REVERT:
+        return Literal(uint32_t(2));
+      default:
+        return Literal(uint32_t(1));
+      }
     }
 
     if (import->base == Name("selfDestruct")) {
