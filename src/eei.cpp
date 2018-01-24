@@ -133,9 +133,24 @@ namespace HeraVM {
       uint32_t cost = arguments[2].geti32();
       uint32_t sp = arguments[3].geti32();
 
+      HERA_DEBUG << "evmTrace\n";
+
       heraAssert(sp <= (1024 * 32), "EVM stack pointer out of bounds.");
 
-      // FIXME: implement
+      cout << "{'pc': " << pc;
+      cout << ", 'op': " << opcode;
+      cout << ", 'gas': 0x" << hex << result.gasLeft;
+      cout << ", 'gasCost': 0x" << cost;
+      cout << ", 'stack': [";
+
+      for (int32_t i = sp; i >= 0; i -= 32) {
+        cout << "'0x";
+        for (size_t j = 0; j < 32 && (int32_t)(i + j) > 0; ++j)
+          // TODO: remove leading zeroes
+          cout << static_cast<int>(memory.get<uint8_t>(i + j));
+        cout << ((i - 32 >= 0) ? "'," : "'");
+      }
+      cout << "]" << dec << ", 'depth': " << msg.depth << "}" << endl;
 
       return Literal();
     }
