@@ -44,7 +44,7 @@ using namespace HeraVM;
 
 namespace {
 
-vector<uint8_t> sentinel(struct evm_context* context, vector<uint8_t> const& input)
+vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
 {
 #if HERA_DEBUGGING
   cerr << "Metering (input " << input.size() << " bytes)..." << endl;
@@ -86,9 +86,9 @@ vector<uint8_t> sentinel(struct evm_context* context, vector<uint8_t> const& inp
 }
 
 void execute(
-	struct evm_context* context,
+	evm_context* context,
 	vector<uint8_t> & code,
-	struct evm_message const& msg,
+	evm_message const& msg,
 	ExecutionResult & result
 ) {
 #if HERA_DEBUGGING
@@ -141,21 +141,21 @@ void execute(
 
 extern "C" {
 
-static void evm_destroy_result(struct evm_result const* result)
+static void evm_destroy_result(evm_result const* result)
 {
   delete[] result->output_data;
 }
 
-static struct evm_result evm_execute(
-  struct evm_instance* instance,
-  struct evm_context* context,
+static evm_result evm_execute(
+  evm_instance* instance,
+  evm_context* context,
   enum evm_revision rev,
-  const struct evm_message* msg,
+  const evm_message* msg,
   const uint8_t* code,
   size_t code_size)
 {
-  struct evm_result ret;
-  memset(&ret, 0, sizeof(struct evm_result));
+  evm_result ret;
+  memset(&ret, 0, sizeof(evm_result));
 
   try {
     heraAssert(instance != NULL, "");
@@ -227,20 +227,20 @@ static struct evm_result evm_execute(
 }
 
 
-static void evm_destroy(struct evm_instance* instance)
+static void evm_destroy(evm_instance* instance)
 {
   free(instance);
 }
 
-struct evm_instance* hera_create()
+evm_instance* hera_create()
 {
-  struct evm_instance init = {
+  evm_instance init = {
     .abi_version = EVM_ABI_VERSION,
     .destroy = evm_destroy,
     .execute = evm_execute,
     .set_option = (evm_set_option_fn)NULL
   };
-  struct evm_instance* instance = (struct evm_instance*)calloc(1, sizeof(struct evm_instance));
+  evm_instance* instance = (evm_instance*)calloc(1, sizeof(evm_instance));
   if (instance)
     memcpy(instance, &init, sizeof(init));
   return instance;
