@@ -187,7 +187,6 @@ static evm_result evm_execute(
   memset(&ret, 0, sizeof(evm_result));
 
   try {
-    heraAssert(instance != NULL, "");
     heraAssert(msg->gas >= 0, "Negative startgas?");
 
     ExecutionResult result;
