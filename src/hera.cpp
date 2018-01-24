@@ -152,10 +152,7 @@ void execute(
   // TODO: validate for other conditions too?
   heraAssert(module.getExportOrNull(Name("main")) != nullptr, "Contract entry point (\"main\") missing.");
 
-  // Optimise
-  // PassRunner passRunner(module);
-  // passRunner.addDefaultOptimizationPasses();
-  // passRunner.run();
+  // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
   // Interpet
   EthereumInterface interface(context, code, msg, result);
