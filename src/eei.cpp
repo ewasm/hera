@@ -556,7 +556,7 @@ namespace HeraVM {
       uint32_t length = arguments[2].geti32();
       uint32_t resultOffset = arguments[3].geti32();
 
-      HERA_DEBUG << "create" << hex << valueOffset << " " << dataOffset << " " << resultOffset << dec << " " << length << dec << "\n";
+      HERA_DEBUG << "create " << hex << valueOffset << " " << dataOffset << " " << length << dec << " " << resultOffset << dec << "\n";
 
       heraAssert(!(msg.flags & EVM_STATIC), "\"create\" attempted in static mode");
 
