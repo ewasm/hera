@@ -44,6 +44,7 @@ using namespace HeraVM;
 
 namespace {
 
+#if HERA_METERING_CONTRACT
 vector<uint8_t> callSystemContract(
   evm_context* context,
   evm_address const& address,
@@ -77,6 +78,7 @@ vector<uint8_t> callSystemContract(
 
   return ret;
 }
+#endif
 
 vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
 {
