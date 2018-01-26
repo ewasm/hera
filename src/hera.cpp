@@ -42,6 +42,12 @@ using namespace std;
 using namespace wasm;
 using namespace HeraVM;
 
+struct hera_instance : evm_instance {
+  bool fallback = false;
+
+  hera_instance() : evm_instance({EVM_ABI_VERSION, nullptr, nullptr, nullptr}) {}
+};
+
 namespace {
 
 #if HERA_METERING_CONTRACT
@@ -188,7 +194,8 @@ static evm_result evm_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
-      ret.status_code = EVM_REJECTED;
+      hera_instance* hera = static_cast<hera_instance*>(instance);
+      ret.status_code = hera->fallback ? EVM_REJECTED : EVM_FAILURE;
       return ret;
     }
 
@@ -248,24 +255,32 @@ static evm_result evm_execute(
   return ret;
 }
 
+static int evm_set_option(
+  evm_instance* instance,
+  char const* name,
+  char const* value
+) {
+  if (strcmp(name, "fallback") == 0) {
+    hera_instance* hera = static_cast<hera_instance*>(instance);
+    hera->fallback = strcmp(value, "true") == 0;
+    return 1;
+  }
+  return 0;
+}
 
 static void evm_destroy(evm_instance* instance)
 {
-  free(instance);
+  hera_instance* hera = static_cast<hera_instance*>(instance);
+  delete hera;
 }
 
 evm_instance* hera_create()
 {
-  evm_instance init = {
-    .abi_version = EVM_ABI_VERSION,
-    .destroy = evm_destroy,
-    .execute = evm_execute,
-    .set_option = (evm_set_option_fn)NULL
-  };
-  evm_instance* instance = (evm_instance*)calloc(1, sizeof(evm_instance));
-  if (instance)
-    memcpy(instance, &init, sizeof(init));
-  return instance;
+  hera_instance* instance = new hera_instance;
+  instance->destroy = evm_destroy;
+  instance->execute = evm_execute;
+  instance->set_option = evm_set_option;
+  return static_cast<evm_instance*>(instance);
 }
 
 }
