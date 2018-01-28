@@ -23,7 +23,7 @@ set(source_dir ${prefix}/src/binaryen)
 set(binary_dir ${prefix}/src/binaryen-build)
 # Use source dir because binaryen only installs single header with C API.
 set(binaryen_include_dir ${source_dir}/src)
-set(binaryen_library ${prefix}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}binaryen${CMAKE_STATIC_LIBRARY_SUFFIX})
+set(binaryen_library ${prefix}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}binaryen${CMAKE_STATIC_LIBRARY_SUFFIX})
 # Include also other static libs needed:
 set(binaryen_other_libraries
     ${binary_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}wasm${CMAKE_STATIC_LIBRARY_SUFFIX}
