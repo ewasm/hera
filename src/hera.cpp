@@ -56,6 +56,7 @@ struct hera_instance : evm_instance {
 
 namespace {
 
+#if HERA_EVM2WASM_JS
 // NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
 string mktemp_string(string pattern) {
   char tmp[PATH_MAX] = { 0 };
@@ -64,7 +65,6 @@ string mktemp_string(string pattern) {
   return string(tmp, len);
 }
 
-#if HERA_EVM2WASM_JS
 string evm2wasm(string const& input) {
   string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXXXX");
   string fileWASM = mktemp_string("/tmp/hera.evm2wasm.wasm.XXXXXXXX");
@@ -74,7 +74,7 @@ string evm2wasm(string const& input) {
   os << input;
   os.close();
 
-  string cmd = string("evm2wasm") + fileEVM + " " + fileWASM;
+  string cmd = string("evm2wasm ") + fileEVM + " " + fileWASM;
   if (system(cmd.c_str()) != 0) {
     unlink(fileEVM.c_str());
     unlink(fileWASM.c_str());
