@@ -56,11 +56,12 @@ struct hera_instance : evm_instance {
 
 namespace {
 
+// NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
 string mktemp_string(string pattern) {
   char tmp[PATH_MAX] = { 0 };
-  strncpy(tmp, pattern.c_str(), (pattern.length() > sizeof(tmp)) ? sizeof(tmp) : pattern.length());
+  size_t len = snprintf(tmp, sizeof(tmp), "%s", pattern.c_str());
   mktemp(tmp);
-  return string(tmp, strlen(tmp));
+  return string(tmp, len);
 }
 
 #if HERA_EVM2WASM_JS
