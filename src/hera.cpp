@@ -25,6 +25,8 @@
 #include <vector>
 #include <stdexcept>
 #include <cstdlib>
+#include <unistd.h>
+#include <fstream>
 
 #include <pass.h>
 #include <wasm.h>
@@ -54,19 +56,27 @@ struct hera_instance : evm_instance {
 
 namespace {
 
+string mktemp_string(string pattern) {
+  char tmp[PATH_MAX] = { 0 };
+  strncpy(tmp, pattern.c_str(), (pattern.length() > sizeof(tmp)) ? sizeof(tmp) : pattern.length());
+  mktemp(tmp);
+  return string(tmp, strlen(tmp));
+}
+
 #if HERA_EVM2WASM_JS
 string evm2wasm(string const& input) {
-  const char *fileEVM = mktemp("/tmp/hera.evm2wasm.evm.XXXXXXXX");
-  const char *fileWASM = mktemp("/tmp/hera.evm2wasm.wasm.XXXXXXXX");
+  string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXXXX");
+  string fileWASM = mktemp_string("/tmp/hera.evm2wasm.wasm.XXXXXXXX");
 
   ofstream os;
-  is.open(fileEVM);
-  is << input;
-  is.close();
+  os.open(fileEVM);
+  os << input;
+  os.close();
 
-  if (system(string("evm2wasm " + fileEVM + " " + fileWASM).c_str()) != 0) {
-    unlink(fileEVM);
-    unlink(fileEWASM);
+  string cmd = string("evm2wasm") + fileEVM + " " + fileWASM;
+  if (system(cmd.c_str()) != 0) {
+    unlink(fileEVM.c_str());
+    unlink(fileWASM.c_str());
     return string();
   }
 
@@ -74,8 +84,8 @@ string evm2wasm(string const& input) {
   string str((istreambuf_iterator<char>(is)),
                  istreambuf_iterator<char>());
 
-  unlink(fileEVM);
-  unlink(fileEWASM);
+  unlink(fileEVM.c_str());
+  unlink(fileWASM.c_str());
 
   return str;
 }
