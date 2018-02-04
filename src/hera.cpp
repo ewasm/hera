@@ -131,7 +131,8 @@ void execute(
     WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> &>(code), false);
     parser.read();
   } catch (ParseException &p) {
-    throw InternalErrorException(
+    heraAssert(
+      false,
       "Error in parsing WASM binary: '" +
       p.text +
       "' at " +
@@ -151,10 +152,7 @@ void execute(
   // TODO: validate for other conditions too?
   heraAssert(module.getExportOrNull(Name("main")) != nullptr, "Contract entry point (\"main\") missing.");
 
-  // Optimise
-  // PassRunner passRunner(module);
-  // passRunner.addDefaultOptimizationPasses();
-  // passRunner.run();
+  // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
   // Interpet
   EthereumInterface interface(context, code, msg, result);
@@ -186,7 +184,6 @@ static evm_result evm_execute(
   memset(&ret, 0, sizeof(evm_result));
 
   try {
-    heraAssert(instance != NULL, "");
     heraAssert(msg->gas >= 0, "Negative startgas?");
 
     ExecutionResult result;
