@@ -775,8 +775,8 @@ namespace HeraVM {
   {
     for (unsigned i = 0; i < 32; i++) {
       if (value.bytes[i] != 0)
-        return true;
+        return false;
     }
-    return false;
+    return true;
   }
 }
