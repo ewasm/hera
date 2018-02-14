@@ -74,7 +74,7 @@ string evm2wasm(string const& input) {
   os << input;
   os.close();
 
-  string cmd = string("evm2wasm ") + fileEVM + " " + fileWASM;
+  string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM;
   if (system(cmd.c_str()) != 0) {
     unlink(fileEVM.c_str());
     unlink(fileWASM.c_str());
