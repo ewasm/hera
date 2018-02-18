@@ -2,17 +2,14 @@
 
 set -e
 
-git clone --recursive https://github.com/ethereum/cpp-ethereum
-cd cpp-ethereum
+WORKING_DIR=$(pwd)
+echo "running tests.sh inside working dir: $WORKING_DIR"
 
-rm -rf hera
-ln -s `pwd`/../. hera
+echo "listing files:"
+ls -al
 
-mkdir build
-cd build
-cmake -DHERA=ON ..
-make
+echo "fetch ewasm tests."
+git clone https://github.com/ewasm/tests --branch wasm-tests --single-branch
 
-git clone --recursive https://github.com/ewasm/tests -b wasm-tests
-
-ETHEREUM_TEST_PATH='`pwd`/tests`' test/testeth -t GeneralStateTests/stEWASMTests -- --filltests --vm hera --singlenet "Byzantium"
+echo "run ewasm tests."
+testeth -t GeneralStateTests/stEWASMTests -- --testpath ./tests --vm hera --singlenet "Byzantium"
