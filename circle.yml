@@ -25,23 +25,58 @@ defaults:
       command: |
         cmake ../project -G "$GENERATOR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE $CMAKE_OPTIONS
 
+#  configure-eth: &configure-eth
+#    run:
+#      name: "Configure Client"
+#      working_directory: ~/cpp-ethereum/build
+#      command: |
+#        rm -rf ../hera
+#        ln -s ../.. hera
+#        cmake -DHERA=ON ..
+
   build: &build
     run:
       name: "Build"
       working_directory: ~/build
       command: cmake --build . -- -j $BUILD_PARALLEL_JOBS
 
+#  build-eth: &build-eth
+#    run:
+#      name: "Build client"
+#      working_directory: ~/cpp-ethereum/build
+#      command: cmake --build . -- -j $BUILD_PARALLEL_JOBS
+
   save-deps-cache: &save-deps-cache
-    cache-save:
+    save_cache:
       name: "Save dependencies cache"
       key: &deps-cache-key deps-4-{{arch}}-{{checksum "compiler.version"}}-{{checksum "cmake/ProjectBinaryen.cmake"}}
       paths:
         - ~/build/deps
 
+  save-eth-cache: &save-eth-cache
+    save_cache:
+      name: "Save client dependency cache"
+      key: &eth-cache-key deps-4-{{arch}}-{{checksum "compiler.version"}}-cpp-ethereum
+      paths:
+        - ~/cpp-ethereum/build
+
   restore-deps-cache: &restore-deps-cache
-    cache-restore:
+    restore_cache:
       name: "Restore dependencies cache"
       key: *deps-cache-key
+
+  restore-eth-cache: &restore-eth-cache
+    restore_cache:
+      name: "Restore client dependency cache"
+      key: *eth-cache-key
+
+#  ewasm-tests: &ewasm-tests
+#    run:
+#      name: "Run ewasm tests"
+#      working_directory: ~/cpp-ethereum/build
+#      command: |
+#        git clone --recursive https://github.com/ewasm/tests -b wasm-tests
+#        ./test/testeth -t GeneralStateTests/stEWASMTests -- --testpath ./tests --vm hera --singlenet "Byzantium"
 
   linux-steps: &linux-steps
     - checkout
@@ -52,9 +87,31 @@ defaults:
     - *build
     - *save-deps-cache
 
+#  cpp-ethereum-steps: &cpp-ethereum-steps
+#    - *restore-eth-cache
+#    - *configure-eth
+#    - *build-eth
+#    - *save-eth-cache
+
+  test-steps: &test-steps
+    - *linux-steps
+    - *restore-eth-cache
+
 
 version: 2
 jobs:
+
+  test:
+    environment:
+      - BUILD_TYPE: Release
+      - CXX: clang++-5.0
+      - CC: clang-5.0
+      - GENERATOR: Ninja
+      - BUILD_PARALLEL_JOBS: 4
+      - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF
+    docker:
+      - image: ethereum/cpp-build-env
+    steps: *test-steps
 
   Linux-Clang5:
     environment:
@@ -86,3 +143,4 @@ workflows:
     jobs:
       - Linux-Clang5
       - Linux-GCC6-Debug
+      - test
