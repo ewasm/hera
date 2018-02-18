@@ -16,6 +16,14 @@ then
   make
 fi
 
+WORKING_DIR=$(pwd)
+echo "running tests.sh inside working dir: $WORKING_DIR"
+
+echo "listing files:"
+ls -al
+
+echo "fetch ewasm tests."
 git clone https://github.com/ewasm/tests -b wasm-tests --single-branch
 
+echo "run ewasm tests."
 testeth -t GeneralStateTests/stEWASMTests -- --testpath ./tests --vm hera --singlenet "Byzantium"
