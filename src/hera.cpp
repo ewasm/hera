@@ -150,7 +150,7 @@ void execute(
 
   // This should be caught during deployment time by the Sentinel.
   // TODO: validate for other conditions too?
-  heraAssert(module.getExportOrNull(Name("main")) != nullptr, "Contract entry point (\"main\") missing.");
+  heraAssert(module.getExportOrNull(Name("main")) != nullptr && module.getExportOrNull(Name("_main")) != nullptr, "Contract entry point (\"main\" or \"_main\") missing.");
 
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
@@ -158,7 +158,13 @@ void execute(
   EthereumInterface interface(context, code, msg, result);
   ModuleInstance instance(module, &interface);
 
+
   Name main = Name("main");
+  if(!module.getExportOrNull(main)) {
+    // if 'main' doesn't exist as an export, try '_main' (emscripten export name mangling)
+    main = Name("_main");
+  }
+
   LiteralList args;
   instance.callExport(main, args);
 }
