@@ -9,7 +9,7 @@ echo "listing files:"
 ls -al
 
 echo "fetch ewasm tests."
-git clone https://github.com/ewasm/tests --branch wasm-tests --single-branch
+git clone https://github.com/hugo-dc/tests --branch gas-usage --single-branch
 
 echo "run ewasm tests."
 testeth -t GeneralStateTests/stEWASMTests -- --testpath ./tests --vm hera --singlenet "Byzantium"
