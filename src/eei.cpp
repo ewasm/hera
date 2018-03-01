@@ -487,7 +487,7 @@ namespace HeraVM {
 
       HERA_DEBUG << (import->base == Name("revert") ? "revert " : "return ") << hex << offset << " " << size << dec << "\n";
 
-      result.returnValue.clear();
+      result.returnValue = vector<uint8_t>(size);
       loadMemory(offset, result.returnValue, size);
 
       result.isRevert = import->base == Name("revert");
