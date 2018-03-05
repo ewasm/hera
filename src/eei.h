@@ -116,8 +116,23 @@ private:
 };
 
 struct GasSchedule {
+  static constexpr unsigned storageLoad = 200;
   static constexpr unsigned storageStoreCreate = 20000;
   static constexpr unsigned storageStoreChange = 5000;
+  static constexpr unsigned log = 375;
+  static constexpr unsigned logData = 8;
+  static constexpr unsigned logTopic = 375;
+  static constexpr unsigned create = 32000;
+  static constexpr unsigned call = 700;
+  static constexpr unsigned copy = 3;
+  static constexpr unsigned blockhash = 800;
+  static constexpr unsigned balance = 400;
+  static constexpr unsigned base = 2;
+  static constexpr unsigned verylow = 3;
+  static constexpr unsigned extcode = 700;
+  static constexpr unsigned selfdestruct = 5000;
+  static constexpr unsigned valuetransfer = 9000;
+  static constexpr unsigned callNewAccount = 25000;
 };
 
 }
