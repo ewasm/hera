@@ -37,12 +37,12 @@ set(binaryen_other_libraries
 
 ExternalProject_Add(binaryen
     PREFIX ${prefix}
-    DOWNLOAD_NAME binaryen-1.37.28.tar.gz
+    DOWNLOAD_NAME binaryen-1.37.29.tar.gz
     DOWNLOAD_DIR ${prefix}/downloads
     SOURCE_DIR ${source_dir}
     BINARY_DIR ${binary_dir}
-    URL https://github.com/WebAssembly/binaryen/archive/1.37.28.tar.gz
-    URL_HASH SHA256=90395016042d187c9be876eb18290ef839d55b58643f654b10aa9d5c98fc8703
+    URL https://github.com/WebAssembly/binaryen/archive/1.37.29.tar.gz
+    URL_HASH SHA256=f09f2ada74c37439a0d38d660a5636bc54771ee203386e39666bf7e2e42c4fd9
     CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     -DCMAKE_BUILD_TYPE=Release
