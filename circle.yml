@@ -43,6 +43,19 @@ defaults:
       name: "Restore dependencies cache"
       key: *deps-cache-key
 
+  test-ewasm: &test-ewasm
+    run:
+      name: "Run ewasm state tests"
+      working_directory: ~/project
+      command: |
+        echo "print working directory:"
+        pwd
+        echo "list files in working directory:"
+        ls -al .
+        echo "run tests script."
+        ./scripts/tests.sh
+
+
   linux-steps: &linux-steps
     - checkout
     - *update-submodules
@@ -51,10 +64,29 @@ defaults:
     - *configure
     - *build
     - *save-deps-cache
+    - *test-ewasm
 
 
 version: 2
 jobs:
+
+  build: # workaround; Linux-Clang5 copied as `build` key under jobs. needed for local circle tool `circleci build -c circle.yml`
+    environment:
+      - BUILD_TYPE: Release
+      - CXX: clang++-5.0
+      - CC:  clang-5.0
+      - GENERATOR: Ninja
+      - BUILD_PARALLEL_JOBS: 4
+      - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF
+    docker:
+      - image: ethereum/cpp-build-env
+    steps:
+      - checkout
+      - *update-submodules
+      - *environment-info
+      - *configure
+      - *build
+      - *test-ewasm
 
   Linux-Clang5:
     environment:

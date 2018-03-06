@@ -8,21 +8,36 @@ matrix:
     include:
         - os: linux
           dist: trusty
-          sudo: required
           node_js:
               - "8"
           env:
               - DEBUG=ON
+              - TESTS=0
         - os: linux
           dist: trusty
-          sudo: required
           node_js:
               - "8"
           env:
               - DEBUG=OFF
+              - TESTS=0
+        - os: linux
+          dist: trusty
+          sudo: required
+          env:
+              - DEBUG=ON
+              - TESTS=1
 git:
     depth: 2
+sudo: true
 script:
-    - mkdir build && cd build
-    - cmake -DHERA_DEBUGGING=$DEBUG ..
-    - cmake --build . -- -j4
+    - |
+      if [ $TESTS -eq 0 ]; then
+          mkdir build && cd build
+          cmake -DHERA_DEBUGGIN=$DEBUG ..
+          cmake --build . -- -j4
+      fi
+    - |
+      if [ $TESTS -eq 1 ]; then
+          sudo apt-get install libleveldb-dev
+          ./scripts/tests.sh
+      fi
