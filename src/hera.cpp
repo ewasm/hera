@@ -115,7 +115,7 @@ vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
 
 void execute(
 	evm_context* context,
-	vector<uint8_t> & code,
+	vector<uint8_t> const& code,
 	evm_message const& msg,
 	ExecutionResult & result
 ) {
@@ -127,8 +127,7 @@ void execute(
 
   // Load module
   try {
-    // FIXME: should get rid of this horrible typecast
-    WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> &>(code), false);
+    WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(code), false);
     parser.read();
   } catch (ParseException &p) {
     heraAssert(
