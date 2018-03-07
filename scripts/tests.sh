@@ -2,16 +2,19 @@
 
 set -e
 
-git clone --recursive https://github.com/ethereum/cpp-ethereum
-cd cpp-ethereum
+if [ "$1" == "build" ]
+then
+  git clone --recursive https://github.com/ethereum/cpp-ethereum
+  cd cpp-ethereum
 
-rm -rf hera
-ln -s `pwd`/../. hera
+  rm -rf hera
+  ln -s `pwd`/../. hera
 
-mkdir build
-cd build
-cmake -DHERA=ON ..
-make
+  mkdir build
+  cd build
+  cmake -DHERA=ON ..
+  make
+fi
 
 git clone --recursive https://github.com/ewasm/tests -b wasm-tests
 
