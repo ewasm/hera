@@ -43,6 +43,19 @@ struct NullStream {
 #endif
 
 namespace HeraVM {
+
+namespace {
+
+string toHex(evm_uint256be const& value) {
+  ostringstream os;
+  os << hex;
+  for (auto b: value.bytes)
+    os << setw(2) << setfill('0') << unsigned(b);
+  return "0x" + os.str();
+}
+
+}
+
 #if HERA_DEBUGGING
   Literal EthereumInterface::callDebugImport(Import *import, LiteralList& arguments) {
     heraAssert(import->module == Name("debug"), "Import namespace error.");
@@ -128,29 +141,30 @@ namespace HeraVM {
     }
 
     if (import->base == Name("evmTrace")) {
-      uint32_t pc = arguments[0].geti32();
-      uint32_t opcode = arguments[1].geti32();
-      uint32_t cost = arguments[2].geti32();
-      uint32_t sp = arguments[3].geti32();
+      uint32_t pc = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t opcode = static_cast<uint32_t>(arguments[1].geti32());
+      uint32_t cost = static_cast<uint32_t>(arguments[2].geti32());
+      int32_t sp = arguments[3].geti32();
 
       HERA_DEBUG << "evmTrace\n";
 
-      heraAssert(sp <= (1024 * 32), "EVM stack pointer out of bounds.");
+      static constexpr int stackItemSize = sizeof(evm_uint256be);
+      heraAssert(sp <= (1024 * stackItemSize), "EVM stack pointer out of bounds.");
 
-      cout << "{'pc': " << pc;
-      cout << ", 'op': " << opcode;
-      cout << ", 'gas': 0x" << hex << result.gasLeft;
-      cout << ", 'gasCost': 0x" << cost;
-      cout << ", 'stack': [";
+      cout << "{\"depth\":" << dec << msg.depth
+        << ",\"gas\":" << result.gasLeft
+        << ",\"gasCost\":" << cost
+        << ",\"op\":" << opcode
+        << ",\"pc\":" << pc
+        << ",\"stack\":[";
 
-      for (int32_t i = sp; i >= 0; i -= 32) {
-        cout << "'0x";
-        for (size_t j = 0; j < 32 && (int32_t)(i + j) > 0; ++j)
-          // TODO: remove leading zeroes
-          cout << static_cast<int>(memory.get<uint8_t>(i + j));
-        cout << ((i - 32 >= 0) ? "'," : "'");
+      for (int32_t i = sp; i > 0; i -= stackItemSize) {
+        if (i != sp)
+          cout << ',';
+        evm_uint256be x = loadUint256(static_cast<uint32_t>(i));
+        cout << '"' << toHex(x) << '"';
       }
-      cout << "]" << dec << ", 'depth': " << msg.depth << "}" << endl;
+      cout << "]}" << endl;
 
       return Literal();
     }
