@@ -26,6 +26,12 @@ Hera implements two interfaces: [EEI](https://github.com/ewasm/design/blob/maste
 
 These are only enabled if Hera is compiled with debugging on.
 
+### EVM Tracing
+
+- `debug::evmTrace(pc: i32, opcode: i32, cost: i32, sp: i32)`
+
+This is useful to trace the transpiled code from [evm2wasm](https://github.com/ewasm/evm2asm). This is only enabled if Hera is compiled with debugging on.
+
 ## Caveats
 
 Although Hera enables the execution of eWASM bytecode, there are more elements to eWASM an Ethereum node must be aware of:
