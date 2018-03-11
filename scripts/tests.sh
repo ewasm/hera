@@ -16,6 +16,6 @@ then
   make
 fi
 
-git clone --recursive https://github.com/ewasm/tests -b wasm-tests
+git clone https://github.com/ewasm/tests -b wasm-tests --single-branch
 
 testeth -t GeneralStateTests/stEWASMTests -- --testpath ./tests --vm hera --singlenet "Byzantium"
