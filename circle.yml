@@ -43,6 +43,72 @@ defaults:
       name: "Restore dependencies cache"
       key: *deps-cache-key
 
+  save-eth-cache: &save-eth-cache
+    save_cache:
+      # TODO: decide how to update cpp-eth version
+      key: &eth-cache-key cpp-prebuilt-cache-{{ arch }}-ee0c6776c01b
+      paths:
+        - ~/build
+        - ~/.hunter
+
+  restore-eth-cache: &restore-eth-cache
+    restore_cache:
+      key: *eth-cache-key
+
+  checkout-cpp-eth: &checkout-cpp-eth
+    run:
+      name: "Checkout cpp-ethereum repo"
+      working_directory: ~/project
+      command: |
+        cd ..
+        git clone https://github.com/ethereum/cpp-ethereum --branch develop --single-branch
+        cd cpp-ethereum
+        git reset --hard ee0c6776c01b09045a379220c7e490000dae9377
+        git submodule update --init
+
+  link-hera: &link-hera
+    run:
+      name: "Link hera to prebuilt cpp-eth"
+      working_directory: ~/project
+      # TODO: run cmake in hera dir with config flags -DHERA_DEBUGGING=ON -DHERA_EVM2WASM_JS=ON
+      command: |
+        cd ..
+        echo "pwd: $(pwd)"
+        echo "listing files: $(ls -al)"
+        rm -rf ~/cpp-ethereum/hera
+        ln -s ~/project ~/cpp-ethereum/hera
+
+  build-cpp-eth: &build-cpp-eth
+    run:
+      name: "Build cpp-ethereum with linked Hera"
+      working_directory: ~/project
+      # export PATH is an alternative to `make install`
+      command: |
+        cd ..
+        mkdir -p build && cd build
+        cmake ../cpp-ethereum -DCMAKE_BUILD_TYPE=RelWithDebInfo -DHERA=ON
+        make -j8
+        echo "build finished."
+        echo 'export PATH=~/build/test:$PATH' >> $BASH_ENV
+        cd ../cpp-ethereum
+        echo "cpp-ethereum branch: $(git rev-parse --abbrev-ref HEAD)  commit: $(git rev-parse HEAD)"
+        cd hera
+        echo "hera branch: $(git rev-parse --abbrev-ref HEAD)  commit: $(git rev-parse HEAD)"
+
+  test-ewasm: &test-ewasm
+    run:
+      name: "Run ewasm state tests"
+      working_directory: ~/project
+      command: |
+        echo "print working directory:"
+        pwd
+        echo "list files in working directory:"
+        ls -al .
+        echo "check testeth command"
+        testeth --help
+        echo "run tests script."
+        ./scripts/tests.sh
+
   linux-steps: &linux-steps
     - checkout
     - *update-submodules
@@ -55,6 +121,27 @@ defaults:
 
 version: 2
 jobs:
+
+  # to run this using local circleci tool, rename Ewasm-Tests to `build` then do `circleci build -c circle.yml`
+  Ewasm-Tests:
+    environment:
+      - BUILD_TYPE: Release
+      - CXX: clang++-5.0
+      - CC:  clang-5.0
+      - GENERATOR: Ninja
+      - BUILD_PARALLEL_JOBS: 4
+      - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF
+    docker:
+      - image: ethereum/cpp-build-env
+    steps:
+      - checkout
+      - *environment-info
+      - *checkout-cpp-eth
+      - *restore-eth-cache
+      - *link-hera
+      - *build-cpp-eth
+      - *save-eth-cache
+      - *test-ewasm
 
   Linux-Clang5:
     environment:
@@ -86,3 +173,4 @@ workflows:
     jobs:
       - Linux-Clang5
       - Linux-GCC6-Debug
+      - Ewasm-Tests
