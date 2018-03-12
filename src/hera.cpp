@@ -426,7 +426,6 @@ int hera_set_option(
   char const *name,
   char const *value
 ) {
-
   hera_instance* hera = static_cast<hera_instance*>(instance);
 
   if (strcmp(name, "fallback") == 0) {
