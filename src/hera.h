@@ -45,6 +45,14 @@ extern "C" {
 HERA_EXPORT
 struct evmc_instance* evmc_create_hera(void);
 
+typedef enum wasm_vm {
+  BINARYEN = 0
+/*
+  WABT = 1,
+  WAVM = 2
+*/
+} wasm_vm;
+
 #if __cplusplus
 }
 #endif

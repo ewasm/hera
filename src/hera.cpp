@@ -57,6 +57,7 @@ enum hera_evm_mode {
 struct hera_instance : evmc_instance {
   hera_evm_mode evm_mode;
   bool metering = false;
+  wasm_vm vm = BINARYEN;
 
   hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr}) {}
 };
@@ -401,7 +402,9 @@ int hera_set_option(
   char const *name,
   char const *value
 ) {
+
   hera_instance* hera = static_cast<hera_instance*>(instance);
+
   if (strcmp(name, "fallback") == 0) {
     if (strcmp(value, "true") == 0)
       hera->evm_mode = EVM_FALLBACK;
@@ -428,6 +431,11 @@ int hera_set_option(
 
   if (strcmp(name, "metering") == 0) {
     hera->metering = strcmp(value, "true") == 0;
+    return 1;
+  }
+  if (strcmp(name, "vm") == 0) {
+    if (strcmp(value, "binaryen") == 0)
+      hera->vm = BINARYEN;
     return 1;
   }
   return 0;
