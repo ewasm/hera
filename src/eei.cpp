@@ -427,12 +427,17 @@ inline int64_t maxCallGas(int64_t gas) {
     }
 
     create_message.code_hash = {};
+<<<<<<< HEAD
+=======
+    create_message.gas = result.gasLeft - (result.gasLeft / 64);
+>>>>>>> Hera VM abstraction layer
     create_message.depth = msg.depth + 1;
     create_message.kind = EVMC_CREATE;
     create_message.flags = 0;
 
     evmc_result create_result;
 
+<<<<<<< HEAD
     create_message.gas = maxCallGas(result.gasLeft);
     takeInterfaceGas(create_message.gas);
     takeInterfaceGas(GasSchedule::create);
@@ -441,6 +446,12 @@ inline int64_t maxCallGas(int64_t gas) {
 
     result.gasLeft += create_result.gas_left;
 
+=======
+    takeInterfaceGas(create_message.gas);
+    takeInterfaceGas(GasSchedule::create);
+    context->fn_table->call(&create_result, context, &create_message);
+
+>>>>>>> Hera VM abstraction layer
     if (create_result.status_code == EVMC_SUCCESS) {
       storeUint160(create_result.create_address, resultOffset);
       lastReturnData.clear();
