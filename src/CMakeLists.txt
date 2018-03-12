@@ -6,6 +6,7 @@ find_package(Threads REQUIRED)
 add_library(hera
     eei.cpp eei.h
     hera.cpp hera.h
+    vm.cpp vm.h
 )
 
 option(HERA_DEBUGGING "Display debugging messages during execution." ON)

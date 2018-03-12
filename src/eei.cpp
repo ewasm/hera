@@ -66,14 +66,902 @@ inline int64_t maxCallGas(int64_t gas) {
 
 }
 
-  void EthereumInterface::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
+/*
+ * Abstract EEI methods called by corresponding WASM import.
+ */
+  void EEI::eth_useGas(uint64_t gas) 
+  {
+    ensureCondition(gas <= result.gasLeft, OutOfGas, "Out of gas.");
+
+    result.gasLeft -= gas;
+  }
+  
+  uint64_t EEI::eth_getGasLeft()
+  {
+    HERA_DEBUG << "getGasLeft\n";
+
+    static_assert(is_same<decltype(result.gasLeft), uint64_t>::value, "uint64_t type expected");
+
+    takeInterfaceGas(GasSchedule::base);
+    return result.gasLeft;
+  }
+
+  void EEI::eth_getAddress(uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
+
+    takeInterfaceGas(GasSchedule::base);
+    storeUint160(msg.destination, resultOffset);
+  }
+
+  void EEI::eth_getBalance(uint32_t addressOffset, uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
+
+    evmc_address address = loadUint160(addressOffset);
+    evmc_uint256be result;
+
+    takeInterfaceGas(GasSchedule::balance);
+    context->fn_table->get_balance(&result, context, &address);
+    storeUint128(result, resultOffset);
+  }
+
+  void EEI::eth_getBlockHash(int64_t number, uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getBlockHash " << number << " " << hex << resultOffset << dec << "\n";
+
+    evmc_uint256be blockhash;
+
+    takeInterfaceGas(GasSchedule::blockhash);
+    context->fn_table->get_block_hash(&blockhash, context, number);
+
+    storeUint256(blockhash, resultOffset);
+  }
+
+  uint32_t EEI::eth_getCallDataSize()
+  {
+    HERA_DEBUG << "getCallDataSize\n";
+
+    takeInterfaceGas(GasSchedule::base);
+
+    return static_cast<uint32_t>(msg.input_size);
+  }
+
+  void EEI::eth_callDataCopy(uint32_t resultOffset, uint32_t dataOffset, uint32_t length)
+  {
+    HERA_DEBUG << "callDataCopy" << hex << resultOffset << " " << dataOffset << dec << length << "\n";
+    
+    ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
+    ensureCondition(
+      numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
+      OutOfGas,
+      "Gas charge overflow"
+    );
+    takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+
+    vector<uint8_t> input(msg.input_data, msg.input_data + msg.input_size);
+    storeMemory(input, dataOffset, resultOffset, length);
+  }
+
+  void EEI::eth_getCaller(uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getCaller " << hex << resultOffset << dec << "\n";
+
+    takeInterfaceGas(GasSchedule::base);
+
+    storeUint160(msg.sender, resultOffset);
+  }
+
+  void EEI::eth_getCallValue(uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
+
+    takeInterfaceGas(GasSchedule::base);
+
+    storeUint128(msg.value, resultOffset);
+  }
+
+  void EEI::eth_codeCopy(uint32_t resultOffset, uint32_t codeOffset, uint32_t length)
+  {
+    HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
+
+    ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
+    ensureCondition(
+      numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
+      OutOfGas,
+      "Gas charge overflow"
+    );
+    takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+    storeMemory(code, codeOffset, resultOffset, length);
+  }
+
+  uint32_t EEI::eth_getCodeSize()
+  {
+    HERA_DEBUG << "getCodeSize\n";
+    
+    takeInterfaceGas(GasSchedule::base);
+
+    return static_cast<uint32_t>(code.size());
+  }
+
+  void EEI::eth_externalCodeCopy(uint32_t addressOffset, uint32_t resultOffset, uint32_t codeOffset, uint32_t length)
+  {
+    HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
+
+    ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
+    ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGas, "Gas charge overflow");
+    takeInterfaceGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+
+    evmc_address address = loadUint160(addressOffset);
+    // FIXME: optimise this so not vector needs to be created
+    vector<uint8_t> codeBuffer(length);
+    size_t numCopied = context->fn_table->copy_code(context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
+    fill_n(&codeBuffer[numCopied], length - numCopied, 0);
+
+    storeMemory(codeBuffer, codeOffset, resultOffset, length);
+  }
+
+  uint32_t EEI::eth_getExternalCodeSize(uint32_t addressOffset)
+  {
+    HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
+
+    evmc_address address = loadUint160(addressOffset);
+    takeInterfaceGas(GasSchedule::extcode);
+    return static_cast<uint32_t>(context->fn_table->get_code_size(context, &address));
+  }
+
+  void EEI::eth_getBlockCoinbase(uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
+
+    evmc_tx_context tx_context;
+
+    takeInterfaceGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+    storeUint160(tx_context.block_coinbase, resultOffset);
+  }
+
+  void EEI::eth_getBlockDifficulty(uint32_t offset)
+  {
+    HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
+
+    evmc_tx_context tx_context;
+
+    takeInterfaceGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+    storeUint256(tx_context.block_difficulty, offset);
+  }
+
+  int64_t EEI::eth_getBlockGasLimit()
+  {
+    HERA_DEBUG << "getBlockGasLimit\n";
+
+    evmc_tx_context tx_context;
+
+    takeInterfaceGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+
+    static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
+    
+    return tx_context.block_gas_limit;
+  }
+
+  void EEI::eth_getTxGasPrice(uint32_t valueOffset)
+  {
+    HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
+
+    evmc_tx_context tx_context;
+
+    takeInterfaceGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+    storeUint128(tx_context.tx_gas_price, valueOffset);
+  }
+
+  void EEI::eth_log(
+    uint32_t dataOffset,
+    uint32_t length,
+    uint32_t numberOfTopics,
+    uint32_t topic1,
+    uint32_t topic2,
+    uint32_t topic3,
+    uint32_t topic4)
+  {
+    HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
+
+    ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "log");
+
+    ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
+
+    array<evmc_uint256be, 4> topics;
+
+    topics[0] = (numberOfTopics >= 1) ? loadUint256(topic1) : evmc_uint256be{};
+    topics[1] = (numberOfTopics >= 2) ? loadUint256(topic2) : evmc_uint256be{};
+    topics[2] = (numberOfTopics >= 3) ? loadUint256(topic3) : evmc_uint256be{};
+    topics[3] = (numberOfTopics == 4) ? loadUint256(topic4) : evmc_uint256be{};
+
+    vector<uint8_t> data(length);
+    loadMemory(dataOffset, data, length);
+
+    ensureCondition(ffs(length) + ffs(GasSchedule::logData) <= 64, OutOfGas, "Gas charge overflow");
+    ensureCondition(
+      numeric_limits<uint64_t>::max() - (GasSchedule::log + GasSchedule::logTopic * numberOfTopics) >= static_cast<uint64_t>(length) * GasSchedule::logData,
+      OutOfGas,
+      "Gas charge overflow"
+    );
+    takeInterfaceGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
+    context->fn_table->emit_log(context, &msg.destination, data.data(), length, topics.data(), numberOfTopics);
+  }
+
+  int64_t EEI::eth_getBlockNumber()
+  {
+    HERA_DEBUG << "getBlockNumber\n";
+
+    evmc_tx_context tx_context;
+
+    takeInterfaceGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+
+    static_assert(is_same<decltype(tx_context.block_number), int64_t>::value, "int64_t type expected");
+
+    return tx_context.block_number;
+  }
+
+  int64_t EEI::eth_getBlockTimestamp()
+  {
+    HERA_DEBUG << "getBlockTimestamp\n";
+
+    evmc_tx_context tx_context;
+
+    takeInterfaceGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+
+    static_assert(is_same<decltype(tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
+    
+    return tx_context.block_timestamp;
+  }
+
+  void EEI::eth_getTxOrigin(uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
+
+    evmc_tx_context tx_context;
+
+    takeInterfaceGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+    storeUint160(tx_context.tx_origin, resultOffset);
+  }
+
+  void EEI::eth_storageStore(uint32_t pathOffset, uint32_t valueOffset)
+  {
+    HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
+
+    ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
+
+    evmc_uint256be path = loadUint256(pathOffset);
+    evmc_uint256be value = loadUint256(valueOffset);
+    evmc_uint256be current;
+
+    context->fn_table->get_storage(&current, context, &msg.destination, &path);
+
+    // We do not need to take care about the delete case (gas refund), the client does it.
+    takeInterfaceGas(
+      (isZeroUint256(current) && !isZeroUint256(value)) ?
+      GasSchedule::storageStoreCreate :
+      GasSchedule::storageStoreChange
+    );
+
+    context->fn_table->set_storage(context, &msg.destination, &path, &value);
+  }
+
+  void EEI::eth_storageLoad(uint32_t pathOffset, uint32_t resultOffset)
+  {
+    HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
+
+    evmc_uint256be path = loadUint256(pathOffset);
+    evmc_uint256be result;
+
+    takeInterfaceGas(GasSchedule::storageLoad);
+    context->fn_table->get_storage(&result, context, &msg.destination, &path);
+
+    storeUint256(result, resultOffset);
+  }
+
+
+/* Separate return and revert methods for clarity */
+  void EEI::eth_return(uint32_t dataOffset, uint32_t length)
+  {
+    HERA_DEBUG << "return " << hex << dataOffset << " " << length << dec << "\n";
+    result.isRevert = false;
+    result.returnValue = vector<uint8_t>(length);
+    loadMemory(dataOffset, result.returnValue, length);
+  }
+
+  void EEI::eth_revert(uint32_t dataOffset, uint32_t length)
+  {
+    HERA_DEBUG << "revert " << hex << dataOffset << " " << length << dec << "\n";
+    result.isRevert = true;
+    result.returnValue = vector<uint8_t>(length);
+    loadMemory(dataOffset, result.returnValue, length);
+  }
+
+  uint32_t EEI::eth_getReturnDataSize()
+  {
+    HERA_DEBUG << "getReturnDataSize\n";
+
+    takeInterfaceGas(GasSchedule::base);
+    
+    return static_cast<uint32_t>(lastReturnData.size());
+  }
+
+  void EEI::eth_returnDataCopy(uint32_t resultOffset, uint32_t dataOffset, uint32_t length)
+  {
+    HERA_DEBUG << "returnDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
+
+    takeInterfaceGas(GasSchedule::verylow);
+    storeMemory(lastReturnData, dataOffset, resultOffset, length);
+  }
+
+  uint32_t EEI::eth_create(uint32_t valueOffset, uint32_t dataOffset, uint32_t length, uint32_t resultOffset)
+  {
+    HERA_DEBUG << "create " << hex << valueOffset << " " << dataOffset << " " << length << dec << " " << resultOffset << dec << "\n";
+
+    ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "create");
+
+    evmc_message create_message;
+
+    create_message.destination = {};
+    create_message.sender = msg.destination;
+    create_message.value = loadUint128(valueOffset);
+
+    ensureSenderBalance(create_message.value);
+
+    vector<uint8_t> contract_code(length);
+    if (length > 0) {
+      contract_code.resize(length);
+      loadMemory(dataOffset, contract_code, length);
+      create_message.input_data = contract_code.data();
+      create_message.input_size = length;
+    } else {
+      create_message.input_data = nullptr;
+      create_message.input_size = 0;
+    }
+
+    create_message.code_hash = {};
+    create_message.gas = result.gasLeft - (result.gasLeft / 64);
+    create_message.depth = msg.depth + 1;
+    create_message.kind = EVMC_CREATE;
+    create_message.flags = 0;
+
+    evmc_result create_result;
+
+    takeInterfaceGas(create_message.gas);
+    takeInterfaceGas(GasSchedule::create);
+    context->fn_table->call(&create_result, context, &create_message);
+
+    if (create_result.status_code == EVMC_SUCCESS) {
+      storeUint160(create_result.create_address, resultOffset);
+      lastReturnData.clear();
+    } else if (create_result.output_data) {
+      lastReturnData.assign(create_result.output_data, create_result.output_data + create_result.output_size);
+    } else {
+      lastReturnData.clear();
+    }
+
+    if (create_result.release)
+      create_result.release(&create_result);
+
+    switch (create_result.status_code) {
+      case EVMC_SUCCESS:
+        return 0;
+      case EVMC_REVERT:
+        return 2;
+      default:
+        return 1;
+    }
+  }
+
+  void EEI::eth_selfDestruct(uint32_t addressOffset)
+  {
+    HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
+
+    ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "selfDestruct");
+
+    evmc_address address = loadUint160(addressOffset);
+
+    if (!context->fn_table->account_exists(context, &address))
+      takeInterfaceGas(GasSchedule::callNewAccount);
+    takeInterfaceGas(GasSchedule::selfdestruct);
+    context->fn_table->selfdestruct(context, &msg.destination, &address);   
+  }
+  /* 
+   * yes, i know the call* methods are repetitive. 
+   * this is better than mashing them together into unreadable spaghetti.
+   */
+  uint32_t EEI::eth_call(
+    int64_t gas, 
+    uint32_t addressOffset, 
+    uint32_t valueOffset, 
+    uint32_t dataOffset, 
+    uint32_t dataLength)
+  {
+    heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+
+    evmc_message call_message;
+
+    call_message.destination = loadUint160(addressOffset);
+    call_message.flags = msg.flags;
+    call_message.code_hash = { };
+    call_message.depth = msg.depth + 1;
+    call_message.sender = msg.destination;
+    call_message.value = loadUint128(valueOffset);
+    call_message.kind = EVMC_CALL;
+    
+    if (!isZeroUint256(call_message.value))
+      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "call");
+    ensureSenderBalance(call_message.value);
+
+    HERA_DEBUG << "call " << hex <<
+      gas << " " <<
+      addressOffset << " " <<
+      valueOffset << " " <<
+      dataOffset << " " <<
+      dataLength << dec << "\n";
+    
+    call_message.input_size = dataLength;
+
+    vector<uint8_t> input_data(dataLength);
+    if (dataLength > 0) {
+      input_data.resize(dataLength);
+      loadMemory(dataOffset, input_data, dataLength);
+      call_message.input_data = input_data.data();
+    } else {
+      call_message.input_data = nullptr;
+    }
+
+    evmc_result call_result;
+
+    int64_t extra_gas = 0;
+
+    if (!context->fn_table->account_exists(context, &call_message.destination))
+      extra_gas += GasSchedule::callNewAccount;
+    if (!isZeroUint256(call_message.value))
+      extra_gas += GasSchedule::valuetransfer;
+    
+    extra_gas += GasSchedule::call;
+
+    takeInterfaceGas(extra_gas);
+
+    gas = std::min(gas, maxCallGas(result.gasLeft));
+
+    takeInterfaceGas(gas);
+
+    if (!isZeroUint256(call_message.value))
+      gas += 2300;
+
+    call_message.gas = gas;
+
+    context->fn_table->call(&call_result, context, &call_message);
+
+    if (call_result.output_data)
+      lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
+    else
+      lastReturnData.clear();
+
+    if (call_result.release)
+      call_result.release(&call_result);
+
+    result.gasLeft += call_result.gas_left;
+
+    switch (call_result.status_code) {
+    case EVMC_SUCCESS:
+      return 0;
+    case EVMC_REVERT:
+      return 2;
+    default:
+      return 1;
+    }
+  }
+
+  uint32_t EEI::eth_callCode(
+    int64_t gas,
+    uint32_t addressOffset,
+    uint32_t valueOffset,
+    uint32_t dataOffset,
+    uint32_t dataLength)
+  {
+    heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+
+    evmc_message call_message;
+
+    call_message.destination = loadUint160(addressOffset);
+    call_message.flags = msg.flags;
+    call_message.code_hash = { };
+    call_message.depth = msg.depth + 1;
+    call_message.sender = msg.destination;
+    call_message.value = loadUint128(valueOffset);
+    call_message.kind = EVMC_CALLCODE;
+
+    ensureSenderBalance(call_message.value);
+
+    HERA_DEBUG << "callCode " << hex <<
+      gas << " " <<
+      addressOffset << " " <<
+      valueOffset << " " <<
+      dataOffset << " " <<
+      dataLength << dec << "\n";
+    
+    call_message.input_size = dataLength;
+
+    vector<uint8_t> input_data(dataLength);
+    if (dataLength > 0) {
+      input_data.resize(dataLength);
+      loadMemory(dataOffset, input_data, dataLength);
+      call_message.input_data = input_data.data();
+    } else {
+      call_message.input_data = nullptr;
+    }
+
+    evmc_result call_result;
+
+    int64_t extra_gas = 0;
+
+    if (!isZeroUint256(call_message.value))
+      extra_gas += GasSchedule::valuetransfer;
+    
+    extra_gas += GasSchedule::call;
+
+    takeInterfaceGas(extra_gas);
+
+    gas = std::min(gas, maxCallGas(result.gasLeft));
+
+    takeInterfaceGas(gas);
+
+    if (!isZeroUint256(call_message.value))
+      gas += 2300;
+
+    call_message.gas = gas;
+
+    context->fn_table->call(&call_result, context, &call_message);
+
+    if (call_result.output_data)
+      lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
+    else
+      lastReturnData.clear();
+
+    if (call_result.release)
+      call_result.release(&call_result);
+
+    result.gasLeft += call_result.gas_left;
+
+    switch (call_result.status_code) {
+    case EVMC_SUCCESS:
+      return 0;
+    case EVMC_REVERT:
+      return 2;
+    default:
+      return 1;
+    }
+  }
+
+  uint32_t EEI::eth_callDelegate(int64_t gas, uint32_t addressOffset, uint32_t dataOffset, uint32_t dataLength)
+  {
+    heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+
+    evmc_message call_message;
+
+    call_message.destination = loadUint160(addressOffset);
+    call_message.flags = msg.flags;
+    call_message.code_hash = { };
+    call_message.depth = msg.depth + 1;
+    call_message.sender = msg.sender;
+    call_message.value = msg.value;
+    call_message.kind = EVMC_DELEGATECALL;
+
+    HERA_DEBUG << "callDelegate " << hex <<
+      gas << " " <<
+      addressOffset << " " <<
+      dataOffset << " " <<
+      dataLength << dec << "\n";
+    
+    call_message.input_size = dataLength;
+
+    vector<uint8_t> input_data(dataLength);
+    if (dataLength > 0) {
+      input_data.resize(dataLength);
+      loadMemory(dataOffset, input_data, dataLength);
+      call_message.input_data = input_data.data();
+    } else {
+      call_message.input_data = nullptr;
+    }
+
+    evmc_result call_result;
+
+    int64_t extra_gas = 0;
+
+    if (!isZeroUint256(call_message.value))
+      extra_gas += GasSchedule::valuetransfer;
+    
+    extra_gas += GasSchedule::call;
+
+    takeInterfaceGas(extra_gas);
+
+    gas = std::min(gas, maxCallGas(result.gasLeft));
+
+    takeInterfaceGas(gas);
+
+    if (!isZeroUint256(call_message.value))
+      gas += 2300;
+
+    call_message.gas = gas;
+
+    context->fn_table->call(&call_result, context, &call_message);
+
+    if (call_result.output_data)
+      lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
+    else
+      lastReturnData.clear();
+
+    if (call_result.release)
+      call_result.release(&call_result);
+
+    result.gasLeft += call_result.gas_left;
+
+    switch (call_result.status_code) {
+    case EVMC_SUCCESS:
+      return 0;
+    case EVMC_REVERT:
+      return 2;
+    default:
+      return 1;
+    }
+  }
+
+  uint32_t EEI::eth_callStatic(int64_t gas, uint32_t addressOffset, uint32_t dataOffset, uint32_t dataLength)
+  {
+    heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+
+    evmc_message call_message;
+
+    call_message.destination = loadUint160(addressOffset);
+    call_message.flags = msg.flags;
+    call_message.code_hash = { };
+    call_message.depth = msg.depth + 1;
+    call_message.sender = msg.destination;
+    call_message.value = { };
+    call_message.kind = EVMC_CALL;
+    call_message.flags |= EVMC_STATIC;
+
+    HERA_DEBUG << "callDelegate " << hex <<
+      gas << " " <<
+      addressOffset << " " <<
+      dataOffset << " " <<
+      dataLength << dec << "\n";
+
+    call_message.input_size = dataLength;
+
+    vector<uint8_t> input_data(dataLength);
+    if (dataLength > 0) {
+      input_data.resize(dataLength);
+      loadMemory(dataOffset, input_data, dataLength);
+      call_message.input_data = input_data.data();
+    } else {
+      call_message.input_data = nullptr;
+    }
+
+    evmc_result call_result;
+
+    int64_t extra_gas = 0;
+
+    if (!isZeroUint256(call_message.value))
+      extra_gas += GasSchedule::valuetransfer;
+    
+    extra_gas += GasSchedule::call;
+
+    takeInterfaceGas(extra_gas);
+
+    gas = std::min(gas, maxCallGas(result.gasLeft));
+
+    takeInterfaceGas(gas);
+
+    if (!isZeroUint256(call_message.value))
+      gas += 2300;
+
+    call_message.gas = gas;
+
+    context->fn_table->call(&call_result, context, &call_message);
+
+    if (call_result.output_data)
+      lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
+    else
+      lastReturnData.clear();
+
+    if (call_result.release)
+      call_result.release(&call_result);
+
+    result.gasLeft += call_result.gas_left;
+
+    switch (call_result.status_code) {
+    case EVMC_SUCCESS:
+      return 0;
+    case EVMC_REVERT:
+      return 2;
+    default:
+      return 1;
+    }
+  }
+
+  /*
+   * Abstract helper functions used in the EEI
+   */
+
+  void EEI::takeInterfaceGas(uint64_t gas)
+  {
+    if(!meterGas)
+      return;
+    eth_useGas(gas);
+  }
+  void EEI::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
+  {
+    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+
+    if (!length)
+      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec << "\n";
+
+    for (uint32_t i = 0; i < length; ++i) {
+      dst[length - (i + 1)] = memory_getbyte(srcOffset + i);
+    }
+  }
+
+  void EEI::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
+  {
+    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition(dst.size() >= length, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+
+    if (!length)
+      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec <<"\n";
+
+    for (uint32_t i = 0; i < length; ++i) {
+      dst[i] = memory_getbyte(srcOffset + i);
+    }
+  }
+
+  void EEI::storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length)
+  {
+    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+    ensureCondition(memory_size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+
+    if (!length)
+      HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
+
+    for (uint32_t i = 0; i < length; ++i) {
+      memory_setbyte(dstOffset + length - (i + 1), src[i]);
+    }
+  }
+
+  void EEI::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
+  {
+    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition(src.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+    ensureCondition(memory_size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+
+    if (!length)
+      HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
+
+    for (uint32_t i = 0; i < length; i++) {
+      memory_setbyte(dstOffset + i, src[srcOffset + i]);
+    }
+  }
+
+  /*
+   * Memory Op Wrapper Functions
+   */
+
+  evmc_uint256be EEI::loadUint256(uint32_t srcOffset)
+  {
+    evmc_uint256be dst = {};
+    loadMemory(srcOffset, dst.bytes, 32);
+    return dst;
+  }
+
+  void EEI::storeUint256(evmc_uint256be const& src, uint32_t dstOffset)
+  {
+    storeMemory(src.bytes, dstOffset, 32);
+  }
+
+  evmc_address EEI::loadUint160(uint32_t srcOffset)
+  {
+    evmc_address dst = {};
+    loadMemory(srcOffset, dst.bytes, 20);
+    return dst;
+  }
+
+  void EEI::storeUint160(evmc_address const& src, uint32_t dstOffset)
+  {
+    storeMemory(src.bytes, dstOffset, 20);
+  }
+
+  evmc_uint256be EEI::loadUint128(uint32_t srcOffset)
+  {
+    evmc_uint256be dst = {};
+    loadMemory(srcOffset, dst.bytes + 16, 16);
+    return dst;
+  }
+
+  void EEI::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
+  {
+    // TODO: use a specific error code here?
+    ensureCondition(!exceedsUint128(src), OutOfGas, "Value exceeds 128 bits.");
+    storeMemory(src.bytes + 16, dstOffset, 16);
+  }
+
+  /*
+   * Numeric checks.
+   */
+  void EEI::ensureSenderBalance(evmc_uint256be const& value)
+  {
+    evmc_uint256be balance;
+    context->fn_table->get_balance(&balance, context, &msg.destination);
+    ensureCondition(safeLoadUint128(balance) >= safeLoadUint128(value), OutOfGas, "Out of gas.");
+  }
+
+  unsigned __int128 EEI::safeLoadUint128(evmc_uint256be const& value)
+  {
+    // TODO: use a specific error code here?
+    ensureCondition(!exceedsUint128(value), OutOfGas, "Value exceeds 128 bits.");
+    unsigned __int128 ret = 0;
+    for (unsigned i = 16; i < 32; i++) {
+      ret <<= 8;
+      ret |= value.bytes[i];
+    }
+    return ret;
+  }
+
+  bool EEI::exceedsUint64(evmc_uint256be const& value)
+  {
+    for (unsigned i = 0; i < 24; i++) {
+      if (value.bytes[i])
+        return true;
+    }
+    return false;
+  }
+
+  bool EEI::exceedsUint128(evmc_uint256be const& value)
+  {
+    for (unsigned i = 0; i < 16; i++) {
+      if (value.bytes[i])
+        return true;
+    }
+    return false;
+  }
+
+  bool EEI::isZeroUint256(evmc_uint256be const& value)
+  {
+    for (unsigned i = 0; i < 32; i++) {
+      if (value.bytes[i] != 0)
+        return false;
+    }
+    return true;
+  }
+
+/*
+ * Binaryen-specific implementation of byte-level memory access functions.
+ */
+  uint8_t BinaryenEEI::memory_getbyte(uint32_t offset) { return memory.get<uint8_t>(offset); }
+  void BinaryenEEI::memory_setbyte(uint32_t offset, uint8_t val) { memory.set<uint8_t>(offset, val); }
+  size_t BinaryenEEI::memory_size() { return memory.size(); }
+
+/*
+ * Binaryen EEI imports.
+ */
+  void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
     HERA_DEBUG << "importGlobals\n";
   }
 
 #if HERA_DEBUGGING
-  Literal EthereumInterface::callDebugImport(Import *import, LiteralList& arguments) {
+  Literal BinaryenEEI::callDebugImport(Import *import, LiteralList& arguments) {
     heraAssert(import->module == Name("debug"), "Import namespace error.");
 
     if (import->base == Name("print32")) {
@@ -205,7 +1093,12 @@ inline int64_t maxCallGas(int64_t gas) {
   }
 #endif
 
-  Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
+/*
+ * Binaryen-specific function import callback.
+ * In our case, the number of arguments is verified depending on the import name
+ * and said arguments are passed to the correct abstract interface function.
+ */
+  Literal BinaryenEEI::callImport(Import *import, LiteralList& arguments) {
 #if HERA_DEBUGGING
     if (import->module == Name("debug"))
       // Reroute to debug namespace
@@ -221,7 +1114,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "useGas " << gas << "\n";
 
-      takeGas(gas);
+      eth_useGas(gas);
 
       return Literal();
     }
@@ -229,13 +1122,7 @@ inline int64_t maxCallGas(int64_t gas) {
     if (import->base == Name("getGasLeft")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getGasLeft\n";
-
-      static_assert(is_same<decltype(result.gasLeft), uint64_t>::value, "uint64_t type expected");
-
-      takeInterfaceGas(GasSchedule::base);
-
-      return Literal(result.gasLeft);
+      return Literal(eth_getGasLeft());
     }
 
     if (import->base == Name("getAddress")) {
@@ -243,11 +1130,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
-
-      storeUint160(msg.destination, resultOffset);
-
-      takeInterfaceGas(GasSchedule::base);
+      eth_getAddress(resultOffset);
 
       return Literal();
     }
@@ -258,14 +1141,7 @@ inline int64_t maxCallGas(int64_t gas) {
       uint32_t addressOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
 
-      HERA_DEBUG << "getBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
-
-      evmc_address address = loadUint160(addressOffset);
-      evmc_uint256be result;
-
-      takeInterfaceGas(GasSchedule::balance);
-      context->fn_table->get_balance(&result, context, &address);
-      storeUint128(result, resultOffset);
+      eth_getBalance(addressOffset, resultOffset);
 
       return Literal();
     }
@@ -276,13 +1152,7 @@ inline int64_t maxCallGas(int64_t gas) {
       int64_t number = arguments[0].geti64();
       uint32_t resultOffset = arguments[1].geti32();
 
-      HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
-
-      evmc_uint256be blockhash;
-
-      takeInterfaceGas(GasSchedule::blockhash);
-      context->fn_table->get_block_hash(&blockhash, context, number);
-      storeUint256(blockhash, resultOffset);
+      eth_getBlockHash(number, resultOffset);
 
       return Literal();
     }
@@ -290,11 +1160,7 @@ inline int64_t maxCallGas(int64_t gas) {
     if (import->base == Name("getCallDataSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "callDataSize\n";
-
-      takeInterfaceGas(GasSchedule::base);
-
-      return Literal(static_cast<uint32_t>(msg.input_size));
+      return Literal(eth_getCallDataSize());
     }
 
     if (import->base == Name("callDataCopy")) {
@@ -304,18 +1170,7 @@ inline int64_t maxCallGas(int64_t gas) {
       uint32_t dataOffset = arguments[1].geti32();
       uint32_t length = arguments[2].geti32();
 
-      HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
-
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
-      ensureCondition(
-        numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
-        OutOfGas,
-        "Gas charge overflow"
-      );
-      takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
-
-      vector<uint8_t> input(msg.input_data, msg.input_data + msg.input_size);
-      storeMemory(input, dataOffset, resultOffset, length);
+      eth_callDataCopy(resultOffset, dataOffset, length);
 
       return Literal();
     }
@@ -325,10 +1180,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getCaller " << hex << resultOffset << dec << "\n";
-
-      takeInterfaceGas(GasSchedule::base);
-      storeUint160(msg.sender, resultOffset);
+      eth_getCaller(resultOffset);
 
       return Literal();
     }
@@ -338,10 +1190,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
-
-      takeInterfaceGas(GasSchedule::base);
-      storeUint128(msg.value, resultOffset);
+      eth_getCallValue(resultOffset);
 
       return Literal();
     }
@@ -353,16 +1202,7 @@ inline int64_t maxCallGas(int64_t gas) {
       uint32_t codeOffset = arguments[1].geti32();
       uint32_t length = arguments[2].geti32();
 
-      HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
-
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
-      ensureCondition(
-        numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
-        OutOfGas,
-        "Gas charge overflow"
-      );
-      takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
-      storeMemory(code, codeOffset, resultOffset, length);
+      eth_codeCopy(resultOffset, codeOffset, length);
 
       return Literal();
     }
@@ -370,11 +1210,7 @@ inline int64_t maxCallGas(int64_t gas) {
     if (import->base == Name("getCodeSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getCodeSize\n";
-
-      takeInterfaceGas(GasSchedule::base);
-
-      return Literal(static_cast<uint32_t>(code.size()));
+      return Literal(eth_getCodeSize());
     }
 
     if (import->base == Name("externalCodeCopy")) {
@@ -385,19 +1221,7 @@ inline int64_t maxCallGas(int64_t gas) {
       uint32_t codeOffset = arguments[2].geti32();
       uint32_t length = arguments[3].geti32();
 
-      HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
-
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
-      ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGas, "Gas charge overflow");
-      takeInterfaceGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
-
-      evmc_address address = loadUint160(addressOffset);
-      // FIXME: optimise this so no vector needs to be created
-      vector<uint8_t> codeBuffer(length);
-      size_t numCopied = context->fn_table->copy_code(context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
-      fill_n(&codeBuffer[numCopied], length - numCopied, 0);
-
-      storeMemory(codeBuffer, 0, resultOffset, length);
+      eth_externalCodeCopy(addressOffset, resultOffset, codeOffset, length);
 
       return Literal();
     }
@@ -407,13 +1231,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       uint32_t addressOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
-
-      evmc_address address = loadUint160(addressOffset);
-      takeInterfaceGas(GasSchedule::extcode);
-      size_t code_size = context->fn_table->get_code_size(context, &address);
-
-      return Literal(static_cast<uint32_t>(code_size));
+      return Literal(eth_getExternalCodeSize(addressOffset));
     }
 
     if (import->base == Name("getBlockCoinbase")) {
@@ -421,13 +1239,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-      storeUint160(tx_context.block_coinbase, resultOffset);
+      eth_getBlockCoinbase(resultOffset);
 
       return Literal();
     }
@@ -436,31 +1248,16 @@ inline int64_t maxCallGas(int64_t gas) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t offset = arguments[0].geti32();
-
-      HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-      storeUint256(tx_context.block_difficulty, offset);
-
+      
+      eth_getBlockDifficulty(offset);
+      
       return Literal();
     }
 
     if (import->base == Name("getBlockGasLimit")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
-
-      HERA_DEBUG << "getBlockGasLimit\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-
-      static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
-
-      return Literal(tx_context.block_gas_limit);
+      
+      return Literal(eth_getBlockGasLimit());
     }
 
     if (import->base == Name("getTxGasPrice")) {
@@ -468,13 +1265,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       uint32_t valueOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-      storeUint128(tx_context.tx_gas_price, valueOffset);
+      eth_getTxGasPrice(valueOffset);
 
       return Literal();
     }
@@ -485,62 +1276,26 @@ inline int64_t maxCallGas(int64_t gas) {
       uint32_t dataOffset = arguments[0].geti32();
       uint32_t length = arguments[1].geti32();
       uint32_t numberOfTopics = arguments[2].geti32();
+      uint32_t topic1 = arguments[3].geti32();
+      uint32_t topic2 = arguments[4].geti32();
+      uint32_t topic3 = arguments[5].geti32();
+      uint32_t topic4 = arguments[6].geti32();
 
-      HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
-
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "log");
-
-      ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
-
-      array<evmc_uint256be, 4> topics;
-      for (size_t i = 0; i < numberOfTopics; ++i) {
-        uint32_t topicOffset = arguments[3 + i].geti32();
-        topics[i] = loadUint256(topicOffset);
-      }
-
-      vector<uint8_t> data(length);
-      loadMemory(dataOffset, data, length);
-
-      ensureCondition(ffs(length) + ffs(GasSchedule::logData) <= 64, OutOfGas, "Gas charge overflow");
-      ensureCondition(
-        numeric_limits<uint64_t>::max() - (GasSchedule::log + GasSchedule::logTopic * numberOfTopics) >= static_cast<uint64_t>(length) * GasSchedule::logData,
-        OutOfGas,
-        "Gas charge overflow"
-      );
-      takeInterfaceGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
-      context->fn_table->emit_log(context, &msg.destination, data.data(), length, topics.data(), numberOfTopics);
+      eth_log(dataOffset, length, numberOfTopics, topic1, topic2, topic3, topic4);
 
       return Literal();
     }
 
     if (import->base == Name("getBlockNumber")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
-
-      HERA_DEBUG << "getBlockNumber\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-
-      static_assert(is_same<decltype(tx_context.block_number), int64_t>::value, "int64_t type expected");
-
-      return Literal(tx_context.block_number);
+      
+      return Literal(eth_getBlockNumber());
     }
 
     if (import->base == Name("getBlockTimestamp")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
-
-      HERA_DEBUG << "getBlockTimestamp\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-
-      static_assert(is_same<decltype(tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
-
-      return Literal(tx_context.block_timestamp);
+      
+      return Literal(eth_getBlockTimestamp());
     }
 
     if (import->base == Name("getTxOrigin")) {
@@ -548,13 +1303,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-      storeUint160(tx_context.tx_origin, resultOffset);
+      eth_getTxOrigin(resultOffset);
 
       return Literal();
     }
@@ -564,26 +1313,9 @@ inline int64_t maxCallGas(int64_t gas) {
 
       uint32_t pathOffset = arguments[0].geti32();
       uint32_t valueOffset = arguments[1].geti32();
-
-      HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
-
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
-
-      evmc_uint256be path = loadUint256(pathOffset);
-      evmc_uint256be value = loadUint256(valueOffset);
-      evmc_uint256be current;
-
-      context->fn_table->get_storage(&current, context, &msg.destination, &path);
-
-      // We do not need to take care about the delete case (gas refund), the client does it.
-      takeInterfaceGas(
-        (isZeroUint256(current) && !isZeroUint256(value)) ?
-        GasSchedule::storageStoreCreate :
-        GasSchedule::storageStoreChange
-      );
-
-      context->fn_table->set_storage(context, &msg.destination, &path, &value);
-
+      
+      eth_storageStore(pathOffset, valueOffset);
+      
       return Literal();
     }
 
@@ -593,15 +1325,7 @@ inline int64_t maxCallGas(int64_t gas) {
       uint32_t pathOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
 
-      HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
-
-      evmc_uint256be path = loadUint256(pathOffset);
-      evmc_uint256be result;
-
-      takeInterfaceGas(GasSchedule::storageLoad);
-      context->fn_table->get_storage(&result, context, &msg.destination, &path);
-
-      storeUint256(result, resultOffset);
+      eth_storageLoad(pathOffset, resultOffset);
 
       return Literal();
     }
@@ -609,166 +1333,79 @@ inline int64_t maxCallGas(int64_t gas) {
     if (import->base == Name("return") || import->base == Name("revert")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t offset = arguments[0].geti32();
-      uint32_t size = arguments[1].geti32();
-
-      HERA_DEBUG << (import->base == Name("revert") ? "revert " : "return ") << hex << offset << " " << size << dec << "\n";
-
-      result.returnValue = vector<uint8_t>(size);
-      loadMemory(offset, result.returnValue, size);
-
-      result.isRevert = import->base == Name("revert");
-
+      uint32_t dataOffset = arguments[0].geti32();
+      uint32_t length = arguments[1].geti32();
+      
+      if (import->base == Name("revert"))
+        eth_revert(dataOffset, length);
+      else
+        eth_return(dataOffset, length);
+      
       return Literal();
     }
 
     if (import->base == Name("getReturnDataSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getReturnDataSize\n";
-
-      takeInterfaceGas(GasSchedule::base);
-
-      return Literal(static_cast<uint32_t>(lastReturnData.size()));
+      return Literal(eth_getReturnDataSize());
     }
 
     if (import->base == Name("returnDataCopy")) {
       heraAssert(arguments.size() == 3, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t dataOffset = arguments[0].geti32();
-      uint32_t offset = arguments[1].geti32();
-      uint32_t size = arguments[2].geti32();
-
-      HERA_DEBUG << "returnDataCopy " << hex << dataOffset << " " << offset << " " << size << dec << "\n";
-
-      takeInterfaceGas(GasSchedule::verylow);
-      storeMemory(lastReturnData, offset, dataOffset, size);
-
+      uint32_t resultOffset = arguments[0].geti32();
+      uint32_t dataOffset = arguments[1].geti32();
+      uint32_t length = arguments[2].geti32();
+      
+      eth_returnDataCopy(resultOffset, dataOffset, length);
+      
       return Literal();
     }
-
-    if (
-      import->base == Name("call") ||
-      import->base == Name("callCode") ||
-      import->base == Name("callDelegate") ||
-      import->base == Name("callStatic")
-    ) {
-      if (import->base == Name("call") || import->base == Name("callCode")) {
-        heraAssert(arguments.size() == 5, string("Argument count mismatch in: ") + import->base.str);
-      } else {
-        heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
-      }
+// TODO: implement the fixed call gas logic in that 63/64 PR
+    if (import->base == Name("call")) {
+      heraAssert(arguments.size() == 5, string("Argument count mismatch in: ") + import->base.str);
 
       int64_t gas = arguments[0].geti64();
       uint32_t addressOffset = arguments[1].geti32();
-      uint32_t valueOffset;
-      uint32_t dataOffset;
-      uint32_t dataLength;
+      uint32_t valueOffset = arguments[2].geti32();
+      uint32_t dataOffset = arguments[3].geti32();
+      uint32_t dataLength = arguments[4].geti32();
 
-      heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+      return Literal(eth_call(gas, addressOffset, valueOffset, dataOffset, dataLength));
+    }
 
-      evmc_message call_message;
-      call_message.destination = loadUint160(addressOffset);
-      call_message.flags = msg.flags;
-      call_message.code_hash = {};
-      call_message.depth = msg.depth + 1;
+    if (import->base == Name("callCode")) {
+      heraAssert(arguments.size() == 5, string("Argument count mismatch in: ") + import->base.str);
 
-      if (import->base == Name("call") || import->base == Name("callCode")) {
-        valueOffset = arguments[2].geti32();
-        dataOffset = arguments[3].geti32();
-        dataLength = arguments[4].geti32();
+      int64_t gas = arguments[0].geti64();
+      uint32_t addressOffset = arguments[1].geti32();
+      uint32_t valueOffset = arguments[2].geti32();
+      uint32_t dataOffset = arguments[3].geti32();
+      uint32_t dataLength = arguments[4].geti32();
 
-        call_message.sender = msg.destination;
-        call_message.value = loadUint128(valueOffset);
-        call_message.kind = (import->base == Name("callCode")) ? EVMC_CALLCODE : EVMC_CALL;
+      return Literal(eth_callCode(gas, addressOffset, valueOffset, dataOffset, dataLength));
+    }
 
-        if (import->base == Name("call") && !isZeroUint256(call_message.value)) {
-          ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "call");
-        }
+    if (import->base == Name("callDelegate")) {
+      heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
 
-        ensureSenderBalance(call_message.value);
-      } else {
-        valueOffset = 0;
-        dataOffset = arguments[2].geti32();
-        dataLength = arguments[3].geti32();
+      int64_t gas = arguments[0].geti64();
+      uint32_t addressOffset = arguments[1].geti32();
+      uint32_t dataOffset = arguments[2].geti32();
+      uint32_t dataLength = arguments[3].geti32();
 
-        if (import->base == Name("callDelegate")) {
-          call_message.sender = msg.sender;
-          call_message.value = msg.value;
-          call_message.kind = EVMC_DELEGATECALL;
-        } else if (import->base == Name("callStatic")) {
-          call_message.sender = msg.destination;
-          call_message.value = {};
-          call_message.kind = EVMC_CALL;
-          call_message.flags |= EVMC_STATIC;
-        }
-      }
+      return Literal(eth_callDelegate(gas, addressOffset, dataOffset, dataLength));
+    }
 
-      HERA_DEBUG <<
-        import->base << " " << hex <<
-        gas << " " <<
-        addressOffset << " " <<
-        valueOffset << " " <<
-        dataOffset << " " <<
-        dataLength << dec << "\n";
+    if (import->base == Name("callStatic")) {
+      heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
 
-      // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
-      vector<uint8_t> input_data;
-      if (dataLength) {
-        input_data.resize(dataLength);
-        loadMemory(dataOffset, input_data, dataLength);
-        call_message.input_data = input_data.data();
-        call_message.input_size = dataLength;
-      } else {
-        call_message.input_data = nullptr;
-        call_message.input_size = 0;
-      }
+      int64_t gas = arguments[0].geti64();
+      uint32_t addressOffset = arguments[1].geti32();
+      uint32_t dataOffset = arguments[2].geti32();
+      uint32_t dataLength = arguments[3].geti32();
 
-      evmc_result call_result;
-      int64_t extra_gas = 0;
-
-      if (import->base == Name("call") && !context->fn_table->account_exists(context, &call_message.destination))
-        extra_gas += GasSchedule::callNewAccount;
-      if (!isZeroUint256(call_message.value))
-        extra_gas += GasSchedule::valuetransfer;
-      extra_gas += GasSchedule::call;
-
-      // this check is in EIP150 but not in the YellowPaper
-      takeInterfaceGas(extra_gas);
-
-      // retain one 64th gas (EIP150)
-      gas = std::min(gas, maxCallGas(result.gasLeft));
-
-      takeInterfaceGas(gas);
-
-      // add 2300 gas stipend for value transfers
-      if (!isZeroUint256(call_message.value))
-        gas += 2300;
-
-      call_message.gas = gas;
-
-      context->fn_table->call(&call_result, context, &call_message);
-
-      if (call_result.output_data) {
-        lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
-      } else {
-        lastReturnData.clear();
-      }
-
-      if (call_result.release)
-        call_result.release(&call_result);
-
-      /* Return unspent gas */
-      result.gasLeft += call_result.gas_left;
-
-      switch (call_result.status_code) {
-      case EVMC_SUCCESS:
-        return Literal(uint32_t(0));
-      case EVMC_REVERT:
-        return Literal(uint32_t(2));
-      default:
-        return Literal(uint32_t(1));
-      }
+      return Literal(eth_callStatic(gas, addressOffset, dataOffset, dataLength));
     }
 
     if (import->base == Name("create")) {
@@ -779,67 +1416,7 @@ inline int64_t maxCallGas(int64_t gas) {
       uint32_t length = arguments[2].geti32();
       uint32_t resultOffset = arguments[3].geti32();
 
-      HERA_DEBUG << "create " << hex << valueOffset << " " << dataOffset << " " << length << dec << " " << resultOffset << dec << "\n";
-
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "create");
-
-      evmc_message create_message;
-
-      create_message.destination = {};
-      create_message.sender = msg.destination;
-      create_message.value = loadUint128(valueOffset);
-
-      ensureSenderBalance(create_message.value);
-
-      // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
-      vector<uint8_t> contract_code;
-      if (length) {
-        contract_code.resize(length);
-        loadMemory(dataOffset, contract_code, length);
-        create_message.input_data = contract_code.data();
-        create_message.input_size = length;
-      } else {
-        create_message.input_data = nullptr;
-        create_message.input_size = 0;
-      }
-
-      create_message.code_hash = {};
-      create_message.depth = msg.depth + 1;
-      create_message.kind = EVMC_CREATE;
-      create_message.flags = 0;
-
-      evmc_result create_result;
-
-      takeInterfaceGas(GasSchedule::create);
-
-      create_message.gas = maxCallGas(result.gasLeft);
-      takeInterfaceGas(create_message.gas);
-
-      context->fn_table->call(&create_result, context, &create_message);
-
-      /* Return unspent gas */
-      result.gasLeft += create_result.gas_left;
-
-      if (create_result.status_code == EVMC_SUCCESS) {
-        storeUint160(create_result.create_address, resultOffset);
-        lastReturnData.clear();
-      } else if (create_result.output_data) {
-        lastReturnData.assign(create_result.output_data, create_result.output_data + create_result.output_size);
-      } else {
-        lastReturnData.clear();
-      }
-
-      if (create_result.release)
-        create_result.release(&create_result);
-
-      switch (create_result.status_code) {
-      case EVMC_SUCCESS:
-        return Literal(uint32_t(0));
-      case EVMC_REVERT:
-        return Literal(uint32_t(2));
-      default:
-        return Literal(uint32_t(1));
-      }
+      return Literal(eth_create(valueOffset, dataOffset, length, resultOffset)); 
     }
 
     if (import->base == Name("selfDestruct")) {
@@ -847,181 +1424,11 @@ inline int64_t maxCallGas(int64_t gas) {
 
       uint32_t addressOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
-
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "selfDestruct");
-
-      evmc_address address = loadUint160(addressOffset);
-
-      if (!context->fn_table->account_exists(context, &address))
-        takeInterfaceGas(GasSchedule::callNewAccount);
-      takeInterfaceGas(GasSchedule::selfdestruct);
-      context->fn_table->selfdestruct(context, &msg.destination, &address);
+      eth_selfDestruct(addressOffset);
 
       return Literal();
     }
 
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
-  }
-
-  void EthereumInterface::takeGas(uint64_t gas)
-  {
-    ensureCondition(gas <= result.gasLeft, OutOfGas, "Out of gas.");
-    result.gasLeft -= gas;
-  }
-
-  void EthereumInterface::takeInterfaceGas(uint64_t gas)
-  {
-    if (!meterGas)
-      return;
-    takeGas(gas);
-  }
-
-  /*
-   * Memory Operations
-   */
-
-  void EthereumInterface::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
-  {
-    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
-
-    if (!length)
-      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec << "\n";
-
-    for (uint32_t i = 0; i < length; ++i) {
-      dst[length - (i + 1)] = memory.get<uint8_t>(srcOffset + i);
-    }
-  }
-
-  void EthereumInterface::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
-  {
-    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
-    ensureCondition(dst.size() >= length, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
-
-    if (!length)
-      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec <<"\n";
-
-    for (uint32_t i = 0; i < length; ++i) {
-      dst[i] = memory.get<uint8_t>(srcOffset + i);
-    }
-  }
-
-  void EthereumInterface::storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length)
-  {
-    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
-    ensureCondition(memory.size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
-
-    if (!length)
-      HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
-
-    for (uint32_t i = 0; i < length; ++i) {
-      memory.set<uint8_t>(dstOffset + length - (i + 1), src[i]);
-    }
-  }
-
-  void EthereumInterface::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
-  {
-    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
-    ensureCondition(src.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
-    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
-    ensureCondition(memory.size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
-
-    if (!length)
-      HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
-
-    for (uint32_t i = 0; i < length; i++) {
-      memory.set<uint8_t>(dstOffset + i, src[srcOffset + i]);
-    }
-  }
-
-  /*
-   * Memory Op Wrapper Functions
-   */
-
-  evmc_uint256be EthereumInterface::loadUint256(uint32_t srcOffset)
-  {
-    evmc_uint256be dst = {};
-    loadMemory(srcOffset, dst.bytes, 32);
-    return dst;
-  }
-
-  void EthereumInterface::storeUint256(evmc_uint256be const& src, uint32_t dstOffset)
-  {
-    storeMemory(src.bytes, dstOffset, 32);
-  }
-
-  evmc_address EthereumInterface::loadUint160(uint32_t srcOffset)
-  {
-    evmc_address dst = {};
-    loadMemory(srcOffset, dst.bytes, 20);
-    return dst;
-  }
-
-  void EthereumInterface::storeUint160(evmc_address const& src, uint32_t dstOffset)
-  {
-    storeMemory(src.bytes, dstOffset, 20);
-  }
-
-  evmc_uint256be EthereumInterface::loadUint128(uint32_t srcOffset)
-  {
-    evmc_uint256be dst = {};
-    loadMemory(srcOffset, dst.bytes + 16, 16);
-    return dst;
-  }
-
-  void EthereumInterface::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
-  {
-    // TODO: use a specific error code here?
-    ensureCondition(!exceedsUint128(src), OutOfGas, "Value exceeds 128 bits.");
-    storeMemory(src.bytes + 16, dstOffset, 16);
-  }
-
-  /*
-   * Utilities
-   */
-  void EthereumInterface::ensureSenderBalance(evmc_uint256be const& value)
-  {
-    evmc_uint256be balance;
-    context->fn_table->get_balance(&balance, context, &msg.destination);
-    ensureCondition(safeLoadUint128(balance) >= safeLoadUint128(value), OutOfGas, "Out of gas.");
-  }
-
-  unsigned __int128 EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
-  {
-    // TODO: use a specific error code here?
-    ensureCondition(!exceedsUint128(value), OutOfGas, "Value exceeds 128 bits.");
-    unsigned __int128 ret = 0;
-    for (unsigned i = 16; i < 32; i++) {
-      ret <<= 8;
-      ret |= value.bytes[i];
-    }
-    return ret;
-  }
-
-  bool EthereumInterface::exceedsUint64(evmc_uint256be const& value)
-  {
-    for (unsigned i = 0; i < 24; i++) {
-      if (value.bytes[i])
-        return true;
-    }
-    return false;
-  }
-
-  bool EthereumInterface::exceedsUint128(evmc_uint256be const& value)
-  {
-    for (unsigned i = 0; i < 16; i++) {
-      if (value.bytes[i])
-        return true;
-    }
-    return false;
-  }
-
-  bool EthereumInterface::isZeroUint256(evmc_uint256be const& value)
-  {
-    for (unsigned i = 0; i < 32; i++) {
-      if (value.bytes[i] != 0)
-        return false;
-    }
-    return true;
   }
 }
