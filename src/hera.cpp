@@ -162,16 +162,12 @@ void execute(
   instance.callExport(main, args);
 }
 
-}
-
-extern "C" {
-
-static void evm_destroy_result(evm_result const* result)
+void evm_destroy_result(evm_result const* result)
 {
   delete[] result->output_data;
 }
 
-static evm_result evm_execute(
+evm_result evm_execute(
   evm_instance* instance,
   evm_context* context,
   enum evm_revision rev,
@@ -251,7 +247,7 @@ static evm_result evm_execute(
   return ret;
 }
 
-static int evm_set_option(
+int evm_set_option(
   evm_instance* instance,
   char const* name,
   char const* value
@@ -264,11 +260,15 @@ static int evm_set_option(
   return 0;
 }
 
-static void evm_destroy(evm_instance* instance)
+void evm_destroy(evm_instance* instance)
 {
   hera_instance* hera = static_cast<hera_instance*>(instance);
   delete hera;
 }
+
+} // anonymous namespace
+
+extern "C" {
 
 evm_instance* hera_create()
 {
