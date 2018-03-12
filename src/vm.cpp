@@ -22,41 +22,50 @@
  * SOFTWARE.
  */
 
-#ifndef __HERA_H
-#define __HERA_H
+#include "vm.h"
 
-#include <evmc/evmc.h>
+using namespace std;
+using namespace wasm;
+using namespace HeraVM;
 
-#if defined _MSC_VER || defined __MINGW32__
-# define HERA_EXPORT __declspec(dllexport)
-# define HERA_IMPORT __declspec(dllimport)
-#elif __GNU__ >= 4
-# define HERA_EXPORT __attribute__((visibility("default")))
-# define HERA_IMPORT __attribute__((visibility("default")))
-#else
-# define HERA_EXPORT
-# define HERA_IMPORT
-#endif
+int BinaryenVM::execute()
+{
+  Module module;
 
-#if __cplusplus
-extern "C" {
-#endif
+  try {
+    WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(this->code), false);
+    parser.read();
+  } catch (ParseException &p) {
+    /* TODO: Potentially introduce abstracted VM exceptions */
+    heraAssert(
+      false, 
+      "Error in parsing WASM binary: '" +
+      p.text + 
+      "' at " + 
+      to_string(p.line) + 
+      ":" + 
+      to_string(p.col));
+  }
 
-HERA_EXPORT
-struct evmc_instance* evmc_create_hera(void);
+  /* Validation */
+  ensureCondition(
+    WasmValidator().validate(module),
+    ContractValidationFailure, 
+    "Module is not valid."
+  );
+  ensureCondition(
+    module.getExportOrNull(Name("main")) != nullptr,
+    ContractValidationFailure,
+    "Contract entry point (\"main\") missing."
+  );
 
-typedef enum wasm_vm {
-#if WABT_SUPPORTED
-  VM_WABT,
-#endif
-#if WAVM_SUPPORTED
-  VM_WAVM,
-#endif
-  VM_BINARYEN
-} wasm_vm;
+  BinaryenEEI interface(context, code, msg, output, meterGas);
 
-#if __cplusplus
+  ModuleInstance instance(module, &interface);
+
+  Name main = Name("main");
+  LiteralList args;
+  instance.callExport(main, args);
+
+  return 0;
 }
-#endif
-
-#endif

@@ -44,6 +44,7 @@
 #include "hera.h"
 #include "eei.h"
 #include "exceptions.h"
+#include "vm.h"
 
 using namespace std;
 using namespace wasm;
@@ -62,6 +63,7 @@ enum hera_evm_mode {
 struct hera_instance : evmc_instance {
   hera_evm_mode evm_mode = EVM_REJECT;
   bool metering = false;
+  wasm_vm vm = VM_BINARYEN;
 
   hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr}) {}
 };
@@ -240,66 +242,6 @@ vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
   return ret;
 }
 
-void execute(
-  evmc_context* context,
-  vector<uint8_t> const& code,
-  vector<uint8_t> const& state_code,
-  evmc_message const& msg,
-  ExecutionResult & result,
-  bool meterInterfaceGas
-) {
-#if HERA_DEBUGGING
-  cerr << "Executing..." << endl;
-#endif
-
-  Module module;
-
-  // Load module
-  try {
-    WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(code), false);
-    parser.read();
-  } catch (ParseException &p) {
-    ensureCondition(
-      false,
-      ContractValidationFailure,
-      "Error in parsing WASM binary: '" +
-      p.text +
-      "' at " +
-      to_string(p.line) +
-      ":" +
-      to_string(p.col)
-    );
-  }
-
-  // Print
-  // WasmPrinter::printModule(module);
-
-  // Validate
-  ensureCondition(
-    WasmValidator().validate(module),
-    ContractValidationFailure,
-    "Module is not valid."
-  );
-
-  // This should be caught during deployment time by the Sentinel.
-  // TODO: validate for other conditions too?
-  ensureCondition(
-    module.getExportOrNull(Name("main")) != nullptr,
-    ContractValidationFailure,
-    "Contract entry point (\"main\") missing."
-  );
-
-  // NOTE: DO NOT use the optimiser here, it will conflict with metering
-
-  // Interpet
-  EthereumInterface interface(context, state_code, msg, result, meterInterfaceGas);
-  ModuleInstance instance(module, &interface);
-
-  Name main = Name("main");
-  LiteralList args;
-  instance.callExport(main, args);
-}
-
 void hera_destroy_result(evmc_result const* result)
 {
   delete[] result->output_data;
@@ -323,13 +265,7 @@ evmc_result hera_execute(
     heraAssert(msg->gas >= 0, "Negative startgas?");
 
     bool meterInterfaceGas = true;
-    ExecutionResult result;
-    result.gasLeft = (uint64_t)msg->gas;
 
-    // the bytecode residing in the state - this will be used by interface methods (i.e. codecopy)
-    vector<uint8_t> state_code(code, code + code_size);
-
-    // the actual executable code - this can be modified (metered or evm2wasm compiled)
     vector<uint8_t> _code(code, code + code_size);
 
     // ensure we can only handle WebAssembly version 1
@@ -371,18 +307,40 @@ evmc_result hera_execute(
       ensureCondition(_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
     }
 
-    execute(context, _code, state_code, *msg, result, meterInterfaceGas);
+    //execute(context, _code, *msg, result);
+    ExecutionResult vmresult;
+    
+    /* This should probably be cleaned up a bit */
+    switch (hera->vm) {
+    #if WABT_SUPPORTED
+    case VM_WABT:
+      WabtVM vm = WabtVM(_code, *msg, context, meterInterfaceGas);
+      vm.execute();
+      vmresult = vm.getResult();
+    #endif
+    #if WAVM_SUPPORTED
+    case VM_WAVM:
+      WavmVM vm = WavmVM(_code, *msg, context, meterInterfaceGas);
+      vm.execute();
+      vmresult = vm.getResult();
+    #endif
+    default:
+      BinaryenVM vm = BinaryenVM(_code, *msg, context, meterInterfaceGas);
+      vm.execute();
+      vmresult = vm.getResult();
+    }
 
     // copy call result
-    if (result.returnValue.size() > 0) {
+    if (vmresult.returnValue.size() > 0) {
       vector<uint8_t> returnValue;
 
-      if (msg->kind == EVMC_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
-        // Meter the deployed code if it is WebAssembly
-        returnValue = hera->metering ? sentinel(context, result.returnValue) : move(result.returnValue);
+      if (msg->kind == EVMC_CREATE && !vmresult.isRevert && hasWasmPreamble(vmresult.returnValue)) {
+        // Meter the deployed code
+        returnValue = hera->metering ? sentinel(context, vmresult.returnValue) : move(vmresult.returnValue);
+
         ensureCondition(returnValue.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
       } else {
-        returnValue = move(result.returnValue);
+        returnValue = move(vmresult.returnValue);
       }
 
       uint8_t* output_data = new uint8_t[returnValue.size()];
@@ -393,8 +351,8 @@ evmc_result hera_execute(
       ret.release = hera_destroy_result;
     }
 
-    ret.status_code = result.isRevert ? EVMC_REVERT : EVMC_SUCCESS;
-    ret.gas_left = result.gasLeft;
+    ret.status_code = vmresult.isRevert ? EVMC_REVERT : EVMC_SUCCESS;
+    ret.gas_left = vmresult.gasLeft;
   } catch (OutOfGasException const& e) {
     ret.status_code = EVMC_OUT_OF_GAS;
 #if HERA_DEBUGGING
@@ -417,6 +375,7 @@ evmc_result hera_execute(
 #endif
   } catch (InternalErrorException const& e) {
     ret.status_code = EVMC_INTERNAL_ERROR;
+
 #if HERA_DEBUGGING
     cerr << "InternalError: " << e.what() << endl;
 #endif
@@ -440,7 +399,9 @@ int hera_set_option(
   char const *name,
   char const *value
 ) {
+
   hera_instance* hera = static_cast<hera_instance*>(instance);
+
   if (strcmp(name, "fallback") == 0) {
     if (strcmp(value, "true") == 0)
       hera->evm_mode = EVM_FALLBACK;
@@ -479,6 +440,19 @@ int hera_set_option(
 
   if (strcmp(name, "metering") == 0) {
     hera->metering = strcmp(value, "true") == 0;
+    return 1;
+  }
+  if (strcmp(name, "vm") == 0) {
+    if (strcmp(value, "binaryen") == 0)
+      hera->vm = VM_BINARYEN;
+#if WABT_SUPPORTED
+    if (strcmp(value, "wabt") == 0)
+      hera->vm = VM_WABT;
+#endif
+#if WAVM_SUPPORTED
+    if (strcmp(value, "wavm") == 0)
+      hera->vm = VM_WAVM;
+#endif
     return 1;
   }
   return 0;
