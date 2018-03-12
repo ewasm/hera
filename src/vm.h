@@ -22,41 +22,51 @@
  * SOFTWARE.
  */
 
-#ifndef __HERA_H
-#define __HERA_H
+#ifndef __VM_H
+#define __VM_H
 
-#include <evmc/evmc.h>
+#include "hera.h"
+#include "eei.h" /* for ExecutionResult */
 
-#if defined _MSC_VER || defined __MINGW32__
-# define HERA_EXPORT __declspec(dllexport)
-# define HERA_IMPORT __declspec(dllimport)
-#elif __GNU__ >= 4
-# define HERA_EXPORT __attribute__((visibility("default")))
-# define HERA_IMPORT __attribute__((visibility("default")))
-#else
-# define HERA_EXPORT
-# define HERA_IMPORT
-#endif
+#include <evmc.h>
 
-#if __cplusplus
-extern "C" {
-#endif
+using namespace std;
+using namespace HeraVM;
 
-HERA_EXPORT
-struct evmc_instance* evmc_create_hera(void);
+class WasmVM
+{
+private:
+	wasm_vm vm;
+	vector<uint8_t> code;
+	evmc_message msg;
+	evmc_context *context;
 
-typedef enum wasm_vm {
-#if WABT_SUPPORTED
-  WABT,
-#endif
-#if WAVM_SUPPORTED
-  WAVM,
-#endif
-  BINARYEN
-} wasm_vm;
+	int runBinaryen();
+	#if WABT_SUPPORTED
+	int runWabt();
+	#endif
+	#if WAVM_SUPPORTED
+	int runWavm();
+	#endif
 
-#if __cplusplus
-}
-#endif
+public:
+	WasmVM(wasm_vm const vm, 
+	           vector<uint8_t> const& code, 
+		   evm_message const& msg,
+		   evm_context *context)
+	{
+		this->vm = vm;
+		this->msg = msg;
+		this->output.gasLeft = (uint64_t)msg.gas;
+		this->context = context;
+		for (size_t i = 0; i < code.size(); ++i)
+			this->code.push_back(code[i]);
+	}
+
+	void execute();
+
+	struct ExecutionResult output;
+	int exitStatus;
+};
 
 #endif

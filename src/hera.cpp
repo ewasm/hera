@@ -42,6 +42,7 @@
 #include "hera.h"
 #include "eei.h"
 #include "exceptions.h"
+#include "vm.h"
 
 using namespace std;
 using namespace wasm;
@@ -301,8 +302,10 @@ evmc_result hera_execute(
     ExecutionResult result;
     result.gasLeft = (uint64_t)msg->gas;
 
-    vector<uint8_t> _code(code, code + code_size);
+  vector<uint8_t> _code(code, code + code_size);
 
+  try {
+    heraAssert(msg->gas >= 0, "Negative startgas?");
     // ensure we can only handle WebAssembly version 1
     if (!hasWasmPreamble(_code)) {
       switch (hera->evm_mode) {
@@ -333,18 +336,20 @@ evmc_result hera_execute(
       ensureCondition(_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
     }
 
-    execute(context, _code, *msg, result, meterInterfaceGas);
+    //execute(context, _code, *msg, result);
+    WasmVM vm = WasmVM(hera->vm, _code, *msg, context);
+    vm.execute();
 
     // copy call result
-    if (result.returnValue.size() > 0) {
+    if (vm.output.returnValue.size() > 0) {
       vector<uint8_t> returnValue;
 
-      if (msg->kind == EVMC_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
+      if (msg->kind == EVMC_CREATE && !vm.output.isRevert && hasWasmPreamble(vm.output.returnValue)) {
         // Meter the deployed code
-        returnValue = hera->metering ? sentinel(context, result.returnValue) : move(result.returnValue);
-        ensureCondition(returnValue.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
+        returnValue = hera->metering ? sentinel(context, vm.output.returnValue) : move(vm.output.returnValue);
+        heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
       } else {
-        returnValue = move(result.returnValue);
+        returnValue = move(vm.output.returnValue);
       }
 
       uint8_t* output_data = new uint8_t[returnValue.size()];
@@ -355,8 +360,8 @@ evmc_result hera_execute(
       ret.release = hera_destroy_result;
     }
 
-    ret.status_code = result.isRevert ? EVMC_REVERT : EVMC_SUCCESS;
-    ret.gas_left = result.gasLeft;
+    ret.status_code = vm.output.isRevert ? EVMC_REVERT : EVMC_SUCCESS;
+    ret.gas_left = vm.output.gasLeft;
   } catch (OutOfGasException const& e) {
     ret.status_code = EVMC_OUT_OF_GAS;
 #if HERA_DEBUGGING
@@ -402,7 +407,6 @@ int hera_set_option(
   char const *name,
   char const *value
 ) {
-
   hera_instance* hera = static_cast<hera_instance*>(instance);
 
   if (strcmp(name, "fallback") == 0) {
@@ -436,6 +440,14 @@ int hera_set_option(
   if (strcmp(name, "vm") == 0) {
     if (strcmp(value, "binaryen") == 0)
       hera->vm = BINARYEN;
+#if WABT_SUPPORTED
+    if (strcmp(value, "wabt") == 0)
+      hera->vm = WABT;
+#endif
+#if WAVM_SUPPORTED
+    if (strcmp(value, "wavm") == 0)
+      hera->vm = WAVM;
+#endif
     return 1;
   }
   return 0;

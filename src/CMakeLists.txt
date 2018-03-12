@@ -7,6 +7,7 @@ add_library(hera
     eei.cpp eei.h
     evm-instructions.cpp evm-instructions.h
     hera.cpp hera.h
+    vm.cpp vm.h
 )
 
 option(HERA_DEBUGGING "Display debugging messages during execution." ON)

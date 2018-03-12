@@ -22,41 +22,56 @@
  * SOFTWARE.
  */
 
-#ifndef __HERA_H
-#define __HERA_H
+#include "vm.h"
 
-#include <evmc/evmc.h>
+using namespace std;
+using namespace wasm;
+using namespace HeraVM;
 
-#if defined _MSC_VER || defined __MINGW32__
-# define HERA_EXPORT __declspec(dllexport)
-# define HERA_IMPORT __declspec(dllimport)
-#elif __GNU__ >= 4
-# define HERA_EXPORT __attribute__((visibility("default")))
-# define HERA_IMPORT __attribute__((visibility("default")))
-#else
-# define HERA_EXPORT
-# define HERA_IMPORT
-#endif
-
-#if __cplusplus
-extern "C" {
-#endif
-
-HERA_EXPORT
-struct evmc_instance* evmc_create_hera(void);
-
-typedef enum wasm_vm {
-#if WABT_SUPPORTED
-  WABT,
-#endif
-#if WAVM_SUPPORTED
-  WAVM,
-#endif
-  BINARYEN
-} wasm_vm;
-
-#if __cplusplus
+void WasmVM::execute() 
+{
+	switch (this->vm) {
+	case BINARYEN:
+		this->exitStatus = this->runBinaryen();
+		break;
+	#ifdef WABT_SUPPORTED
+	case WABT:
+		this->exitStatus = this->runWabt();
+		break;
+	#endif
+	#ifdef WAVM_SUPPORTED
+	case WAVM:
+		this->exitStatus = this->runWavm();
+		break;
+	#endif
+	}
 }
-#endif
 
-#endif
+int WasmVM::runBinaryen()
+{
+	Module module;
+
+	try {
+		WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(this->code), false);
+		parser.read();
+	} catch (ParseException &p) {
+		return 1;
+	}
+
+	/* Validation */
+	heraAssert(WasmValidator().validate(module), "Module is not valid.");
+	heraAssert(module.getExportOrNull(Name("main")) != nullptr, 
+					      "Contract entry point (\"main\") missing.");
+	
+	EthereumInterface interface(this->context,
+				        this->code,
+					this->msg,
+					this->output);
+	ModuleInstance instance(module, &interface);
+
+	Name main = Name("main");
+	LiteralList args;
+	instance.callExport(main, args);
+
+	return 0;
+}
