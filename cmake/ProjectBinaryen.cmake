@@ -4,6 +4,7 @@ endif()
 set(ProjectBinaryenIncluded TRUE)
 
 include(ExternalProject)
+include(GNUInstallDirs)
 
 if(MSVC)
     # Overwrite build and install commands to force Release build on MSVC.
@@ -14,7 +15,7 @@ elseif(CMAKE_GENERATOR STREQUAL Ninja)
     # Otherwise it will go crazy and run out of memory.
     if($ENV{BUILD_PARALLEL_JOBS})
         set(build_command BUILD_COMMAND cmake --build <BINARY_DIR> -- -j $ENV{BUILD_PARALLEL_JOBS})
-        message(STATUS "Ninja $ENV{BUILD_PARALLEL_JOBS}") 
+        message(STATUS "Ninja $ENV{BUILD_PARALLEL_JOBS}")
     endif()
 endif()
 
