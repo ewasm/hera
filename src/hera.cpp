@@ -25,6 +25,9 @@
 #include <vector>
 #include <stdexcept>
 #include <cstdlib>
+#include <unistd.h>
+#include <string.h>
+#include <fstream>
 
 #include <pass.h>
 #include <wasm.h>
@@ -113,7 +116,52 @@ vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
 #endif
 }
 
-#if HERA_EVM2WASM
+#if HERA_EVM2WASM_JS
+// NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
+string mktemp_string(string pattern) {
+  const unsigned long len = pattern.size();
+  char tmp[len];
+  strncpy(tmp, pattern.data(), len);
+  if (!mktemp(tmp))
+     return string();
+  return string(tmp, len);
+}
+
+vector<uint8_t> evm2wasm(evm_context* context, vector<uint8_t> const& input) {
+  (void)context;
+
+  string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXX");
+  string fileWASM = mktemp_string("/tmp/hera.evm2wasm.wasm.XXXXXX");
+
+  if (fileEVM.size() == 0 || fileWASM.size() == 0)
+    return vector<uint8_t>();
+
+  ofstream os;
+  os.open(fileEVM);
+  // print as a hex sting
+  os << hex;
+  for (uint8_t byte: input)
+    os << static_cast<int>(byte);
+  os.close();
+
+  string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM;
+  int ret = system(cmd.data());
+  unlink(fileEVM.data());
+
+  if (ret != 0) {
+    unlink(fileWASM.data());
+    return vector<uint8_t>();
+  }
+
+  ifstream is(fileWASM);
+  string str((istreambuf_iterator<char>(is)),
+                 istreambuf_iterator<char>());
+
+  unlink(fileWASM.data());
+
+  return vector<uint8_t>(str.begin(), str.end());
+}
+#elif HERA_EVM2WASM
 vector<uint8_t> evm2wasm(evm_context* context, vector<uint8_t> const& input) {
 #if HERA_DEBUGGING
   cerr << "Calling evm2wasm (input " << input.size() << " bytes)..." << endl;
@@ -211,7 +259,7 @@ evm_result evm_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
-#if HERA_EVM2WASM
+#if HERA_EVM2WASM_JS || HERA_EVM2WASM
       (void)instance;
       // Translate EVM bytecode to WASM
       _code = evm2wasm(context, vector<uint8_t>(code, code + code_size));
