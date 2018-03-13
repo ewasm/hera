@@ -25,12 +25,24 @@
 #ifndef __HERA_H
 #define __HERA_H
 
+#if defined _MSC_VER || defined __MINGW32__
+# define HERA_EXPORT __declspec(dllexport)
+# define HERA_IMPORT __declspec(dllimport)
+#elif __GNU__ >= 4
+# define HERA_EXPORT __attribute__((visibility("default")))
+# define HERA_IMPORT __attribute__((visibility("default")))
+#else
+# define HERA_EXPORT
+# define HERA_IMPORT
+#endif
+
 #if __cplusplus
 extern "C" {
 #endif
 
 struct evm_instance;
 
+HERA_EXPORT
 struct evm_instance* hera_create(void);
 
 #if __cplusplus
