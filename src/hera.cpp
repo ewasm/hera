@@ -56,6 +56,10 @@ struct hera_instance : evm_instance {
 
 namespace {
 
+bool hasWasmPreamble(vector<uint8_t> const& _input) {
+  return _input.size() >= 5 && _input[0] == 0 && _input[1] == 'a' && _input[2] == 's' && _input[3] == 'm' && _input[4] == 1;
+}
+
 #if HERA_METERING_CONTRACT || HERA_EVM2WASM
 vector<uint8_t> callSystemContract(
   evm_context* context,
@@ -259,7 +263,7 @@ evm_result evm_execute(
     vector<uint8_t> _code(code, code + code_size);
 
     // ensure we can only handle WebAssembly version 1
-    if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
+    if (!hasWasmPreamble(_code)) {
       hera_instance* hera = static_cast<hera_instance*>(instance);
 #if HERA_EVM2WASM
       // Translate EVM bytecode to WASM
