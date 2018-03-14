@@ -292,7 +292,7 @@ evm_result evm_execute(
     if (result.returnValue.size() > 0) {
       vector<uint8_t> returnValue;
 
-      if (msg->kind == EVM_CREATE && !result.isRevert) {
+      if (msg->kind == EVM_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
         // Meter the deployed code
         returnValue = sentinel(context, result.returnValue);
         heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
