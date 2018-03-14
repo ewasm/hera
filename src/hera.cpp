@@ -56,6 +56,19 @@ struct hera_instance : evm_instance {
 
 namespace {
 
+bool hasWasmPreamble(vector<uint8_t> const& _input) {
+  return
+    _input.size() >= 8 &&
+    _input[0] == 0 &&
+    _input[1] == 'a' &&
+    _input[2] == 's' &&
+    _input[3] == 'm' &&
+    _input[4] == 1 &&
+    _input[5] == 0 &&
+    _input[6] == 0 &&
+    _input[7] == 0;
+}
+
 #if HERA_METERING_CONTRACT || HERA_EVM2WASM
 vector<uint8_t> callSystemContract(
   evm_context* context,
@@ -259,7 +272,7 @@ evm_result evm_execute(
     vector<uint8_t> _code(code, code + code_size);
 
     // ensure we can only handle WebAssembly version 1
-    if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
+    if (!hasWasmPreamble(_code)) {
       hera_instance* hera = static_cast<hera_instance*>(instance);
 #if HERA_EVM2WASM
       // Translate EVM bytecode to WASM
@@ -288,7 +301,7 @@ evm_result evm_execute(
     if (result.returnValue.size() > 0) {
       vector<uint8_t> returnValue;
 
-      if (msg->kind == EVM_CREATE && !result.isRevert) {
+      if (msg->kind == EVM_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
         // Meter the deployed code
         returnValue = sentinel(context, result.returnValue);
         heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
