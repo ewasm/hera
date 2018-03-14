@@ -164,7 +164,7 @@ string toHex(evm_uint256be const& value) {
         << ",\"pc\":" << pc
         << ",\"stack\":[";
 
-      for (int32_t i = sp; i > 0; i -= stackItemSize) {
+      for (int32_t i = sp; i >= 0; i -= stackItemSize) {
         if (i != sp)
           cout << ',';
         evm_uint256be x = loadUint256(static_cast<uint32_t>(i));
