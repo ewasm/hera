@@ -351,7 +351,7 @@ int evm_set_option(
     hera->fallback = strcmp(value, "true") == 0;
     return 1;
   }
-#if EVM2WASM
+#if HERA_EVM2WASM
   if (strcmp(name, "evm2wasm.js") == 0) {
     hera->use_evm2wasm_js = strcmp(value, "true") == 0;
     return 1;
