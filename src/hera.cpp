@@ -47,6 +47,9 @@ using namespace HeraVM;
 
 struct hera_instance : evm_instance {
   bool fallback = false;
+#if HERA_EVM2WASM
+  bool use_evm2wasm_js = false;
+#endif
 
   hera_instance() : evm_instance({EVM_ABI_VERSION, nullptr, nullptr, nullptr}) {}
 };
@@ -116,7 +119,7 @@ vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
 #endif
 }
 
-#if HERA_EVM2WASM_JS
+#if HERA_EVM2WASM
 // NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
 string mktemp_string(string pattern) {
   const unsigned long len = pattern.size();
@@ -127,7 +130,7 @@ string mktemp_string(string pattern) {
   return string(tmp, len);
 }
 
-vector<uint8_t> evm2wasm(evm_context* context, vector<uint8_t> const& input) {
+vector<uint8_t> evm2wasm_js(evm_context* context, vector<uint8_t> const& input) {
   (void)context;
 
   string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXX");
@@ -161,7 +164,7 @@ vector<uint8_t> evm2wasm(evm_context* context, vector<uint8_t> const& input) {
 
   return vector<uint8_t>(str.begin(), str.end());
 }
-#elif HERA_EVM2WASM
+
 vector<uint8_t> evm2wasm(evm_context* context, vector<uint8_t> const& input) {
 #if HERA_DEBUGGING
   cerr << "Calling evm2wasm (input " << input.size() << " bytes)..." << endl;
@@ -259,13 +262,15 @@ evm_result evm_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
-#if HERA_EVM2WASM_JS || HERA_EVM2WASM
-      (void)instance;
+      hera_instance* hera = static_cast<hera_instance*>(instance);
+#if HERA_EVM2WASM
       // Translate EVM bytecode to WASM
-      _code = evm2wasm(context, vector<uint8_t>(code, code + code_size));
+      if (hera->use_evm2wasm_js)
+        _code = evm2wasm_js(context, vector<uint8_t>(code, code + code_size));
+      else
+        _code = evm2wasm(context, vector<uint8_t>(code, code + code_size));
       heraAssert(_code.size() != 0, "Transcompiling via evm2wasm failed");
 #else
-      hera_instance* hera = static_cast<hera_instance*>(instance);
       ret.status_code = hera->fallback ? EVM_REJECTED : EVM_FAILURE;
       return ret;
 #endif
@@ -332,11 +337,17 @@ int evm_set_option(
   char const* name,
   char const* value
 ) {
+  hera_instance* hera = static_cast<hera_instance*>(instance);
   if (strcmp(name, "fallback") == 0) {
-    hera_instance* hera = static_cast<hera_instance*>(instance);
     hera->fallback = strcmp(value, "true") == 0;
     return 1;
   }
+#if EVM2WASM
+  if (strcmp(name, "evm2wasm.js") == 0) {
+    hera->use_evm2wasm_js = strcmp(value, "true") == 0;
+    return 1;
+  }
+#endif
   return 0;
 }
 
