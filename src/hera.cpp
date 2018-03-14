@@ -25,6 +25,9 @@
 #include <vector>
 #include <stdexcept>
 #include <cstdlib>
+#include <unistd.h>
+#include <string.h>
+#include <fstream>
 
 #include <pass.h>
 #include <wasm.h>
@@ -44,13 +47,16 @@ using namespace HeraVM;
 
 struct hera_instance : evm_instance {
   bool fallback = false;
+#if HERA_EVM2WASM
+  bool use_evm2wasm_js = false;
+#endif
 
   hera_instance() : evm_instance({EVM_ABI_VERSION, nullptr, nullptr, nullptr}) {}
 };
 
 namespace {
 
-#if HERA_METERING_CONTRACT
+#if HERA_METERING_CONTRACT || HERA_EVM2WASM
 vector<uint8_t> callSystemContract(
   evm_context* context,
   evm_address const& address,
@@ -112,6 +118,74 @@ vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
   return input;
 #endif
 }
+
+#if HERA_EVM2WASM
+// NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
+string mktemp_string(string pattern) {
+  const unsigned long len = pattern.size();
+  char tmp[len];
+  strncpy(tmp, pattern.data(), len);
+  if (!mktemp(tmp))
+     return string();
+  return string(tmp, len);
+}
+
+vector<uint8_t> evm2wasm_js(evm_context* context, vector<uint8_t> const& input) {
+  (void)context;
+
+  string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXX");
+  string fileWASM = mktemp_string("/tmp/hera.evm2wasm.wasm.XXXXXX");
+
+  if (fileEVM.size() == 0 || fileWASM.size() == 0)
+    return vector<uint8_t>();
+
+  ofstream os;
+  os.open(fileEVM);
+  // print as a hex sting
+  os << hex;
+  for (uint8_t byte: input)
+    os << static_cast<int>(byte);
+  os.close();
+
+  string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM;
+  int ret = system(cmd.data());
+  unlink(fileEVM.data());
+
+  if (ret != 0) {
+    unlink(fileWASM.data());
+    return vector<uint8_t>();
+  }
+
+  ifstream is(fileWASM);
+  string str((istreambuf_iterator<char>(is)),
+                 istreambuf_iterator<char>());
+
+  unlink(fileWASM.data());
+
+  return vector<uint8_t>(str.begin(), str.end());
+}
+
+vector<uint8_t> evm2wasm(evm_context* context, vector<uint8_t> const& input) {
+#if HERA_DEBUGGING
+  cerr << "Calling evm2wasm (input " << input.size() << " bytes)..." << endl;
+#endif
+
+  int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
+  int64_t gas = startgas;
+  vector<uint8_t> ret = callSystemContract(
+    context,
+    { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } }, // precompile address 0x00...0b
+    gas,
+    input
+  );
+
+#if HERA_DEBUGGING
+  cerr << "evm2wasm done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)" << endl;
+#endif
+
+  return ret;
+}
+#endif
 
 void execute(
 	evm_context* context,
@@ -184,16 +258,27 @@ evm_result evm_execute(
     ExecutionResult result;
     result.gasLeft = (uint64_t)msg->gas;
 
+    vector<uint8_t> _code;
+
     // ensure we can only handle WebAssembly version 1
     if (code_size < 5 || code[0] != 0 || code[1] != 'a' || code[2] != 's' || code[3] != 'm' || code[4] != 1) {
       hera_instance* hera = static_cast<hera_instance*>(instance);
+#if HERA_EVM2WASM
+      // Translate EVM bytecode to WASM
+      if (hera->use_evm2wasm_js)
+        _code = evm2wasm_js(context, vector<uint8_t>(code, code + code_size));
+      else
+        _code = evm2wasm(context, vector<uint8_t>(code, code + code_size));
+      heraAssert(_code.size() != 0, "Transcompiling via evm2wasm failed");
+#else
       ret.status_code = hera->fallback ? EVM_REJECTED : EVM_FAILURE;
       return ret;
+#endif
+    } else {
+      _code.assign(code, code + code_size);
     }
 
     heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");
-
-    vector<uint8_t> _code(code, code + code_size);
 
     if (msg->kind == EVM_CREATE) {
       // Meter the deployment (constructor) code
@@ -252,11 +337,17 @@ int evm_set_option(
   char const* name,
   char const* value
 ) {
+  hera_instance* hera = static_cast<hera_instance*>(instance);
   if (strcmp(name, "fallback") == 0) {
-    hera_instance* hera = static_cast<hera_instance*>(instance);
     hera->fallback = strcmp(value, "true") == 0;
     return 1;
   }
+#if EVM2WASM
+  if (strcmp(name, "evm2wasm.js") == 0) {
+    hera->use_evm2wasm_js = strcmp(value, "true") == 0;
+    return 1;
+  }
+#endif
   return 0;
 }
 

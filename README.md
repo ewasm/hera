@@ -10,12 +10,14 @@ Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpre
 
 - `-DHERA_DEBUGGING=ON` will turn on debugging features and messages
 - `-DHERA_METERING_CONTRACT=ON` will pass contract creation data through the metering contract residing at 0x00..0a
+- `-DHERA_EVM2WASM=ON` will use the evm2wasm contract translate EVM bytecode (through the contract residing at 0x00..0b)
 
 ## Runtime options
 
 These are to be used via EVM-C `set_option`:
 
 - `fallback=true` will allow EVM bytecode to be passed through to the client for execution (if set to `false`, the default, it will be rejected as invalid)
+- `evm2wasm.js=true` will use a `evm2wasm.js` as an external commandline tool instead as a system contract
 
 ## Interfaces
 
