@@ -11,6 +11,12 @@ Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpre
 - `-DHERA_DEBUGGING=ON` will turn on debugging features and messages
 - `-DHERA_METERING_CONTRACT=ON` will pass contract creation data through the metering contract residing at 0x00..0a
 
+## Runtime options
+
+These are to be used via EVM-C `set_option`:
+
+- `fallback=true` will allow EVM bytecode to be passed through to the client for execution (if set to `false`, the default, it will be rejected as invalid)
+
 ## Interfaces
 
 Hera implements two interfaces: [EEI](https://github.com/ewasm/design/blob/master/eth_interface.md) and a debugging module.
