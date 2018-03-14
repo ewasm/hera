@@ -57,7 +57,16 @@ struct hera_instance : evm_instance {
 namespace {
 
 bool hasWasmPreamble(vector<uint8_t> const& _input) {
-  return _input.size() >= 5 && _input[0] == 0 && _input[1] == 'a' && _input[2] == 's' && _input[3] == 'm' && _input[4] == 1;
+  return
+    _input.size() >= 8 &&
+    _input[0] == 0 &&
+    _input[1] == 'a' &&
+    _input[2] == 's' &&
+    _input[3] == 'm' &&
+    _input[4] == 1 &&
+    _input[5] == 0 &&
+    _input[6] == 0 &&
+    _input[7] == 0;
 }
 
 #if HERA_METERING_CONTRACT || HERA_EVM2WASM
