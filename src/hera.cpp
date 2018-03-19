@@ -153,9 +153,9 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input) {
   ofstream os;
   os.open(fileEVM);
   // print as a hex sting
-  os << setfill('0') << setw(2) << hex;
+  os << hex;
   for (uint8_t byte: input)
-    os << static_cast<int>(byte);
+    os << setfill('0') << setw(2) << static_cast<int>(byte);
   os.close();
 
   string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM;
