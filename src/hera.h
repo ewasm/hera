@@ -47,12 +47,12 @@ struct evmc_instance* evmc_create_hera(void);
 
 typedef enum wasm_vm {
 #if WABT_SUPPORTED
-  WABT,
+  VM_WABT,
 #endif
 #if WAVM_SUPPORTED
-  WAVM,
+  VM_WAVM,
 #endif
-  BINARYEN
+  VM_BINARYEN
 } wasm_vm;
 
 #if __cplusplus

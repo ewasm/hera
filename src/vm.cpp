@@ -31,16 +31,16 @@ using namespace HeraVM;
 void WasmVM::execute() 
 {
 	switch (this->vm) {
-	case BINARYEN:
+	case VM_BINARYEN:
 		this->exitStatus = this->runBinaryen();
 		break;
 	#ifdef WABT_SUPPORTED
-	case WABT:
+	case VM_WABT:
 		this->exitStatus = this->runWabt();
 		break;
 	#endif
 	#ifdef WAVM_SUPPORTED
-	case WAVM:
+	case VM_WAVM:
 		this->exitStatus = this->runWavm();
 		break;
 	#endif

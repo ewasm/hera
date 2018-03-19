@@ -439,14 +439,14 @@ int hera_set_option(
   }
   if (strcmp(name, "vm") == 0) {
     if (strcmp(value, "binaryen") == 0)
-      hera->vm = BINARYEN;
+      hera->vm = VM_BINARYEN;
 #if WABT_SUPPORTED
     if (strcmp(value, "wabt") == 0)
-      hera->vm = WABT;
+      hera->vm = VM_WABT;
 #endif
 #if WAVM_SUPPORTED
     if (strcmp(value, "wavm") == 0)
-      hera->vm = WAVM;
+      hera->vm = VM_WAVM;
 #endif
     return 1;
   }
