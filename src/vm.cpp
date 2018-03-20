@@ -55,7 +55,15 @@ int WasmVM::runBinaryen()
 		WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(this->code), false);
 		parser.read();
 	} catch (ParseException &p) {
-		return 1;
+		/* TODO: Potentially introduce abstracted VM exceptions */
+		heraAssert(
+		    false, 
+		    "Error in parsing WASM binary: '" +
+		    p.text + 
+		    "' at " + 
+		    to_string(p.line) + 
+		    ":" + 
+		    to_string(p.col));
 	}
 
 	/* Validation */
