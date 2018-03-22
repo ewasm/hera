@@ -35,38 +35,42 @@ using namespace HeraVM;
 
 class WasmVM
 {
-private:
-	wasm_vm vm;
-	vector<uint8_t> code;
-	evmc_message msg;
-	evmc_context *context;
-
-	int runBinaryen();
-	#if WABT_SUPPORTED
-	int runWabt();
-	#endif
-	#if WAVM_SUPPORTED
-	int runWavm();
-	#endif
-
 public:
-	WasmVM(wasm_vm const vm, 
-	           vector<uint8_t> const& code, 
-		   evm_message const& msg,
-		   evm_context *context)
-	{
-		this->vm = vm;
-		this->msg = msg;
-		this->output.gasLeft = (uint64_t)msg.gas;
-		this->context = context;
-		for (size_t i = 0; i < code.size(); ++i)
-			this->code.push_back(code[i]);
-	}
+  WasmVM(wasm_vm const _vm, 
+    vector<uint8_t> const& _code, 
+    evmc_message const& _msg,
+    evmc_context *_context
+  ):
+    vm(_vm),
+    code(_code),
+    msg(_msg),
+    context(_context)
+  { this->output.gasLeft = (uint64_t)_msg.gas; }
 
-	void execute();
+private:
+  wasm_vm vm;
+  vector<uint8_t> code;
+  evmc_message msg;
+  evmc_context *context;
 
-	struct ExecutionResult output;
-	int exitStatus;
+  void execute();
+
+  struct ExecutionResult output;
+  int exitStatus;
+
+private:
+  int runBinaryen();
+#if WABT_SUPPORTED
+  int runWabt();
+#endif
+#if WAVM_SUPPORTED
+  int runWavm();
+#endif
+
+  wasm_vm vm;
+  vector<uint8_t> code;
+  evm_message msg;
+  evm_context *context;
 };
 
 #endif

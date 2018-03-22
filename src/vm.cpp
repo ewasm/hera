@@ -30,56 +30,56 @@ using namespace HeraVM;
 
 void WasmVM::execute() 
 {
-	switch (this->vm) {
-	case VM_BINARYEN:
-		this->exitStatus = this->runBinaryen();
-		break;
-	#ifdef WABT_SUPPORTED
-	case VM_WABT:
-		this->exitStatus = this->runWabt();
-		break;
-	#endif
-	#ifdef WAVM_SUPPORTED
-	case VM_WAVM:
-		this->exitStatus = this->runWavm();
-		break;
-	#endif
-	}
+  switch (this->vm) {
+  case VM_BINARYEN:
+    this->exitStatus = this->runBinaryen();
+    break;
+#ifdef WABT_SUPPORTED
+  case VM_WABT:
+    this->exitStatus = this->runWabt();
+    break;
+#endif
+#ifdef WAVM_SUPPORTED
+  case VM_WAVM:
+    this->exitStatus = this->runWavm();
+    break;
+#endif
+  }
 }
 
 int WasmVM::runBinaryen()
 {
-	Module module;
+  Module module;
 
-	try {
-		WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(this->code), false);
-		parser.read();
-	} catch (ParseException &p) {
-		/* TODO: Potentially introduce abstracted VM exceptions */
-		heraAssert(
-		    false, 
-		    "Error in parsing WASM binary: '" +
-		    p.text + 
-		    "' at " + 
-		    to_string(p.line) + 
-		    ":" + 
-		    to_string(p.col));
-	}
+  try {
+    WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(this->code), false);
+    parser.read();
+  } catch (ParseException &p) {
+    /* TODO: Potentially introduce abstracted VM exceptions */
+    heraAssert(
+      false, 
+      "Error in parsing WASM binary: '" +
+      p.text + 
+      "' at " + 
+      to_string(p.line) + 
+      ":" + 
+      to_string(p.col));
+  }
 
-	/* Validation */
-	heraAssert(WasmValidator().validate(module), "Module is not valid.");
-	heraAssert(module.getExportOrNull(Name("main")) != nullptr, 
-					      "Contract entry point (\"main\") missing.");
-	
-	EthereumInterface interface(this->context,
-				        this->code,
-					this->msg,
-					this->output);
-	ModuleInstance instance(module, &interface);
+  /* Validation */
+  heraAssert(WasmValidator().validate(module), "Module is not valid.");
+  heraAssert(module.getExportOrNull(Name("main")) != nullptr, 
+    "Contract entry point (\"main\") missing.");
 
-	Name main = Name("main");
-	LiteralList args;
-	instance.callExport(main, args);
+  EthereumInterface interface(this->context,
+    this->code,
+    this->msg,
+    this->output);
+  ModuleInstance instance(module, &interface);
 
-	return 0;
+  Name main = Name("main");
+  LiteralList args;
+  instance.callExport(main, args);
+
+  return 0;
 }
