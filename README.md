@@ -40,6 +40,8 @@ These are only enabled if Hera is compiled with debugging on.
 
 This is useful to trace the transpiled code from [evm2wasm](https://github.com/ewasm/evm2asm). This is only enabled if Hera is compiled with debugging on.
 
+**Note:** it is valid to invoke `evmTrace` with a negative value for `sp`.  In this case, no stack values will be printed.
+
 ## Caveats
 
 Although Hera enables the execution of eWASM bytecode, there are more elements to eWASM an Ethereum node must be aware of:
