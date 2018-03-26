@@ -426,7 +426,7 @@ string toHex(evm_uint256be const& value) {
       heraAssert(!(msg.flags & EVM_STATIC), "\"log\" attempted in static mode");
       heraAssert(numberOfTopics <= 4, "Too many topics specified");
 
-      evm_uint256be topics[numberOfTopics];
+      array<evm_uint256be, 4> topics;
       for (size_t i = 0; i < numberOfTopics; ++i) {
         uint32_t topicOffset = arguments[3 + i].geti32();
         topics[i] = loadUint256(topicOffset);
@@ -441,7 +441,7 @@ string toHex(evm_uint256be const& value) {
         "Gas charge overflow"
       );
       takeGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
-      context->fn_table->emit_log(context, &msg.destination, data.data(), length, topics, numberOfTopics);
+      context->fn_table->emit_log(context, &msg.destination, data.data(), length, topics.data(), numberOfTopics);
 
       return Literal();
     }
