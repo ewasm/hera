@@ -50,7 +50,9 @@ struct hera_instance : evm_instance {
 #if HERA_EVM2WASM
   bool use_evm2wasm_js = false;
 #endif
-
+#if HERA_DEBUGGING
+  bool debug = false;
+#endif
   hera_instance() : evm_instance({EVM_ABI_VERSION, nullptr, nullptr, nullptr}) {}
 };
 
@@ -263,6 +265,9 @@ evm_result evm_execute(
   evm_result ret;
   memset(&ret, 0, sizeof(evm_result));
 
+  // Declare hera_instance here so that VM options are accessible
+  hera_instance* hera = static_cast<hera_instance*>(instance);
+
   try {
     heraAssert(msg->gas >= 0, "Negative startgas?");
 
@@ -273,7 +278,6 @@ evm_result evm_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (!hasWasmPreamble(_code)) {
-      hera_instance* hera = static_cast<hera_instance*>(instance);
 #if HERA_EVM2WASM
       // Translate EVM bytecode to WASM
       if (hera->use_evm2wasm_js)
@@ -355,6 +359,11 @@ int evm_set_option(
   if (strcmp(name, "evm2wasm.js") == 0) {
     hera->use_evm2wasm_js = strcmp(value, "true") == 0;
     return 1;
+  }
+#endif
+#if HERA_DEBUGGING
+  if (strcmp(name, "debug") == 0) {
+    hera->debug = strcmp(value, "true") == 0;
   }
 #endif
   return 0;
