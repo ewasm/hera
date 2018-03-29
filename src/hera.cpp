@@ -44,6 +44,9 @@
 using namespace std;
 using namespace wasm;
 using namespace HeraVM;
+#if HERA_DEBUGGING
+using namespace HeraDebugging;
+#endif
 
 struct hera_instance : evm_instance {
   bool fallback = false;
@@ -110,7 +113,7 @@ vector<uint8_t> callSystemContract(
 vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
 {
 #if HERA_DEBUGGING
-  hera_debug << "Metering (input " << input.size() << " bytes)..." << endl;
+  HeraDebug() << "Metering (input " << input.size() << " bytes)..." << endl;
 #endif
 
 #if HERA_METERING_CONTRACT
@@ -124,7 +127,7 @@ vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
   );
 
 #if HERA_DEBUGGING
-  hera_debug << "Metering done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)" << endl;
+  HeraDebug() << "Metering done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)" << endl;
 #endif
 
   return ret;
@@ -180,7 +183,7 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input) {
 
 vector<uint8_t> evm2wasm(evm_context* context, vector<uint8_t> const& input) {
 #if HERA_DEBUGGING
-  hera_debug << "Calling evm2wasm (input " << input.size() << " bytes)..." << endl;
+  HeraDebug() << "Calling evm2wasm (input " << input.size() << " bytes)..." << endl;
 #endif
 
   int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
@@ -193,7 +196,7 @@ vector<uint8_t> evm2wasm(evm_context* context, vector<uint8_t> const& input) {
   );
 
 #if HERA_DEBUGGING
-  hera_debug << "evm2wasm done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)" << endl;
+  HeraDebug() << "evm2wasm done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)" << endl;
 #endif
 
   return ret;
@@ -207,7 +210,7 @@ void execute(
 	ExecutionResult & result
 ) {
 #if HERA_DEBUGGING
-  hera_debug << "Executing..." << endl;
+  HeraDebug() << "Executing..." << endl;
 #endif
 
   Module module;
@@ -268,10 +271,9 @@ evm_result evm_execute(
   // Declare hera_instance here so that VM options are accessible
   hera_instance* hera = static_cast<hera_instance*>(instance);
   
-  // Set fail bit on debug stream if debug messages are disabled
   #if HERA_DEBUGGING
-  if (!hera->debug)
-    hera_debug.setstate(std::ios_base::failbit);
+  hera_debug = DebugStream();
+  hera_debug.setDebug(hera->debug);
   #endif
 
   try {
@@ -334,17 +336,17 @@ evm_result evm_execute(
   } catch (InternalErrorException &e) {
     ret.status_code = EVM_INTERNAL_ERROR;
 #if HERA_DEBUGGING
-    hera_debug << "InternalError: " << e.what() << endl;
+    HeraDebug() << "InternalError: " << e.what() << endl;
 #endif
   } catch (exception &e) {
     ret.status_code = EVM_INTERNAL_ERROR;
 #if HERA_DEBUGGING
-    hera_debug << "Unknown exception: " << e.what() << endl;
+    HeraDebug() << "Unknown exception: " << e.what() << endl;
 #endif
   } catch (...) {
     ret.status_code = EVM_INTERNAL_ERROR;
 #if HERA_DEBUGGING
-    hera_debug << "Totally unknown exception" << endl;
+    HeraDebug() << "Totally unknown exception" << endl;
 #endif
   }
 
