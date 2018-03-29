@@ -36,6 +36,8 @@
 # define HERA_IMPORT
 #endif
 
+#include <iostream>
+
 #if __cplusplus
 extern "C" {
 #endif
@@ -44,6 +46,14 @@ struct evm_instance;
 
 HERA_EXPORT
 struct evm_instance* hera_create(void);
+
+/* 
+ * Debug output stream
+ * At runtime this can be disabled according to evm_options
+ */
+#if HERA_DEBUGGING
+std::ostream& hera_debug(std::cerr);
+#endif
 
 #if __cplusplus
 }
