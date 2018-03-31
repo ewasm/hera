@@ -28,26 +28,7 @@ using namespace std;
 using namespace wasm;
 using namespace HeraVM;
 
-void WasmVM::execute() 
-{
-  switch (this->vm) {
-  case VM_BINARYEN:
-    this->exitStatus = this->runBinaryen();
-    break;
-#ifdef WABT_SUPPORTED
-  case VM_WABT:
-    this->exitStatus = this->runWabt();
-    break;
-#endif
-#ifdef WAVM_SUPPORTED
-  case VM_WAVM:
-    this->exitStatus = this->runWavm();
-    break;
-#endif
-  }
-}
-
-int WasmVM::runBinaryen()
+int BinaryenVM::execute()
 {
   Module module;
 

@@ -33,10 +33,11 @@
 using namespace std;
 using namespace HeraVM;
 
-class WasmVM
+/* Base class for WASM Execution Engines */
+class WasmEngine
 {
 public:
-  WasmVM(wasm_vm const _vm, 
+  WasmEngine(wasm_vm const _vm, 
     vector<uint8_t> const& _code, 
     evmc_message const& _msg,
     evmc_context *_context
@@ -45,32 +46,57 @@ public:
     code(_code),
     msg(_msg),
     context(_context)
-  { this->output.gasLeft = (uint64_t)_msg.gas; }
+  { }
+  
+  /* Each WASM engine overrides this method */
+  virtual int execute();
 
-private:
-  wasm_vm vm;
-  vector<uint8_t> code;
-  evmc_message msg;
-  evmc_context *context;
-
-  void execute();
-
-  struct ExecutionResult output;
-  int exitStatus;
-
-private:
-  int runBinaryen();
-#if WABT_SUPPORTED
-  int runWabt();
-#endif
-#if WAVM_SUPPORTED
-  int runWavm();
-#endif
-
+protected:
   wasm_vm vm;
   vector<uint8_t> code;
   evm_message msg;
   evm_context *context;
 };
 
+class BinaryenVM : WasmEngine
+{
+public:
+  BinaryenVM(vector<uint8_t> const& _code,
+    evm_message const& _msg,
+    evm_context *_context) : 
+    WasmEngine(VM_BINARYEN, _code, _msg, _context) 
+    { this->output.gasLeft = (uint64_t)_msg.gas; }
+  
+  int execute();
+
+  struct ExecutionResult output;
+};
+
+#if WABT_SUPPORTED
+class WabtVM : WasmEngine
+{
+public:
+  WabtVM(vector<uint8_t> const& _code,
+    evm_message const& msg,
+    evm_context *_context) :
+    WasmEngine(VM_WABT, _code, _msg, _context)
+    { }
+
+  int execute();
+};
+#endif
+
+#if WAVM_SUPPORTED
+class WavmVM : WasmEngine
+{
+public:
+  WavmVM(vector<uint8_t> const& _code,
+    evm_message const& msg,
+    evm_context *_context) :
+    WasmEngine(VM_WAVM, _code, _msg, _context)
+    { }
+
+  int execute();
+};
+#endif
 #endif

@@ -337,7 +337,7 @@ evmc_result hera_execute(
     }
 
     //execute(context, _code, *msg, result);
-    WasmVM vm = WasmVM(hera->vm, _code, *msg, context);
+    BinaryenVM vm = BinaryenVM(_code, *msg, context);
     vm.execute();
 
     // copy call result
