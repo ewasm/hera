@@ -28,6 +28,9 @@ using namespace std;
 using namespace wasm;
 using namespace HeraVM;
 
+// generic virtual method to be overridden
+int WasmEngine::execute() { return 0; }
+
 int BinaryenVM::execute()
 {
   Module module;
@@ -52,10 +55,7 @@ int BinaryenVM::execute()
   heraAssert(module.getExportOrNull(Name("main")) != nullptr, 
     "Contract entry point (\"main\") missing.");
 
-  EthereumInterface interface(this->context,
-    this->code,
-    this->msg,
-    this->output);
+  EthereumInterface interface(context, code, msg, output);
   ModuleInstance instance(module, &interface);
 
   Name main = Name("main");
