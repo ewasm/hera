@@ -26,7 +26,7 @@
 
 #include <wasm.h>
 #include <wasm-binary.h>
-#include "evm.h"
+#include <evmc.h>
 #include "shell-interface.h"
 #include "hera.h"
 #include "exceptions.h"
@@ -43,9 +43,9 @@ struct ExecutionResult {
 
 struct EthereumInterface : ShellExternalInterface {
   EthereumInterface(
-    evm_context* _context,
+    evmc_context* _context,
     std::vector<uint8_t> const& _code,
-    evm_message const& _msg,
+    evmc_message const& _msg,
     ExecutionResult & _result
   ):
     ShellExternalInterface(),
@@ -74,29 +74,29 @@ private:
   void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length);
   void storeMemory(std::vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length);
 
-  evm_uint256be loadUint256(uint32_t srcOffset);
-  void storeUint256(evm_uint256be const& src, uint32_t dstOffset);
-  evm_address loadUint160(uint32_t srcOffset);
-  void storeUint160(evm_address const& src, uint32_t dstOffset);
-  evm_uint256be loadUint128(uint32_t srcOffset);
-  void storeUint128(evm_uint256be const& src, uint32_t dstOffset);
+  evmc_uint256be loadUint256(uint32_t srcOffset);
+  void storeUint256(evmc_uint256be const& src, uint32_t dstOffset);
+  evmc_address loadUint160(uint32_t srcOffset);
+  void storeUint160(evmc_address const& src, uint32_t dstOffset);
+  evmc_uint256be loadUint128(uint32_t srcOffset);
+  void storeUint128(evmc_uint256be const& src, uint32_t dstOffset);
 
-  void ensureSenderBalance(evm_uint256be const& value);
+  void ensureSenderBalance(evmc_uint256be const& value);
 
-  static uint64_t safeLoadUint64(evm_uint256be const& value);
+  static uint64_t safeLoadUint64(evmc_uint256be const& value);
 
   /* Checks if host supplied 256 bit value exceeds UINT64_MAX */
-  static bool exceedsUint64(evm_uint256be const& value);
+  static bool exceedsUint64(evmc_uint256be const& value);
 
   /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
-  static bool exceedsUint128(evm_uint256be const& value);
+  static bool exceedsUint128(evmc_uint256be const& value);
 
   /* Checks if 256 bit value is all zeroes */
-  static bool isZeroUint256(evm_uint256be const& value);
+  static bool isZeroUint256(evmc_uint256be const& value);
 
-  evm_context* context = nullptr;
+  evmc_context* context = nullptr;
   std::vector<uint8_t> const& code;
-  evm_message const& msg;
+  evmc_message const& msg;
   std::vector<uint8_t> lastReturnData;
   ExecutionResult & result;
 };

@@ -37,7 +37,8 @@
 #include <wasm-printing.h>
 #include <wasm-validator.h>
 
-#include "evm.h"
+#include <evmc.h>
+
 #include "hera.h"
 #include "eei.h"
 #include "exceptions.h"
@@ -46,14 +47,14 @@ using namespace std;
 using namespace wasm;
 using namespace HeraVM;
 
-struct hera_instance : evm_instance {
+struct hera_instance : evmc_instance {
   bool fallback = false;
 #if HERA_EVM2WASM
   bool use_evm2wasm_js = false;
   bool use_evm2wasm_js_trace = false;
 #endif
 
-  hera_instance() : evm_instance({EVM_ABI_VERSION, nullptr, nullptr, nullptr}) {}
+  hera_instance() : evmc_instance({EVMC_ABI_VERSION, nullptr, nullptr, nullptr}) {}
 };
 
 namespace {
@@ -73,12 +74,12 @@ bool hasWasmPreamble(vector<uint8_t> const& _input) {
 
 #if HERA_METERING_CONTRACT || HERA_EVM2WASM
 vector<uint8_t> callSystemContract(
-  evm_context* context,
-  evm_address const& address,
+  evmc_context* context,
+  evmc_address const& address,
   int64_t & gas,
   vector<uint8_t> const& input
 ) {
-  evm_message message = {
+  evmc_message message = {
     .destination = address,
     .sender = {},
     .value = {},
@@ -87,15 +88,15 @@ vector<uint8_t> callSystemContract(
     .code_hash = {},
     .gas = gas,
     .depth = 0,
-    .kind = EVM_CALL,
-    .flags = EVM_STATIC
+    .kind = EVMC_CALL,
+    .flags = EVMC_STATIC
   };
 
-  evm_result result;
+  evmc_result result;
   context->fn_table->call(&result, context, &message);
 
   vector<uint8_t> ret;
-  if (result.status_code == EVM_SUCCESS && result.output_data)
+  if (result.status_code == EVMC_SUCCESS && result.output_data)
     ret.assign(result.output_data, result.output_data + result.output_size);
 
   gas = result.gas_left;
@@ -107,7 +108,7 @@ vector<uint8_t> callSystemContract(
 }
 #endif
 
-vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
+vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
 {
 #if HERA_DEBUGGING
   cerr << "Metering (input " << input.size() << " bytes)..." << endl;
@@ -197,7 +198,7 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
   return vector<uint8_t>(str.begin(), str.end());
 }
 
-vector<uint8_t> evm2wasm(evm_context* context, vector<uint8_t> const& input) {
+vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
 #if HERA_DEBUGGING
   cerr << "Calling evm2wasm (input " << input.size() << " bytes)..." << endl;
 #endif
@@ -220,10 +221,10 @@ vector<uint8_t> evm2wasm(evm_context* context, vector<uint8_t> const& input) {
 #endif
 
 void execute(
-	evm_context* context,
-	vector<uint8_t> const& code,
-	evm_message const& msg,
-	ExecutionResult & result
+  evmc_context* context,
+  vector<uint8_t> const& code,
+  evmc_message const& msg,
+  ExecutionResult & result
 ) {
 #if HERA_DEBUGGING
   cerr << "Executing..." << endl;
@@ -268,21 +269,21 @@ void execute(
   instance.callExport(main, args);
 }
 
-void evm_destroy_result(evm_result const* result)
+void hera_destroy_result(evmc_result const* result)
 {
   delete[] result->output_data;
 }
 
-evm_result evm_execute(
-  evm_instance* instance,
-  evm_context* context,
-  enum evm_revision rev,
-  const evm_message* msg,
-  const uint8_t* code,
-  size_t code_size)
-{
-  evm_result ret;
-  memset(&ret, 0, sizeof(evm_result));
+evmc_result hera_execute(
+  evmc_instance *instance,
+  evmc_context *context,
+  enum evmc_revision rev,
+  const evmc_message *msg,
+  const uint8_t *code,
+  size_t code_size
+) {
+  evmc_result ret;
+  memset(&ret, 0, sizeof(evmc_result));
 
   try {
     heraAssert(msg->gas >= 0, "Negative startgas?");
@@ -303,14 +304,14 @@ evm_result evm_execute(
         _code = evm2wasm(context, _code);
       heraAssert(_code.size() != 0, "Transcompiling via evm2wasm failed");
 #else
-      ret.status_code = hera->fallback ? EVM_REJECTED : EVM_FAILURE;
+      ret.status_code = hera->fallback ? EVMC_REJECTED : EVMC_FAILURE;
       return ret;
 #endif
     }
 
-    heraAssert(rev == EVM_BYZANTIUM, "Only Byzantium supported.");
+    heraAssert(rev == EVMC_BYZANTIUM, "Only Byzantium supported.");
 
-    if (msg->kind == EVM_CREATE) {
+    if (msg->kind == EVMC_CREATE) {
       // Meter the deployment (constructor) code
       _code = sentinel(context, _code);
       heraAssert(_code.size() > 5, "Invalid contract or metering failed.");
@@ -322,7 +323,7 @@ evm_result evm_execute(
     if (result.returnValue.size() > 0) {
       vector<uint8_t> returnValue;
 
-      if (msg->kind == EVM_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
+      if (msg->kind == EVMC_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
         // Meter the deployed code
         returnValue = sentinel(context, result.returnValue);
         heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
@@ -335,32 +336,32 @@ evm_result evm_execute(
 
       ret.output_size = returnValue.size();
       ret.output_data = output_data;
-      ret.release = evm_destroy_result;
+      ret.release = hera_destroy_result;
     }
 
-    ret.status_code = result.isRevert ? EVM_REVERT : EVM_SUCCESS;
+    ret.status_code = result.isRevert ? EVMC_REVERT : EVMC_SUCCESS;
     ret.gas_left = result.gasLeft;
   } catch (OutOfGasException const&) {
-    ret.status_code = EVM_OUT_OF_GAS;
+    ret.status_code = EVMC_OUT_OF_GAS;
   } catch (StaticModeViolation const& e) {
-    ret.status_code = EVM_STATIC_MODE_ERROR;
+    ret.status_code = EVMC_STATIC_MODE_ERROR;
 #if HERA_DEBUGGING
     cerr << e.what() << endl;
 #endif
   } catch (InternalErrorException const& e) {
     // TODO: split exceptions properly, but for now this mostly (>90%) covers
     // issues in the contracts, as opposed to unrecoverable issues in Hera
-    ret.status_code = EVM_FAILURE;
+    ret.status_code = EVMC_FAILURE;
 #if HERA_DEBUGGING
     cerr << "InternalError: " << e.what() << endl;
 #endif
   } catch (exception const& e) {
-    ret.status_code = EVM_INTERNAL_ERROR;
+    ret.status_code = EVMC_INTERNAL_ERROR;
 #if HERA_DEBUGGING
     cerr << "Unknown exception: " << e.what() << endl;
 #endif
   } catch (...) {
-    ret.status_code = EVM_INTERNAL_ERROR;
+    ret.status_code = EVMC_INTERNAL_ERROR;
 #if HERA_DEBUGGING
     cerr << "Totally unknown exception" << endl;
 #endif
@@ -369,10 +370,10 @@ evm_result evm_execute(
   return ret;
 }
 
-int evm_set_option(
-  evm_instance* instance,
-  char const* name,
-  char const* value
+int hera_set_option(
+  evmc_instance *instance,
+  char const *name,
+  char const *value
 ) {
   hera_instance* hera = static_cast<hera_instance*>(instance);
   if (strcmp(name, "fallback") == 0) {
@@ -393,7 +394,7 @@ int evm_set_option(
   return 0;
 }
 
-void evm_destroy(evm_instance* instance)
+void hera_destroy(evmc_instance* instance)
 {
   hera_instance* hera = static_cast<hera_instance*>(instance);
   delete hera;
@@ -403,13 +404,13 @@ void evm_destroy(evm_instance* instance)
 
 extern "C" {
 
-evm_instance* hera_create()
+evmc_instance* hera_create()
 {
   hera_instance* instance = new hera_instance;
-  instance->destroy = evm_destroy;
-  instance->execute = evm_execute;
-  instance->set_option = evm_set_option;
-  return static_cast<evm_instance*>(instance);
+  instance->destroy = hera_destroy;
+  instance->execute = hera_execute;
+  instance->set_option = hera_set_option;
+  return static_cast<evmc_instance*>(instance);
 }
 
 }
