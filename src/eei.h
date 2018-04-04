@@ -35,6 +35,61 @@ using namespace wasm;
 
 namespace HeraVM {
 
+/* Base class for EEI implementations */
+class EEI {
+public:
+  EEI(evm_context *_context,
+    std::vector<uint8_t> const& _code,
+    evm_message const& _msg) :
+    context(_context),
+    code(_code),
+    msg(_msg)
+    { }
+
+protected:
+  struct GasSchedule {
+    static constexpr unsigned storageLoad = 200;
+    static constexpr unsigned storageStoreCreate = 20000;
+    static constexpr unsigned storageStoreChange = 5000;
+    static constexpr unsigned log = 375;
+    static constexpr unsigned logData = 8;
+    static constexpr unsigned logTopic = 375;
+    static constexpr unsigned create = 32000;
+    static constexpr unsigned call = 700;
+    static constexpr unsigned copy = 3;
+    static constexpr unsigned blockhash = 800;
+    static constexpr unsigned balance = 400;
+    static constexpr unsigned base = 2;
+    static constexpr unsigned verylow = 3;
+    static constexpr unsigned extcode = 700;
+    static constexpr unsigned selfdestruct = 5000;
+    static constexpr unsigned valuetransfer = 9000;
+    static constexpr unsigned callNewAccount = 25000;
+  };
+
+  evm_context *context;
+  std::vector<uint8_t> const& code;
+  evm_message const& msg;
+  std::vector<uint8_t> lastReturnData;
+};
+
+class OutOfGasException : std::exception {
+public:
+  const char* what() const noexcept override { return "Out of gas."; }
+};
+
+class InternalErrorException : std::exception {
+public:
+  explicit InternalErrorException(std::string const& _msg): msg(_msg) {}
+  const char* what() const noexcept override { return const_cast<char*>(msg.c_str()); }
+private:
+  std::string msg;
+};
+
+#define heraAssert(condition, msg) { \
+  if (!(condition)) throw InternalErrorException(msg); \
+}
+
 struct ExecutionResult {
   uint64_t gasLeft = 0;
   std::vector<uint8_t> returnValue;
