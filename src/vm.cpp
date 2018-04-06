@@ -60,6 +60,7 @@ int BinaryenVM::execute()
   );
 
   BinaryenEEI interface(context, code, msg, output, meterGas);
+
   ModuleInstance instance(module, &interface);
 
   Name main = Name("main");
