@@ -61,14 +61,14 @@ string toHex(evmc_uint256be const& value) {
 
 }
 
-  void EthereumInterface::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
+  void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
     HERA_DEBUG << "importGlobals\n";
   }
 
 #if HERA_DEBUGGING
-  Literal EthereumInterface::callDebugImport(Import *import, LiteralList& arguments) {
+  Literal BinaryenEEI::callDebugImport(Import *import, LiteralList& arguments) {
     heraAssert(import->module == Name("debug"), "Import namespace error.");
 
     if (import->base == Name("print32")) {
@@ -198,7 +198,7 @@ string toHex(evmc_uint256be const& value) {
   }
 #endif
 
-  Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
+  Literal BinaryenEEI::callImport(Import *import, LiteralList& arguments) {
 #if HERA_DEBUGGING
     if (import->module == Name("debug"))
       // Reroute to debug namespace
@@ -834,7 +834,7 @@ string toHex(evmc_uint256be const& value) {
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
   }
 
-  void EthereumInterface::takeGas(uint64_t gas)
+  void BinaryenEEI::takeGas(uint64_t gas)
   {
     if (!meterGas)
       return;
@@ -846,7 +846,7 @@ string toHex(evmc_uint256be const& value) {
    * Memory Operations
    */
 
-  void EthereumInterface::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
+  void BinaryenEEI::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
   {
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
 
@@ -858,7 +858,7 @@ string toHex(evmc_uint256be const& value) {
     }
   }
 
-  void EthereumInterface::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
+  void BinaryenEEI::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
   {
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
     ensureCondition(dst.size() >= length, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
@@ -871,7 +871,7 @@ string toHex(evmc_uint256be const& value) {
     }
   }
 
-  void EthereumInterface::storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length)
+  void BinaryenEEI::storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length)
   {
     ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
     ensureCondition(memory.size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
@@ -884,7 +884,7 @@ string toHex(evmc_uint256be const& value) {
     }
   }
 
-  void EthereumInterface::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
+  void BinaryenEEI::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
   {
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
     ensureCondition(src.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
@@ -903,38 +903,38 @@ string toHex(evmc_uint256be const& value) {
    * Memory Op Wrapper Functions
    */
 
-  evmc_uint256be EthereumInterface::loadUint256(uint32_t srcOffset)
+  evmc_uint256be BinaryenEEI::loadUint256(uint32_t srcOffset)
   {
     evmc_uint256be dst = {};
     loadMemory(srcOffset, dst.bytes, 32);
     return dst;
   }
 
-  void EthereumInterface::storeUint256(evmc_uint256be const& src, uint32_t dstOffset)
+  void BinaryenEEI::storeUint256(evmc_uint256be const& src, uint32_t dstOffset)
   {
     storeMemory(src.bytes, dstOffset, 32);
   }
 
-  evmc_address EthereumInterface::loadUint160(uint32_t srcOffset)
+  evmc_address BinaryenEEI::loadUint160(uint32_t srcOffset)
   {
     evmc_address dst = {};
     loadMemory(srcOffset, dst.bytes, 20);
     return dst;
   }
 
-  void EthereumInterface::storeUint160(evmc_address const& src, uint32_t dstOffset)
+  void BinaryenEEI::storeUint160(evmc_address const& src, uint32_t dstOffset)
   {
     storeMemory(src.bytes, dstOffset, 20);
   }
 
-  evmc_uint256be EthereumInterface::loadUint128(uint32_t srcOffset)
+  evmc_uint256be BinaryenEEI::loadUint128(uint32_t srcOffset)
   {
     evmc_uint256be dst = {};
     loadMemory(srcOffset, dst.bytes + 16, 16);
     return dst;
   }
 
-  void EthereumInterface::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
+  void BinaryenEEI::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
   {
     // TODO: use a specific error code here?
     ensureCondition(!exceedsUint128(src), OutOfGasException, "Value exceeds 128 bits.");
@@ -944,14 +944,14 @@ string toHex(evmc_uint256be const& value) {
   /*
    * Utilities
    */
-  void EthereumInterface::ensureSenderBalance(evmc_uint256be const& value)
+  void BinaryenEEI::ensureSenderBalance(evmc_uint256be const& value)
   {
     evmc_uint256be balance;
     context->fn_table->get_balance(&balance, context, &msg.destination);
     ensureCondition(safeLoadUint128(balance) >= safeLoadUint128(value), OutOfGasException, "Out of gas.");
   }
 
-  uint64_t EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
+  uint64_t BinaryenEEI::safeLoadUint128(evmc_uint256be const& value)
   {
     // TODO: use a specific error code here?
     ensureCondition(!exceedsUint128(value), OutOfGasException, "Value exceeds 128 bits.");
@@ -963,7 +963,7 @@ string toHex(evmc_uint256be const& value) {
     return ret;
   }
 
-  bool EthereumInterface::exceedsUint64(evmc_uint256be const& value)
+  bool BinaryenEEI::exceedsUint64(evmc_uint256be const& value)
   {
     for (unsigned i = 0; i < 24; i++) {
       if (value.bytes[i])
@@ -972,7 +972,7 @@ string toHex(evmc_uint256be const& value) {
     return false;
   }
 
-  bool EthereumInterface::exceedsUint128(evmc_uint256be const& value)
+  bool BinaryenEEI::exceedsUint128(evmc_uint256be const& value)
   {
     for (unsigned i = 0; i < 16; i++) {
       if (value.bytes[i])
@@ -981,7 +981,7 @@ string toHex(evmc_uint256be const& value) {
     return false;
   }
 
-  bool EthereumInterface::isZeroUint256(evmc_uint256be const& value)
+  bool BinaryenEEI::isZeroUint256(evmc_uint256be const& value)
   {
     for (unsigned i = 0; i < 32; i++) {
       if (value.bytes[i] != 0)

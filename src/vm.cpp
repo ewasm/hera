@@ -55,7 +55,7 @@ int BinaryenVM::execute()
   heraAssert(module.getExportOrNull(Name("main")) != nullptr, 
     "Contract entry point (\"main\") missing.");
 
-  EthereumInterface interface(context, code, msg, output);
+  BinaryenEEI interface(context, code, msg, output);
   ModuleInstance instance(module, &interface);
 
   Name main = Name("main");
