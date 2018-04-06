@@ -31,9 +31,26 @@
 #include "hera.h"
 #include "exceptions.h"
 
+#define heraAssert(condition, msg) { \
+  if (!(condition)) throw InternalErrorException(msg); \
+}
+
 using namespace wasm;
 
 namespace HeraVM {
+
+class OutOfGasException : std::exception {
+public:
+  const char* what() const noexcept override { return "Out of gas."; }
+};
+
+class InternalErrorException : std::exception {
+public:
+  explicit InternalErrorException(std::string const& _msg): msg(_msg) {}
+  const char* what() const noexcept override { return const_cast<char*>(msg.c_str()); }
+private:
+  std::string msg;
+};
 
 /* Base class for EEI implementations */
 class EEI {
@@ -73,30 +90,16 @@ protected:
   std::vector<uint8_t> lastReturnData;
 };
 
-class OutOfGasException : std::exception {
-public:
-  const char* what() const noexcept override { return "Out of gas."; }
-};
-
-class InternalErrorException : std::exception {
-public:
-  explicit InternalErrorException(std::string const& _msg): msg(_msg) {}
-  const char* what() const noexcept override { return const_cast<char*>(msg.c_str()); }
-private:
-  std::string msg;
-};
-
-#define heraAssert(condition, msg) { \
-  if (!(condition)) throw InternalErrorException(msg); \
-}
-
 struct ExecutionResult {
+  ExecutionResult(uint64_t _gasLeft):
+    gasLeft(_gasLeft)
+  { }
   uint64_t gasLeft = 0;
   std::vector<uint8_t> returnValue;
   bool isRevert = false;
 };
 
-struct EthereumInterface : ShellExternalInterface {
+struct EthereumInterface : ShellExternalInterface, public EEI {
   EthereumInterface(
     evmc_context* _context,
     std::vector<uint8_t> const& _code,
@@ -105,11 +108,8 @@ struct EthereumInterface : ShellExternalInterface {
     bool _meterGas
   ):
     ShellExternalInterface(),
-    context(_context),
-    code(_code),
-    msg(_msg),
-    result(_result),
-    meterGas(_meterGas)
+    EEI(_context, _code, _msg),
+    result(_result)
   { }
 
   Literal callImport(Import *import, LiteralList& arguments) override;

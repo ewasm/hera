@@ -64,11 +64,11 @@ public:
   BinaryenVM(vector<uint8_t> const& _code,
     evm_message const& _msg,
     evm_context *_context) : 
-    WasmEngine(VM_BINARYEN, _code, _msg, _context) 
-    { this->output.gasLeft = (uint64_t)_msg.gas; }
+    WasmEngine(VM_BINARYEN, _code, _msg, _context),
+    output(_msg.gas)
+    { }
   
   int execute();
-
   struct ExecutionResult output;
 };
 
