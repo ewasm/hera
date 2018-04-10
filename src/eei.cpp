@@ -26,6 +26,7 @@
 #include <array>
 #include "eei.h"
 #include "exceptions.h"
+#include "evm-instructions.h"
 
 using namespace std;
 using namespace wasm;
@@ -152,7 +153,7 @@ string toHex(evmc_uint256be const& value) {
 
     if (import->base == Name("evmTrace")) {
       uint32_t pc = static_cast<uint32_t>(arguments[0].geti32());
-      uint32_t opcode = static_cast<uint32_t>(arguments[1].geti32());
+      int32_t opcode = arguments[1].geti32();
       uint32_t cost = static_cast<uint32_t>(arguments[2].geti32());
       int32_t sp = arguments[3].geti32();
 
@@ -160,11 +161,15 @@ string toHex(evmc_uint256be const& value) {
 
       static constexpr int stackItemSize = sizeof(evmc_uint256be);
       heraAssert(sp <= (1024 * stackItemSize), "EVM stack pointer out of bounds.");
+      heraAssert(opcode >= 0x00 && opcode <= 0xff, "Invalid EVM instruction.");
+
+      auto it = evmInstructionNames.find(static_cast<uint8_t>(opcode));
+      string opName = (it != evmInstructionNames.end()) ? it->second : "UNKNOWN";
 
       cout << "{\"depth\":" << dec << msg.depth
         << ",\"gas\":" << result.gasLeft
         << ",\"gasCost\":" << cost
-        << ",\"op\":" << opcode
+        << ",\"op\":" << opName
         << ",\"pc\":" << pc
         << ",\"stack\":[";
 
