@@ -45,8 +45,7 @@ defaults:
 
   save-eth-cache: &save-eth-cache
     save_cache:
-      # TODO: decide how to update cpp-eth version
-      key: &eth-cache-key cpp-prebuilt-cache-{{ arch }}-ee0c6776c01b
+      key: &eth-cache-key cpp-prebuilt-cache-{{arch}}-{{checksum "compiler.version"}}-ee0c6776c01b09045a379220c7e490000dae9377
       paths:
         - ~/build
         - ~/.hunter
@@ -123,11 +122,11 @@ version: 2
 jobs:
 
   # to run this using local circleci tool, rename Ewasm-Tests to `build` then do `circleci build -c circle.yml`
-  Ewasm-Tests:
+  ewasm-tests:
     environment:
       - BUILD_TYPE: Release
-      - CXX: clang++-5.0
-      - CC:  clang-5.0
+      - CXX: clang++
+      - CC:  clang
       - GENERATOR: Ninja
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF
@@ -143,11 +142,11 @@ jobs:
       - *save-eth-cache
       - *test-ewasm
 
-  Linux-Clang5:
+  linux-clang:
     environment:
       - BUILD_TYPE: Release
-      - CXX: clang++-5.0
-      - CC:  clang-5.0
+      - CXX: clang++
+      - CC:  clang
       - GENERATOR: Ninja
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF
@@ -155,11 +154,11 @@ jobs:
       - image: ethereum/cpp-build-env
     steps: *linux-steps
 
-  Linux-GCC6-Debug:
+  linux-gcc-debug:
     environment:
       - BUILD_TYPE: Debug
-      - CXX: g++-6
-      - CC:  gcc-6
+      - CXX: g++
+      - CC:  gcc
       - GENERATOR: Unix Makefiles
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON
@@ -171,6 +170,6 @@ workflows:
   version: 2
   cpp-ethereum:
     jobs:
-      - Linux-Clang5
-      - Linux-GCC6-Debug
-      - Ewasm-Tests
+      - linux-clang
+      - linux-gcc-debug
+      - ewasm-tests
