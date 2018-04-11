@@ -24,6 +24,11 @@ if(HERA_EVM2WASM)
   target_compile_definitions(hera PRIVATE HERA_EVM2WASM=1)
 endif()
 
+option(HERA_EVM2WASM_EVM_TRACE "Display trace steps for transpiled EVM opcodes (Better phrasing here?)" ON)
+if(HERA_EVM2WASM_EVM_TRACE)
+  target_compile_definitions(hera PRIVATE HERA_EVM2WASM_EVM_TRACE=1)
+endif()
+
 target_include_directories(hera PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} PRIVATE ${evm_include_dir})
 target_link_libraries(hera PRIVATE binaryen::binaryen Threads::Threads)
 if(NOT WIN32)

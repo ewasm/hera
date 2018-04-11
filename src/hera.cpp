@@ -159,6 +159,10 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input) {
   os.close();
 
   string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM;
+#if HERA_EVM2WASM_EVM_TRACE
+  cmd += " --trace";
+#endif
+
   int ret = system(cmd.data());
   unlink(fileEVM.data());
 
