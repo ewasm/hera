@@ -45,35 +45,37 @@ public:
     vm(_vm),
     code(_code),
     msg(_msg),
-    context(_context)
+    context(_context),
+    output(_msg.gas)
   { }
   
   /* Each WASM engine overrides this method */
   virtual int execute();
+
+  ExecutionResult & getResult() { return output; }
 
 protected:
   wasm_vm vm;
   vector<uint8_t> code;
   evm_message msg;
   evm_context *context;
+  ExecutionResult output;
 };
 
-class BinaryenVM : WasmEngine
+class BinaryenVM : public WasmEngine
 {
 public:
   BinaryenVM(vector<uint8_t> const& _code,
     evm_message const& _msg,
     evm_context *_context) : 
-    WasmEngine(VM_BINARYEN, _code, _msg, _context),
-    output(_msg.gas)
+    WasmEngine(VM_BINARYEN, _code, _msg, _context)
     { }
   
   int execute();
-  struct ExecutionResult output;
 };
 
 #if WABT_SUPPORTED
-class WabtVM : WasmEngine
+class WabtVM : public WasmEngine
 {
 public:
   WabtVM(vector<uint8_t> const& _code,
@@ -87,7 +89,7 @@ public:
 #endif
 
 #if WAVM_SUPPORTED
-class WavmVM : WasmEngine
+class WavmVM : public WasmEngine
 {
 public:
   WavmVM(vector<uint8_t> const& _code,

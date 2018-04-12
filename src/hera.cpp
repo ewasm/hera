@@ -337,19 +337,38 @@ evmc_result hera_execute(
     }
 
     //execute(context, _code, *msg, result);
-    BinaryenVM vm = BinaryenVM(_code, *msg, context);
-    vm.execute();
+    ExecutionResult vmresult;
+    
+    /* This should probably be cleaned up a bit */
+    switch (hera->vm) {
+    #if WABT_SUPPORTED
+    case VM_WABT:
+      WabtVM vm = WabtVM(_code, *msg, context);
+      vm.execute();
+      vmresult = vm.getResult();
+    #endif
+    #if WAVM_SUPPORTED
+    case VM_WAVM:
+      WavmVM vm = WavmVM(_code, *msg, context);
+      vm.execute();
+      vmresult = vm.getResult();
+    #endif
+    default:
+      BinaryenVM vm = BinaryenVM(_code, *msg, context);
+      vm.execute();
+      vmresult = vm.getResult();
+    }
 
     // copy call result
-    if (vm.output.returnValue.size() > 0) {
+    if (vmresult.returnValue.size() > 0) {
       vector<uint8_t> returnValue;
 
-      if (msg->kind == EVMC_CREATE && !vm.output.isRevert && hasWasmPreamble(vm.output.returnValue)) {
+      if (msg->kind == EVMC_CREATE && !vmresult.isRevert && hasWasmPreamble(vmresult.returnValue)) {
         // Meter the deployed code
-        returnValue = hera->metering ? sentinel(context, vm.output.returnValue) : move(vm.output.returnValue);
+        returnValue = hera->metering ? sentinel(context, vmresult.returnValue) : move(vmresult.returnValue);
         heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
       } else {
-        returnValue = move(vm.output.returnValue);
+        returnValue = move(vmresult.returnValue);
       }
 
       uint8_t* output_data = new uint8_t[returnValue.size()];
@@ -360,8 +379,8 @@ evmc_result hera_execute(
       ret.release = hera_destroy_result;
     }
 
-    ret.status_code = vm.output.isRevert ? EVMC_REVERT : EVMC_SUCCESS;
-    ret.gas_left = vm.output.gasLeft;
+    ret.status_code = vmresult.isRevert ? EVMC_REVERT : EVMC_SUCCESS;
+    ret.gas_left = vmresult.gasLeft;
   } catch (OutOfGasException const& e) {
     ret.status_code = EVMC_OUT_OF_GAS;
 #if HERA_DEBUGGING

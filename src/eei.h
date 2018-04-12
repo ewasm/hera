@@ -91,6 +91,7 @@ protected:
 };
 
 struct ExecutionResult {
+  ExecutionResult() { }
   ExecutionResult(uint64_t _gasLeft):
     gasLeft(_gasLeft)
   { }
