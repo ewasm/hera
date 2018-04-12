@@ -59,6 +59,7 @@ protected:
   vector<uint8_t> code;
   evmc_message msg;
   evmc_context *context;
+
   ExecutionResult output;
 };
 

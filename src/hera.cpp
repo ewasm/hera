@@ -366,6 +366,7 @@ evmc_result hera_execute(
       if (msg->kind == EVMC_CREATE && !vmresult.isRevert && hasWasmPreamble(vmresult.returnValue)) {
         // Meter the deployed code
         returnValue = hera->metering ? sentinel(context, vmresult.returnValue) : move(vmresult.returnValue);
+
         heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
       } else {
         returnValue = move(vmresult.returnValue);
