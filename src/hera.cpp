@@ -49,6 +49,7 @@ struct hera_instance : evm_instance {
   bool fallback = false;
 #if HERA_EVM2WASM
   bool use_evm2wasm_js = false;
+  bool use_evm2wasm_js_trace = false;
 #endif
 
   hera_instance() : evm_instance({EVM_ABI_VERSION, nullptr, nullptr, nullptr}) {}
@@ -143,7 +144,7 @@ string mktemp_string(string pattern) {
   return string(tmp, len);
 }
 
-vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input) {
+vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
   string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXX");
   string fileWASM = mktemp_string("/tmp/hera.evm2wasm.wasm.XXXXXX");
 
@@ -159,6 +160,9 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input) {
   os.close();
 
   string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM;
+  if (evmTrace)
+    cmd += " --trace";
+
   int ret = system(cmd.data());
   unlink(fileEVM.data());
 
@@ -277,7 +281,7 @@ evm_result evm_execute(
 #if HERA_EVM2WASM
       // Translate EVM bytecode to WASM
       if (hera->use_evm2wasm_js)
-        _code = evm2wasm_js(_code);
+        _code = evm2wasm_js(_code, hera->use_evm2wasm_js_trace);
       else
         _code = evm2wasm(context, _code);
       heraAssert(_code.size() != 0, "Transcompiling via evm2wasm failed");
@@ -354,6 +358,11 @@ int evm_set_option(
 #if HERA_EVM2WASM
   if (strcmp(name, "evm2wasm.js") == 0) {
     hera->use_evm2wasm_js = strcmp(value, "true") == 0;
+    return 1;
+  }
+
+  if (strcmp(name, "evm2wasm.js-trace") == 0) {
+    hera->use_evm2wasm_js_trace = strcmp(value, "true") == 0;
     return 1;
   }
 #endif
