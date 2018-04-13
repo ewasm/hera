@@ -137,11 +137,11 @@ vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
 // NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
 string mktemp_string(string pattern) {
   const unsigned long len = pattern.size();
-  char tmp[len];
-  strncpy(tmp, pattern.data(), len);
+  char tmp[len + 1];
+  strncpy(tmp, pattern.data());
   if (!mktemp(tmp))
      return string();
-  return string(tmp, len);
+  return string(tmp, strlen(tmp));
 }
 
 vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
