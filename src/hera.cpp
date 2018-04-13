@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <fstream>
+#include <errno.h>
 
 #include <pass.h>
 #include <wasm.h>
@@ -136,14 +137,18 @@ vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
 // NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
 string mktemp_string(string pattern) {
   const unsigned long len = pattern.size();
-  char tmp[len];
-  strncpy(tmp, pattern.data(), len);
+  char tmp[len+1]; // +1 for null terminator
+  strcpy(tmp, pattern.c_str());
   if (!mktemp(tmp))
      return string();
   return string(tmp, len);
 }
 
 vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input) {
+  #if HERA_DEBUGGING
+    cerr << "Calling evm2wasm.js (input " << input.size() << " bytes)..." << endl;
+  #endif
+
   string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXX");
   string fileWASM = mktemp_string("/tmp/hera.evm2wasm.wasm.XXXXXX");
 
@@ -159,6 +164,11 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input) {
   os.close();
 
   string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM;
+
+  #if HERA_DEBUGGING
+    cerr << "Calling evm2wasm.js with command: " << cmd << endl;
+  #endif
+
   int ret = system(cmd.data());
   unlink(fileEVM.data());
 
@@ -172,6 +182,10 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input) {
                  istreambuf_iterator<char>());
 
   unlink(fileWASM.data());
+
+  #if HERA_DEBUGGING
+    cerr << "evm2wasm.js done (output " << str.length() << " bytes)" << endl;
+  #endif
 
   return vector<uint8_t>(str.begin(), str.end());
 }
