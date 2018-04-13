@@ -138,7 +138,7 @@ string mktemp_string(string pattern) {
   const unsigned long len = pattern.size();
   char tmp[len];
   strncpy(tmp, pattern.data(), len);
-  if (!mktemp(tmp))
+  if (!mkstemp(tmp))
      return string();
   return string(tmp, len);
 }
