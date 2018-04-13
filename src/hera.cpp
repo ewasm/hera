@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <fstream>
+#include <errno.h>
 
 #include <pass.h>
 #include <wasm.h>
@@ -136,9 +137,9 @@ vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
 // NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
 string mktemp_string(string pattern) {
   const unsigned long len = pattern.size();
-  char tmp[len];
-  strncpy(tmp, pattern.data(), len);
-  if (!mkstemp(tmp))
+  char tmp[len+1]; // +1 for null terminator
+  strcpy(tmp, pattern.c_str());
+  if (!mktemp(tmp))
      return string();
   return string(tmp, len);
 }
