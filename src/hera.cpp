@@ -145,6 +145,10 @@ string mktemp_string(string pattern) {
 }
 
 vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
+#if HERA_DEBUGGING
+  cerr << "Calling evm2wasm.js (input " << input.size() << " bytes)..." << endl;
+#endif
+
   string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXX");
   string fileWASM = mktemp_string("/tmp/hera.evm2wasm.wasm.XXXXXX");
 
@@ -163,10 +167,18 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
   if (evmTrace)
     cmd += " --trace";
 
+#if HERA_DEBUGGING
+  cerr << "(Calling evm2wasm.js with command: " << cmd << ")" << endl;
+#endif
+
   int ret = system(cmd.data());
   unlink(fileEVM.data());
 
   if (ret != 0) {
+#if HERA_DEBUGGING
+    cerr << "evm2wasm.js failed" << endl;
+#endif
+
     unlink(fileWASM.data());
     return vector<uint8_t>();
   }
@@ -176,6 +188,10 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
                  istreambuf_iterator<char>());
 
   unlink(fileWASM.data());
+
+#if HERA_DEBUGGING
+  cerr << "evm2wasm.js done (output " << str.length() << " bytes)" << endl;
+#endif
 
   return vector<uint8_t>(str.begin(), str.end());
 }
