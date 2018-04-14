@@ -36,6 +36,57 @@
 # define HERA_IMPORT
 #endif
 
+#include <iostream>
+
+/* 
+ * Debug output stream
+ * At runtime this is silenced if vm options disable debug messages
+ */
+#if HERA_DEBUGGING
+namespace HeraDebugging {
+  class NullBuf: public std::streambuf
+  {
+  public:
+    virtual int overflow(int c) { return c; }
+  };
+
+  class NullStream : public std::ostream
+  {
+  public:
+    NullStream(): std::ostream(&m_sb) { }
+  private:
+    NullBuf m_sb;
+  };
+
+  class DebugStream 
+  {
+  public:
+    DebugStream()
+    { nullstream = NullStream(); }
+
+    bool isDebug() { return debugmode; }
+
+    void setDebug(bool _debug) 
+    { 
+      debugmode = _debug; 
+    }
+
+    std::ostream& getStream()
+    {
+      return (debugmode) ? std::cerr : static_cast<std::ostream&>(nullstream); 
+    }
+
+  private:
+    NullStream nullstream;
+    bool debugmode;
+  };
+
+  DebugStream hera_debug;
+
+}
+#define HeraDebug() hera_debug.getStream()
+#endif
+
 #if __cplusplus
 extern "C" {
 #endif
