@@ -138,7 +138,7 @@ vector<uint8_t> sentinel(evm_context* context, vector<uint8_t> const& input)
 string mktemp_string(string pattern) {
   const unsigned long len = pattern.size();
   char tmp[len + 1];
-  strncpy(tmp, pattern.data());
+  strcpy(tmp, pattern.data());
   if (!mktemp(tmp) || (tmp[0] == 0))
      return string();
   return string(tmp, strlen(tmp));
