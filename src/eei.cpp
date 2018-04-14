@@ -46,6 +46,7 @@ namespace HeraVM {
 
 namespace {
 
+#if HERA_DEBUGGING
 string toHex(evm_uint256be const& value) {
   ostringstream os;
   os << hex;
@@ -53,6 +54,7 @@ string toHex(evm_uint256be const& value) {
     os << setw(2) << setfill('0') << unsigned(b);
   return "0x" + os.str();
 }
+#endif
 
 }
 
