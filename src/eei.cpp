@@ -866,7 +866,7 @@ string toHex(evm_uint256be const& value) {
     evm_uint256be balance;
     context->fn_table->get_balance(&balance, context, &msg.destination);
     if (safeLoadUint64(balance) < safeLoadUint64(value))
-      throw new OutOfGasException();
+      throw OutOfGasException();
   }
 
   uint64_t EthereumInterface::safeLoadUint64(evm_uint256be const& value)
