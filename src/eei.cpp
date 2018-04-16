@@ -754,7 +754,7 @@ string toHex(evm_uint256be const& value) {
   {
     if (gas > result.gasLeft) {
       HERA_DEBUG << "Out of gas :(\n";
-      throw OutOfGasException();
+      throw OutOfGasException{};
     }
 
     result.gasLeft -= gas;
@@ -866,7 +866,7 @@ string toHex(evm_uint256be const& value) {
     evm_uint256be balance;
     context->fn_table->get_balance(&balance, context, &msg.destination);
     if (safeLoadUint64(balance) < safeLoadUint64(value))
-      throw OutOfGasException();
+      throw OutOfGasException{};
   }
 
   uint64_t EthereumInterface::safeLoadUint64(evm_uint256be const& value)
