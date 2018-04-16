@@ -23,6 +23,7 @@
  */
 
 #include <stdexcept>
+#include <array>
 #include "eei.h"
 
 using namespace std;
