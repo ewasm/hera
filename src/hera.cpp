@@ -341,6 +341,11 @@ evm_result evm_execute(
     ret.gas_left = result.gasLeft;
   } catch (OutOfGasException const&) {
     ret.status_code = EVM_OUT_OF_GAS;
+  } catch (StaticModeViolation const& e) {
+    ret.status_code = EVM_STATIC_MODE_ERROR;
+#if HERA_DEBUGGING
+    cerr << e.what() << endl;
+#endif
   } catch (InternalErrorException const& e) {
     ret.status_code = EVM_INTERNAL_ERROR;
 #if HERA_DEBUGGING
