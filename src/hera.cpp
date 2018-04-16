@@ -40,6 +40,7 @@
 #include "evm.h"
 #include "hera.h"
 #include "eei.h"
+#include "exceptions.h"
 
 using namespace std;
 using namespace wasm;
