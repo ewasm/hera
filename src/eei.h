@@ -39,6 +39,20 @@ public:
   const char* what() const noexcept override { return "Out of gas."; }
 };
 
+/// Static Mode Violation.
+///
+/// This exception is thrown when state modifying EEI function is called
+/// in static mode.
+class StaticModeViolation : public std::exception {
+public:
+  explicit StaticModeViolation(std::string const& _functionName):
+    msg("Static mode violation in " + _functionName + ".")
+  {}
+  const char* what() const noexcept override { return msg.c_str(); }
+private:
+  std::string msg;
+};
+
 class InternalErrorException : public std::exception {
 public:
   explicit InternalErrorException(std::string _msg): msg(std::move(_msg)) {}
