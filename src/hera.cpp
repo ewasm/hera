@@ -339,14 +339,14 @@ evm_result evm_execute(
 
     ret.status_code = result.isRevert ? EVM_REVERT : EVM_SUCCESS;
     ret.gas_left = result.gasLeft;
-  } catch (OutOfGasException) {
+  } catch (OutOfGasException const&) {
     ret.status_code = EVM_OUT_OF_GAS;
-  } catch (InternalErrorException &e) {
+  } catch (InternalErrorException const& e) {
     ret.status_code = EVM_INTERNAL_ERROR;
 #if HERA_DEBUGGING
     cerr << "InternalError: " << e.what() << endl;
 #endif
-  } catch (exception &e) {
+  } catch (exception const& e) {
     ret.status_code = EVM_INTERNAL_ERROR;
 #if HERA_DEBUGGING
     cerr << "Unknown exception: " << e.what() << endl;
