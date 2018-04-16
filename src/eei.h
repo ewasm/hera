@@ -41,8 +41,8 @@ public:
 
 class InternalErrorException : public std::exception {
 public:
-  explicit InternalErrorException(std::string const& _msg): msg(_msg) {}
-  const char* what() const noexcept override { return const_cast<char*>(msg.c_str()); }
+  explicit InternalErrorException(std::string _msg): msg(std::move(_msg)) {}
+  const char* what() const noexcept override { return msg.c_str(); }
 private:
   std::string msg;
 };
