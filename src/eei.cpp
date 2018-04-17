@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <array>
 #include "eei.h"
+#include "exceptions.h"
 
 using namespace std;
 using namespace wasm;
