@@ -348,7 +348,9 @@ evm_result evm_execute(
     cerr << e.what() << endl;
 #endif
   } catch (InternalErrorException const& e) {
-    ret.status_code = EVM_INTERNAL_ERROR;
+    // TODO: split exceptions properly, but for now this mostly (>90%) covers
+    // issues in the contracts, as opposed to unrecoverable issues in Hera
+    ret.status_code = EVM_FAILURE;
 #if HERA_DEBUGGING
     cerr << "InternalError: " << e.what() << endl;
 #endif
