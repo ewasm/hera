@@ -59,7 +59,11 @@ private:
 };
 
 #define heraAssert(condition, msg) { \
-  if (!(condition)) throw InternalErrorException(msg); \
+  if (!(condition)) throw InternalErrorException{msg}; \
+}
+
+#define ensureCondition(condition, ex, msg) { \
+  if (!(condition)) throw ex{msg}; \
 }
 
 }
