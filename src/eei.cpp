@@ -764,9 +764,7 @@ string toHex(evmc_uint256be const& value) {
 
   void EthereumInterface::takeGas(uint64_t gas)
   {
-    if (gas > result.gasLeft)
-      throw OutOfGasException{};
-
+    ensureCondition(gas <= result.gasLeft, OutOfGasException, "Out of gas.");
     result.gasLeft -= gas;
   }
 
@@ -875,8 +873,7 @@ string toHex(evmc_uint256be const& value) {
   {
     evmc_uint256be balance;
     context->fn_table->get_balance(&balance, context, &msg.destination);
-    if (safeLoadUint128(balance) < safeLoadUint128(value))
-      throw OutOfGasException{};
+    ensureCondition(safeLoadUint128(balance) >= safeLoadUint128(value), OutOfGasException, "Out of gas.");
   }
 
   uint64_t EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
