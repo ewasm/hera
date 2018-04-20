@@ -43,7 +43,7 @@ extern "C" {
 struct evm_instance;
 
 HERA_EXPORT
-struct evm_instance* hera_create(void);
+struct evmc_instance* hera_create(void);
 
 #if __cplusplus
 }

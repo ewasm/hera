@@ -1,10 +1,10 @@
 # Hera
 
-Hera is an [eWASM](https://github.com/ewasm/design) virtual machine implemented in C++ conforming to the [Ethereum VM API](https://github.com/ethereum/EIPs/issues/56).
+Hera is an [ewasm](https://github.com/ewasm/design) virtual machine implemented in C++ conforming to [EVMC](https://github.com/ethereum/evmc/).
 
 It can be used with [cpp-ethereum](https://github.com/ethereum/cpp-ethereum) and perhaps in the future with other implementations through appropriate bindings.
 
-Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpreter for running WebAssembly bytecode and it should be improved to support the [WAVM](https://github.com/AndrewScheidecker/WAVM) as a backend.
+Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpreter for running WebAssembly bytecode and it should be improved to support [wabt](https://github.com/webassembly/wabt) and [wavm](https://github.com/AndrewScheidecker/WAVM) as backends.
 
 ## Build options
 

@@ -49,7 +49,7 @@ namespace HeraVM {
 namespace {
 
 #if HERA_DEBUGGING
-string toHex(evm_uint256be const& value) {
+string toHex(evmc_uint256be const& value) {
   ostringstream os;
   os << hex;
   for (auto b: value.bytes)
@@ -118,7 +118,7 @@ string toHex(evm_uint256be const& value) {
     if (import->base == Name("printStorage") || import->base == Name("printStorageHex")) {
       uint32_t pathOffset = arguments[0].geti32();
 
-      evm_uint256be path = loadUint256(pathOffset);
+      evmc_uint256be path = loadUint256(pathOffset);
 
       bool useHex = import->base == Name("printStorageHex");
 
@@ -130,7 +130,7 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "): " << dec;
 
-      evm_uint256be result;
+      evmc_uint256be result;
       context->fn_table->get_storage(&result, context, &msg.destination, &path);
 
       if (useHex)
@@ -158,7 +158,7 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "evmTrace\n";
 
-      static constexpr int stackItemSize = sizeof(evm_uint256be);
+      static constexpr int stackItemSize = sizeof(evmc_uint256be);
       heraAssert(sp <= (1024 * stackItemSize), "EVM stack pointer out of bounds.");
 
       cout << "{\"depth\":" << dec << msg.depth
@@ -171,7 +171,7 @@ string toHex(evm_uint256be const& value) {
       for (int32_t i = sp; i >= 0; i -= stackItemSize) {
         if (i != sp)
           cout << ',';
-        evm_uint256be x = loadUint256(static_cast<uint32_t>(i));
+        evmc_uint256be x = loadUint256(static_cast<uint32_t>(i));
         cout << '"' << toHex(x) << '"';
       }
       cout << "]}" << endl;
@@ -230,8 +230,8 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "getBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
 
-      evm_address address = loadUint160(addressOffset);
-      evm_uint256be result;
+      evmc_address address = loadUint160(addressOffset);
+      evmc_uint256be result;
 
       takeGas(GasSchedule::balance);
       context->fn_table->get_balance(&result, context, &address);
@@ -246,7 +246,7 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
 
-      evm_uint256be blockhash;
+      evmc_uint256be blockhash;
 
       takeGas(GasSchedule::blockhash);
       context->fn_table->get_block_hash(&blockhash, context, number);
@@ -339,16 +339,17 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
-      evm_address address = loadUint160(addressOffset);
-      const uint8_t *code;
-      size_t code_size = context->fn_table->get_code(&code, context, &address);
-
       heraAssert(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, "Gas charge overflow");
       heraAssert(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), "Gas charge overflow");
       takeGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
-      // NOTE: code will be freed by the callee (client)
+
+      evmc_address address = loadUint160(addressOffset);
       // FIXME: optimise this so not vector needs to be created
-      storeMemory(vector<uint8_t>(code, code + code_size), codeOffset, resultOffset, length);
+      vector<uint8_t> codeBuffer(length);
+      size_t numCopied = context->fn_table->copy_code(context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
+      fill_n(&codeBuffer[numCopied], length - numCopied, 0);
+
+      storeMemory(codeBuffer, codeOffset, resultOffset, length);
 
       return Literal();
     }
@@ -358,9 +359,9 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
 
-      evm_address address = loadUint160(addressOffset);
+      evmc_address address = loadUint160(addressOffset);
       takeGas(GasSchedule::extcode);
-      size_t code_size = context->fn_table->get_code(NULL, context, &address);
+      size_t code_size = context->fn_table->get_code_size(context, &address);
 
       return Literal(static_cast<uint32_t>(code_size));
     }
@@ -370,7 +371,7 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
 
-      evm_tx_context tx_context;
+      evmc_tx_context tx_context;
 
       takeGas(GasSchedule::base);
       context->fn_table->get_tx_context(&tx_context, context);
@@ -384,7 +385,7 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
 
-      evm_tx_context tx_context;
+      evmc_tx_context tx_context;
 
       takeGas(GasSchedule::base);
       context->fn_table->get_tx_context(&tx_context, context);
@@ -396,7 +397,7 @@ string toHex(evm_uint256be const& value) {
     if (import->base == Name("getBlockGasLimit")) {
       HERA_DEBUG << "getBlockGasLimit\n";
 
-      evm_tx_context tx_context;
+      evmc_tx_context tx_context;
 
       takeGas(GasSchedule::base);
       context->fn_table->get_tx_context(&tx_context, context);
@@ -411,7 +412,7 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
 
-      evm_tx_context tx_context;
+      evmc_tx_context tx_context;
 
       takeGas(GasSchedule::base);
       context->fn_table->get_tx_context(&tx_context, context);
@@ -427,12 +428,12 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
 
-      if (msg.flags & EVM_STATIC)
+      if (msg.flags & EVMC_STATIC)
         throw StaticModeViolation{"log"};
 
       heraAssert(numberOfTopics <= 4, "Too many topics specified");
 
-      array<evm_uint256be, 4> topics;
+      array<evmc_uint256be, 4> topics;
       for (size_t i = 0; i < numberOfTopics; ++i) {
         uint32_t topicOffset = arguments[3 + i].geti32();
         topics[i] = loadUint256(topicOffset);
@@ -455,7 +456,7 @@ string toHex(evm_uint256be const& value) {
     if (import->base == Name("getBlockNumber")) {
       HERA_DEBUG << "getBlockNumber\n";
 
-      evm_tx_context tx_context;
+      evmc_tx_context tx_context;
 
       takeGas(GasSchedule::base);
       context->fn_table->get_tx_context(&tx_context, context);
@@ -468,7 +469,7 @@ string toHex(evm_uint256be const& value) {
     if (import->base == Name("getBlockTimestamp")) {
       HERA_DEBUG << "getBlockTimestamp\n";
 
-      evm_tx_context tx_context;
+      evmc_tx_context tx_context;
 
       takeGas(GasSchedule::base);
       context->fn_table->get_tx_context(&tx_context, context);
@@ -483,7 +484,7 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
 
-      evm_tx_context tx_context;
+      evmc_tx_context tx_context;
 
       takeGas(GasSchedule::base);
       context->fn_table->get_tx_context(&tx_context, context);
@@ -498,12 +499,12 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
 
-      if (msg.flags & EVM_STATIC)
+      if (msg.flags & EVMC_STATIC)
         throw StaticModeViolation{"storageStore"};
 
-      evm_uint256be path = loadUint256(pathOffset);
-      evm_uint256be value = loadUint256(valueOffset);
-      evm_uint256be current;
+      evmc_uint256be path = loadUint256(pathOffset);
+      evmc_uint256be value = loadUint256(valueOffset);
+      evmc_uint256be current;
 
       context->fn_table->get_storage(&current, context, &msg.destination, &path);
 
@@ -525,8 +526,8 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
 
-      evm_uint256be path = loadUint256(pathOffset);
-      evm_uint256be result;
+      evmc_uint256be path = loadUint256(pathOffset);
+      evmc_uint256be result;
 
       takeGas(GasSchedule::storageLoad);
       context->fn_table->get_storage(&result, context, &msg.destination, &path);
@@ -583,9 +584,9 @@ string toHex(evm_uint256be const& value) {
       uint32_t dataOffset;
       uint32_t dataLength;
 
-      heraAssert((msg.flags & ~EVM_STATIC) == 0, "Unknown flags not supported.");
+      heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
 
-      evm_message call_message;
+      evmc_message call_message;
       call_message.destination = loadUint160(addressOffset);
       call_message.flags = msg.flags;
       call_message.code_hash = {};
@@ -599,9 +600,9 @@ string toHex(evm_uint256be const& value) {
 
         call_message.sender = msg.destination;
         call_message.value = loadUint128(valueOffset);
-        call_message.kind = (import->base == Name("callCode")) ? EVM_CALLCODE : EVM_CALL;
+        call_message.kind = (import->base == Name("callCode")) ? EVMC_CALLCODE : EVMC_CALL;
 
-        if ((msg.flags & EVM_STATIC) && import->base == Name("call") && !isZeroUint256(call_message.value))
+        if ((msg.flags & EVMC_STATIC) && import->base == Name("call") && !isZeroUint256(call_message.value))
           throw StaticModeViolation{"call"};
 
         ensureSenderBalance(call_message.value);
@@ -613,12 +614,12 @@ string toHex(evm_uint256be const& value) {
         if (import->base == Name("callDelegate")) {
           call_message.sender = msg.sender;
           call_message.value = msg.value;
-          call_message.kind = EVM_DELEGATECALL;
+          call_message.kind = EVMC_DELEGATECALL;
         } else if (import->base == Name("callStatic")) {
           call_message.sender = msg.destination;
           call_message.value = {};
-          call_message.kind = EVM_CALL;
-          call_message.flags |= EVM_STATIC;
+          call_message.kind = EVMC_CALL;
+          call_message.flags |= EVMC_STATIC;
         }
       }
 
@@ -640,7 +641,7 @@ string toHex(evm_uint256be const& value) {
         call_message.input_size = 0;
       }
 
-      evm_result call_result;
+      evmc_result call_result;
 
       if (import->base == Name("call") && !context->fn_table->account_exists(context, &call_message.destination))
         takeGas(GasSchedule::callNewAccount);
@@ -663,9 +664,9 @@ string toHex(evm_uint256be const& value) {
       result.gasLeft += call_result.gas_left;
 
       switch (call_result.status_code) {
-      case EVM_SUCCESS:
+      case EVMC_SUCCESS:
         return Literal(uint32_t(0));
-      case EVM_REVERT:
+      case EVMC_REVERT:
         return Literal(uint32_t(2));
       default:
         return Literal(uint32_t(1));
@@ -680,10 +681,10 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "create " << hex << valueOffset << " " << dataOffset << " " << length << dec << " " << resultOffset << dec << "\n";
 
-      if (msg.flags & EVM_STATIC)
+      if (msg.flags & EVMC_STATIC)
         throw StaticModeViolation{"create"};
 
-      evm_message create_message;
+      evmc_message create_message;
 
       create_message.destination = {};
       create_message.sender = msg.destination;
@@ -704,16 +705,16 @@ string toHex(evm_uint256be const& value) {
       create_message.code_hash = {};
       create_message.gas = result.gasLeft - (result.gasLeft / 64);
       create_message.depth = msg.depth + 1;
-      create_message.kind = EVM_CREATE;
+      create_message.kind = EVMC_CREATE;
       create_message.flags = 0;
 
-      evm_result create_result;
+      evmc_result create_result;
 
       takeGas(create_message.gas);
       takeGas(GasSchedule::create);
       context->fn_table->call(&create_result, context, &create_message);
 
-      if (create_result.status_code == EVM_SUCCESS) {
+      if (create_result.status_code == EVMC_SUCCESS) {
         storeUint160(create_result.create_address, resultOffset);
         lastReturnData.clear();
       } else if (create_result.output_data) {
@@ -726,9 +727,9 @@ string toHex(evm_uint256be const& value) {
         create_result.release(&create_result);
 
       switch (create_result.status_code) {
-      case EVM_SUCCESS:
+      case EVMC_SUCCESS:
         return Literal(uint32_t(0));
-      case EVM_REVERT:
+      case EVMC_REVERT:
         return Literal(uint32_t(2));
       default:
         return Literal(uint32_t(1));
@@ -740,10 +741,10 @@ string toHex(evm_uint256be const& value) {
 
       HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
 
-      if (msg.flags & EVM_STATIC)
+      if (msg.flags & EVMC_STATIC)
         throw StaticModeViolation{"selfDestruct"};
 
-      evm_address address = loadUint160(addressOffset);
+      evmc_address address = loadUint160(addressOffset);
 
       if (!context->fn_table->account_exists(context, &address))
         takeGas(GasSchedule::callNewAccount);
@@ -827,38 +828,38 @@ string toHex(evm_uint256be const& value) {
    * Memory Op Wrapper Functions
    */
 
-  evm_uint256be EthereumInterface::loadUint256(uint32_t srcOffset)
+  evmc_uint256be EthereumInterface::loadUint256(uint32_t srcOffset)
   {
-    evm_uint256be dst = {};
+    evmc_uint256be dst = {};
     loadMemory(srcOffset, dst.bytes, 32);
     return dst;
   }
 
-  void EthereumInterface::storeUint256(evm_uint256be const& src, uint32_t dstOffset)
+  void EthereumInterface::storeUint256(evmc_uint256be const& src, uint32_t dstOffset)
   {
     storeMemory(src.bytes, dstOffset, 32);
   }
 
-  evm_address EthereumInterface::loadUint160(uint32_t srcOffset)
+  evmc_address EthereumInterface::loadUint160(uint32_t srcOffset)
   {
-    evm_address dst = {};
+    evmc_address dst = {};
     loadMemory(srcOffset, dst.bytes, 20);
     return dst;
   }
 
-  void EthereumInterface::storeUint160(evm_address const& src, uint32_t dstOffset)
+  void EthereumInterface::storeUint160(evmc_address const& src, uint32_t dstOffset)
   {
     storeMemory(src.bytes, dstOffset, 20);
   }
 
-  evm_uint256be EthereumInterface::loadUint128(uint32_t srcOffset)
+  evmc_uint256be EthereumInterface::loadUint128(uint32_t srcOffset)
   {
-    evm_uint256be dst = {};
+    evmc_uint256be dst = {};
     loadMemory(srcOffset, dst.bytes, 16);
     return dst;
   }
 
-  void EthereumInterface::storeUint128(evm_uint256be const& src, uint32_t dstOffset)
+  void EthereumInterface::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
   {
     heraAssert(!exceedsUint128(src), "Value at src cannot exceed 2^128-1");
     storeMemory(src.bytes + 16, dstOffset, 16);
@@ -867,15 +868,15 @@ string toHex(evm_uint256be const& value) {
   /*
    * Utilities
    */
-  void EthereumInterface::ensureSenderBalance(evm_uint256be const& value)
+  void EthereumInterface::ensureSenderBalance(evmc_uint256be const& value)
   {
-    evm_uint256be balance;
+    evmc_uint256be balance;
     context->fn_table->get_balance(&balance, context, &msg.destination);
     if (safeLoadUint64(balance) < safeLoadUint64(value))
       throw OutOfGasException{};
   }
 
-  uint64_t EthereumInterface::safeLoadUint64(evm_uint256be const& value)
+  uint64_t EthereumInterface::safeLoadUint64(evmc_uint256be const& value)
   {
     heraAssert(!exceedsUint64(value), "Value exceeds 64 bits.");
     uint64_t ret = 0;
@@ -886,7 +887,7 @@ string toHex(evm_uint256be const& value) {
     return ret;
   }
 
-  bool EthereumInterface::exceedsUint64(evm_uint256be const& value)
+  bool EthereumInterface::exceedsUint64(evmc_uint256be const& value)
   {
     for (unsigned i = 0; i < 24; i++) {
       if (value.bytes[i])
@@ -895,7 +896,7 @@ string toHex(evm_uint256be const& value) {
     return false;
   }
 
-  bool EthereumInterface::exceedsUint128(evm_uint256be const& value)
+  bool EthereumInterface::exceedsUint128(evmc_uint256be const& value)
   {
     for (unsigned i = 0; i < 16; i++) {
       if (value.bytes[i])
@@ -904,7 +905,7 @@ string toHex(evm_uint256be const& value) {
     return false;
   }
 
-  bool EthereumInterface::isZeroUint256(evm_uint256be const& value)
+  bool EthereumInterface::isZeroUint256(evmc_uint256be const& value)
   {
     for (unsigned i = 0; i < 32; i++) {
       if (value.bytes[i] != 0)
