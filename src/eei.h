@@ -83,7 +83,7 @@ private:
 
   void ensureSenderBalance(evmc_uint256be const& value);
 
-  static uint64_t safeLoadUint64(evmc_uint256be const& value);
+  static uint64_t safeLoadUint128(evmc_uint256be const& value);
 
   /* Checks if host supplied 256 bit value exceeds UINT64_MAX */
   static bool exceedsUint64(evmc_uint256be const& value);
