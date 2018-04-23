@@ -872,15 +872,15 @@ string toHex(evmc_uint256be const& value) {
   {
     evmc_uint256be balance;
     context->fn_table->get_balance(&balance, context, &msg.destination);
-    if (safeLoadUint64(balance) < safeLoadUint64(value))
+    if (safeLoadUint128(balance) < safeLoadUint128(value))
       throw OutOfGasException{};
   }
 
-  uint64_t EthereumInterface::safeLoadUint64(evmc_uint256be const& value)
+  uint64_t EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
   {
-    heraAssert(!exceedsUint64(value), "Value exceeds 64 bits.");
+    heraAssert(!exceedsUint128(value), "Value exceeds 128 bits.");
     uint64_t ret = 0;
-    for (unsigned i = 24; i < 32; i++) {
+    for (unsigned i = 16; i < 32; i++) {
       ret <<= 8;
       ret |= value.bytes[i];
     }
