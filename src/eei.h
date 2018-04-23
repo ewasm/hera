@@ -39,19 +39,6 @@ using namespace wasm;
 
 namespace HeraVM {
 
-class OutOfGasException : std::exception {
-public:
-  const char* what() const noexcept override { return "Out of gas."; }
-};
-
-class InternalErrorException : std::exception {
-public:
-  explicit InternalErrorException(std::string const& _msg): msg(_msg) {}
-  const char* what() const noexcept override { return const_cast<char*>(msg.c_str()); }
-private:
-  std::string msg;
-};
-
 /* Base class for EEI implementations */
 class EEI {
 public:
