@@ -25,6 +25,8 @@
 #ifndef __HERA_H
 #define __HERA_H
 
+#include <evmc/evmc.h>
+
 #if defined _MSC_VER || defined __MINGW32__
 # define HERA_EXPORT __declspec(dllexport)
 # define HERA_IMPORT __declspec(dllimport)
@@ -40,10 +42,8 @@
 extern "C" {
 #endif
 
-struct evm_instance;
-
 HERA_EXPORT
-struct evmc_instance* hera_create(void);
+struct evmc_instance* evmc_create_hera(void);
 
 #if __cplusplus
 }

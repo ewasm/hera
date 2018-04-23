@@ -13,7 +13,6 @@ project(hera)
 
 include(ProjectBinaryen)
 
-option(EVMC_BUILD_EXAMPLES "Build EVMC examples" OFF)
 add_subdirectory(evmc)
 
 add_subdirectory(src)
