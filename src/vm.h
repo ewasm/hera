@@ -57,8 +57,8 @@ public:
 protected:
   wasm_vm vm;
   vector<uint8_t> code;
-  evm_message msg;
-  evm_context *context;
+  evmc_message msg;
+  evmc_context *context;
   ExecutionResult output;
 };
 
@@ -66,8 +66,8 @@ class BinaryenVM : public WasmEngine
 {
 public:
   BinaryenVM(vector<uint8_t> const& _code,
-    evm_message const& _msg,
-    evm_context *_context) : 
+    evmc_message const& _msg,
+    evmc_context *_context) : 
     WasmEngine(VM_BINARYEN, _code, _msg, _context)
     { }
   
@@ -79,8 +79,8 @@ class WabtVM : public WasmEngine
 {
 public:
   WabtVM(vector<uint8_t> const& _code,
-    evm_message const& msg,
-    evm_context *_context) :
+    evmc_message const& msg,
+    evmc_context *_context) :
     WasmEngine(VM_WABT, _code, _msg, _context)
     { }
 
@@ -93,8 +93,8 @@ class WavmVM : public WasmEngine
 {
 public:
   WavmVM(vector<uint8_t> const& _code,
-    evm_message const& msg,
-    evm_context *_context) :
+    evmc_message const& msg,
+    evmc_context *_context) :
     WasmEngine(VM_WAVM, _code, _msg, _context)
     { }
 

@@ -39,25 +39,12 @@ using namespace wasm;
 
 namespace HeraVM {
 
-class OutOfGasException : std::exception {
-public:
-  const char* what() const noexcept override { return "Out of gas."; }
-};
-
-class InternalErrorException : std::exception {
-public:
-  explicit InternalErrorException(std::string const& _msg): msg(_msg) {}
-  const char* what() const noexcept override { return const_cast<char*>(msg.c_str()); }
-private:
-  std::string msg;
-};
-
 /* Base class for EEI implementations */
 class EEI {
 public:
-  EEI(evm_context *_context,
+  EEI(evmc_context *_context,
     std::vector<uint8_t> const& _code,
-    evm_message const& _msg) :
+    evmc_message const& _msg) :
     context(_context),
     code(_code),
     msg(_msg)
@@ -152,10 +139,6 @@ private:
   /* Checks if 256 bit value is all zeroes */
   static bool isZeroUint256(evmc_uint256be const& value);
 
-  evmc_context* context = nullptr;
-  std::vector<uint8_t> const& code;
-  evmc_message const& msg;
-  std::vector<uint8_t> lastReturnData;
   ExecutionResult & result;
   bool meterGas = true;
 };
