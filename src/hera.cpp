@@ -37,7 +37,7 @@
 #include <wasm-printing.h>
 #include <wasm-validator.h>
 
-#include <evmc.h>
+#include <evmc/evmc.h>
 
 #include "hera.h"
 #include "eei.h"
@@ -54,7 +54,7 @@ struct hera_instance : evmc_instance {
   bool use_evm2wasm_js_trace = false;
 #endif
 
-  hera_instance() : evmc_instance({EVMC_ABI_VERSION, nullptr, nullptr, nullptr}) {}
+  hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr}) {}
 };
 
 namespace {
@@ -344,7 +344,7 @@ evmc_result hera_execute(
   } catch (OutOfGasException const&) {
     ret.status_code = EVMC_OUT_OF_GAS;
   } catch (StaticModeViolation const& e) {
-    ret.status_code = EVMC_STATIC_MODE_ERROR;
+    ret.status_code = EVMC_STATIC_MODE_VIOLATION;
 #if HERA_DEBUGGING
     cerr << e.what() << endl;
 #endif
@@ -404,13 +404,13 @@ void hera_destroy(evmc_instance* instance)
 
 extern "C" {
 
-evmc_instance* hera_create()
+evmc_instance* evmc_create_hera()
 {
   hera_instance* instance = new hera_instance;
   instance->destroy = hera_destroy;
   instance->execute = hera_execute;
   instance->set_option = hera_set_option;
-  return static_cast<evmc_instance*>(instance);
+  return instance;
 }
 
 }

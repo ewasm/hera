@@ -45,7 +45,7 @@ defaults:
 
   save-eth-cache: &save-eth-cache
     save_cache:
-      key: &eth-cache-key cpp-prebuilt-cache-{{arch}}-{{checksum "compiler.version"}}-a17f30a41aa2af506b6b453f052c53bd323a36e0
+      key: &eth-cache-key cpp-prebuilt-cache-{{arch}}-{{checksum "compiler.version"}}-d658b3ae8195baaa328a213913c47274ce87296d
       paths:
         - ~/build
         - ~/.hunter
@@ -60,9 +60,9 @@ defaults:
       working_directory: ~/project
       command: |
         cd ..
-        git clone https://github.com/ethereum/cpp-ethereum --branch develop --single-branch
+        git clone https://github.com/ethereum/cpp-ethereum --branch upgrade-evmc --single-branch
         cd cpp-ethereum
-        git reset --hard a17f30a41aa2af506b6b453f052c53bd323a36e0
+        git reset --hard d658b3ae8195baaa328a213913c47274ce87296d
         git submodule update --init
 
   link-hera: &link-hera
