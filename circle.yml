@@ -60,9 +60,9 @@ defaults:
       working_directory: ~/project
       command: |
         cd ..
-        git clone https://github.com/ethereum/cpp-ethereum --branch upgrade-evmc --single-branch
+        git clone https://github.com/ethereum/cpp-ethereum --branch develop --single-branch
         cd cpp-ethereum
-        git reset --hard d658b3ae8195baaa328a213913c47274ce87296d
+        git reset --hard 3f2ac7c4f9e1543eb4f31cbdcdf8028eb9bfe0b6
         git submodule update --init
 
   link-hera: &link-hera
