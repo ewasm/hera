@@ -28,7 +28,7 @@
 #include "hera.h"
 #include "eei.h" /* for ExecutionResult */
 
-#include <evmc.h>
+#include <evmc/evmc.h>
 
 using namespace std;
 using namespace HeraVM;
