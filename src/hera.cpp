@@ -49,6 +49,7 @@ using namespace HeraVM;
 
 struct hera_instance : evmc_instance {
   bool fallback = false;
+  bool metering = false;
 #if HERA_EVM2WASM
   bool use_evm2wasm_js = false;
   bool use_evm2wasm_js_trace = false;
@@ -72,7 +73,6 @@ bool hasWasmPreamble(vector<uint8_t> const& _input) {
     _input[7] == 0;
 }
 
-#if HERA_METERING_CONTRACT || HERA_EVM2WASM
 vector<uint8_t> callSystemContract(
   evmc_context* context,
   evmc_address const& address,
@@ -106,7 +106,6 @@ vector<uint8_t> callSystemContract(
 
   return ret;
 }
-#endif
 
 vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
 {
@@ -114,7 +113,6 @@ vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
   cerr << "Metering (input " << input.size() << " bytes)..." << endl;
 #endif
 
-#if HERA_METERING_CONTRACT
   int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
   int64_t gas = startgas;
   vector<uint8_t> ret = callSystemContract(
@@ -129,10 +127,6 @@ vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
 #endif
 
   return ret;
-#else
-  (void)context;
-  return input;
-#endif
 }
 
 #if HERA_EVM2WASM
@@ -282,6 +276,8 @@ evmc_result hera_execute(
   const uint8_t *code,
   size_t code_size
 ) {
+  hera_instance* hera = static_cast<hera_instance*>(instance);
+
   evmc_result ret;
   memset(&ret, 0, sizeof(evmc_result));
 
@@ -295,7 +291,6 @@ evmc_result hera_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (!hasWasmPreamble(_code)) {
-      hera_instance* hera = static_cast<hera_instance*>(instance);
 #if HERA_EVM2WASM
       // Translate EVM bytecode to WASM
       if (hera->use_evm2wasm_js)
@@ -313,7 +308,8 @@ evmc_result hera_execute(
 
     if (msg->kind == EVMC_CREATE) {
       // Meter the deployment (constructor) code
-      _code = sentinel(context, _code);
+      if (hera->metering)
+        _code = sentinel(context, _code);
       heraAssert(_code.size() > 5, "Invalid contract or metering failed.");
     }
 
@@ -325,7 +321,7 @@ evmc_result hera_execute(
 
       if (msg->kind == EVMC_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
         // Meter the deployed code
-        returnValue = sentinel(context, result.returnValue);
+        returnValue = hera->metering ? sentinel(context, result.returnValue) : move(result.returnValue);
         heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
       } else {
         returnValue = move(result.returnValue);
@@ -391,6 +387,10 @@ int hera_set_option(
     return 1;
   }
 #endif
+  if (strcmp(name, "metering") == 0) {
+    hera->metering = strcmp(value, "true") == 0;
+    return 1;
+  }
   return 0;
 }
 
