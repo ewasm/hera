@@ -548,6 +548,14 @@ string toHex(evmc_uint256be const& value) {
 
       result.isRevert = import->base == Name("revert");
 
+#if HERA_DEBUGGING
+      HERA_DEBUG << "Return value:" << endl << hex;
+      for (uint32_t i = 0; i < size; i++) {
+        HERA_DEBUG << static_cast<int>(result.returnValue[i]) << " ";
+      }
+      HERA_DEBUG << endl;
+#endif
+
       return Literal();
     }
 
