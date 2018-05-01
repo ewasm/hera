@@ -165,7 +165,7 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
     os << setfill('0') << setw(2) << static_cast<int>(byte);
   os.close();
 
-  string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM;
+  string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM + " --charge-per-op";
   if (evmTrace)
     cmd += " --trace";
 
