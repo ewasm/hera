@@ -3,7 +3,7 @@ get_filename_component(evm_include_dir .. ABSOLUTE)
 
 find_package(Threads REQUIRED)
 
-add_library(hera
+add_library(hera SHARED
     eei.cpp eei.h
     evm-instructions.cpp evm-instructions.h
     hera.cpp hera.h
