@@ -162,30 +162,6 @@ jobs:
       - CC:  clang
       - GENERATOR: Ninja
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DHERA_DEBUGGING=on -DHERA_EVM2WASM=on -DHERA_METERING_CONTRACT=on
-    docker:
-      - image: ethereum/cpp-build-env
-    steps: *linux-steps
-
-  linux-clang-metering:
-    environment:
-      - BUILD_TYPE: Release
-      - CXX: clang++
-      - CC:  clang
-      - GENERATOR: Ninja
-      - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DHERA_DEBUGGING=off -DHERA_METERING_CONTRACT=on
-    docker:
-      - image: ethereum/cpp-build-env
-    steps: *linux-steps
-
-  linux-clang-metering:
-    environment:
-      - BUILD_TYPE: Release
-      - CXX: clang++
-      - CC:  clang
-      - GENERATOR: Ninja
-      - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DHERA_DEBUGGING=on -DHERA_EVM2WASM=on
     docker:
       - image: ethereum/cpp-build-env
@@ -210,7 +186,7 @@ jobs:
       - CC:  gcc
       - GENERATOR: Unix Makefiles
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON -DHERA_EVM2WASM=on -DHERA_METERING_CONTRACT=on
+      - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON -DHERA_EVM2WASM=on
     docker:
       - image: ethereum/cpp-build-env
     steps: *linux-steps
@@ -222,6 +198,5 @@ workflows:
       - linux-clang
       - linux-gcc-debug
       - linux-clang-evm2wasm
-      - linux-clang-metering
       - linux-gcc-all-options
       - ewasm-tests
