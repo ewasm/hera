@@ -337,8 +337,11 @@ evmc_result hera_execute(
 
     ret.status_code = result.isRevert ? EVMC_REVERT : EVMC_SUCCESS;
     ret.gas_left = result.gasLeft;
-  } catch (OutOfGasException const&) {
+  } catch (OutOfGasException const& e) {
     ret.status_code = EVMC_OUT_OF_GAS;
+#if HERA_DEBUGGING
+    cerr << e.what() << endl;
+#endif
   } catch (StaticModeViolation const& e) {
     ret.status_code = EVMC_STATIC_MODE_VIOLATION;
 #if HERA_DEBUGGING

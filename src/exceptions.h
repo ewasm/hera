@@ -28,7 +28,12 @@ namespace HeraVM {
 
 class OutOfGasException : public std::exception {
 public:
-  const char* what() const noexcept override { return "Out of gas."; }
+  explicit OutOfGasException(std::string _msg = "Out of gas."):
+    msg(std::move(_msg))
+  {}
+  const char* what() const noexcept override { return msg.c_str(); }
+private:
+  std::string msg;
 };
 
 /// Static Mode Violation.
