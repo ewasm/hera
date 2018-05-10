@@ -16,6 +16,7 @@ Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpre
 
 These are to be used via EVM-C `set_option`:
 
+- `metering=true` will enable metering of bytecode at deployment using the [Sentinel system contract](https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract) (set to `false` by default)
 - `fallback=true` will allow EVM bytecode to be passed through to the client for execution (if set to `false`, the default, it will be rejected as invalid)
 - `evm2wasm.js=true` will use a `evm2wasm.js` as an external commandline tool instead as a system contract
 - `evm2wasm.js-trace=true` will turn on EVM tracing for `evm2wasm.js`
