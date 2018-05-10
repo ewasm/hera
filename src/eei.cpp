@@ -860,7 +860,7 @@ string toHex(evmc_uint256be const& value) {
   evmc_uint256be EthereumInterface::loadUint128(uint32_t srcOffset)
   {
     evmc_uint256be dst = {};
-    loadMemory(srcOffset, dst.bytes, 16);
+    loadMemory(srcOffset, dst.bytes + 16, 16);
     return dst;
   }
 
