@@ -2,7 +2,7 @@
 
 Hera is an [ewasm](https://github.com/ewasm/design) virtual machine implemented in C++ conforming to [EVMC](https://github.com/ethereum/evmc/).
 
-It can be used with [cpp-ethereum](https://github.com/ethereum/cpp-ethereum) and perhaps in the future with other implementations through appropriate bindings.
+It can be used with [cpp-ethereum] and perhaps in the future with other implementations through appropriate bindings.
 
 Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpreter for running WebAssembly bytecode and it should be improved to support [wabt](https://github.com/webassembly/wabt) and [wavm](https://github.com/AndrewScheidecker/WAVM) as backends.
 
@@ -10,6 +10,7 @@ Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpre
 
 - `-DHERA_DEBUGGING=ON` will turn on debugging features and messages
 - `-DHERA_EVM2WASM=ON` will use the evm2wasm contract translate EVM bytecode (through the contract residing at 0x00..0b)
+- `-DBUILD_SHARED_LIBS=ON` is a standard CMake option to build libraries as shared. This will build Hera shared library that can be then dynamically loaded by EVMC compatible Clients (e.g. `eth` from [cpp-ethereum]).
 
 ## Runtime options
 
@@ -60,3 +61,6 @@ Alex Beregszaszi
 ## License
 
 MIT
+
+
+[cpp-ethereum]: https://github.com/ethereum/cpp-ethereum
