@@ -892,7 +892,7 @@ string toHex(evmc_uint256be const& value) {
 
   bool EthereumInterface::exceedsUint64(evmc_uint256be const& value)
   {
-    for (unsigned i = 0; i < 24; i++) {
+    for (unsigned i = 24; i < 32; i++) {
       if (value.bytes[i])
         return true;
     }
@@ -901,7 +901,7 @@ string toHex(evmc_uint256be const& value) {
 
   bool EthereumInterface::exceedsUint128(evmc_uint256be const& value)
   {
-    for (unsigned i = 0; i < 16; i++) {
+    for (unsigned i = 16; i < 32; i++) {
       if (value.bytes[i])
         return true;
     }
