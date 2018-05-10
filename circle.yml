@@ -143,17 +143,27 @@ jobs:
       - *save-eth-cache
       - *test-ewasm
 
-  linux-clang:
+  linux-clang-shared:
     environment:
       - BUILD_TYPE: Release
       - CXX: clang++
       - CC:  clang
       - GENERATOR: Ninja
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF
+      - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF -DBUILD_SHARED_LIBS=ON
     docker:
       - image: ethereum/cpp-build-env
-    steps: *linux-steps
+    steps:
+      - checkout
+      - *update-submodules
+      - *environment-info
+      - *restore-deps-cache
+      - *configure
+      - *build
+      - *save-deps-cache
+      - store_artifacts:
+          path: ~/build/src/libhera.so
+          destination: libhera.so
 
   linux-clang-evm2wasm:
     environment:
@@ -195,7 +205,7 @@ workflows:
   version: 2
   cpp-ethereum:
     jobs:
-      - linux-clang
+      - linux-clang-shared
       - linux-gcc-debug
       - linux-clang-evm2wasm
       - linux-gcc-all-options
