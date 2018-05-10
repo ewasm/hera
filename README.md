@@ -9,7 +9,6 @@ Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpre
 ## Build options
 
 - `-DHERA_DEBUGGING=ON` will turn on debugging features and messages
-- `-DHERA_EVM2WASM=ON` will use the evm2wasm contract translate EVM bytecode (through the contract residing at 0x00..0b)
 - `-DBUILD_SHARED_LIBS=ON` is a standard CMake option to build libraries as shared. This will build Hera shared library that can be then dynamically loaded by EVMC compatible Clients (e.g. `eth` from [cpp-ethereum]).
 
 ## Runtime options
@@ -17,8 +16,9 @@ Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpre
 These are to be used via EVM-C `set_option`:
 
 - `metering=true` will enable metering of bytecode at deployment using the [Sentinel system contract](https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract) (set to `false` by default)
-- `fallback=true` will allow EVM bytecode to be passed through to the client for execution (if set to `false`, the default, it will be rejected as invalid)
-- `evm2wasm.js=true` will use a `evm2wasm.js` as an external commandline tool instead as a system contract
+- `evm2wasm=true` will enable metering of bytecode at deployment using the [EVM Transcompiler](https://github.com/ewasm/design/blob/master/system_contracts.md#evm-transcompiler) (set to `false` by default)
+- `fallback=true` will allow EVM bytecode to be passed through to the client for execution (if set to `false`, the default, it will be rejected as invalid) (note: is ignored if `evm2wasm` is `true`)
+- `evm2wasm.js=true` will use a `evm2wasm.js` as an external commandline tool instead of the system contract
 - `evm2wasm.js-trace=true` will turn on EVM tracing for `evm2wasm.js`
 
 ## Interfaces
