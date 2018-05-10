@@ -50,10 +50,9 @@ using namespace HeraVM;
 struct hera_instance : evmc_instance {
   bool fallback = false;
   bool metering = false;
-#if HERA_EVM2WASM
+  bool evm2wasm = false;
   bool use_evm2wasm_js = false;
   bool use_evm2wasm_js_trace = false;
-#endif
 
   hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr}) {}
 };
@@ -129,7 +128,6 @@ vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
   return ret;
 }
 
-#if HERA_EVM2WASM
 // NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
 string mktemp_string(string pattern) {
   const unsigned long len = pattern.size();
@@ -212,7 +210,6 @@ vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
 
   return ret;
 }
-#endif
 
 void execute(
   evmc_context* context,
@@ -291,17 +288,17 @@ evmc_result hera_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (!hasWasmPreamble(_code)) {
-#if HERA_EVM2WASM
-      // Translate EVM bytecode to WASM
-      if (hera->use_evm2wasm_js)
-        _code = evm2wasm_js(_code, hera->use_evm2wasm_js_trace);
-      else
-        _code = evm2wasm(context, _code);
-      heraAssert(_code.size() != 0, "Transcompiling via evm2wasm failed");
-#else
-      ret.status_code = hera->fallback ? EVMC_REJECTED : EVMC_FAILURE;
+      if (hera->evm2wasm) {
+        // Translate EVM bytecode to WASM
+        if (hera->use_evm2wasm_js)
+          _code = evm2wasm_js(_code, hera->use_evm2wasm_js_trace);
+        else
+          _code = evm2wasm(context, _code);
+        heraAssert(_code.size() > 5, "Transcompiling via evm2wasm failed");
+      } else {
+        ret.status_code = hera->fallback ? EVMC_REJECTED : EVMC_FAILURE;
+      }
       return ret;
-#endif
     }
 
     heraAssert(rev == EVMC_BYZANTIUM, "Only Byzantium supported.");
@@ -379,7 +376,12 @@ int hera_set_option(
     hera->fallback = strcmp(value, "true") == 0;
     return 1;
   }
-#if HERA_EVM2WASM
+
+  if (strcmp(name, "evm2wasm") == 0) {
+    hera->evm2wasm = strcmp(value, "true") == 0;
+    return 1;
+  }
+
   if (strcmp(name, "evm2wasm.js") == 0) {
     hera->use_evm2wasm_js = strcmp(value, "true") == 0;
     return 1;
@@ -389,7 +391,7 @@ int hera_set_option(
     hera->use_evm2wasm_js_trace = strcmp(value, "true") == 0;
     return 1;
   }
-#endif
+
   if (strcmp(name, "metering") == 0) {
     hera->metering = strcmp(value, "true") == 0;
     return 1;
