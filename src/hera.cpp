@@ -242,7 +242,6 @@ evmc_result hera_execute(
     bool meterInterfaceGas = true;
     vector<uint8_t> _code(code, code + code_size);
 
-    heraAssert(msg->gas >= 0, "Negative startgas?");
     // ensure we can only handle WebAssembly version 1
     if (!hasWasmPreamble(_code)) {
       switch (hera->evm_mode) {
