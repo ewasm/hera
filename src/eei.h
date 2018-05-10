@@ -31,10 +31,6 @@
 #include "hera.h"
 #include "exceptions.h"
 
-#define heraAssert(condition, msg) { \
-  if (!(condition)) throw InternalErrorException(msg); \
-}
-
 using namespace wasm;
 
 namespace HeraVM {
