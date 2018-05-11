@@ -73,6 +73,94 @@ protected:
     static constexpr unsigned callNewAccount = 25000;
   };
 
+/*
+ * Generic EEI function prototypes
+ */
+  void eth_useGas(uint64_t gas);
+  uint64_t eth_getGasLeft();
+
+  void eth_getAddress(uint32_t resultOffset);
+  void eth_getBalance(uint32_t addressOffset, uint32_t resultOffset);
+  void eth_getBlockHash(int64_t number, uint32_t resultOffset);
+
+  uint32_t eth_call(
+    int64_t gas, 
+    uint32_t addressOffset,
+    uint32_t valueOffset,
+    uint32_t dataOffset,
+    size_t dataLength);
+  uint32_t eth_callCode(
+    int64_t gas,
+    uint32_t addressOffset,
+    uint32_t valueOffset,
+    uint32_t dataOffset,
+    size_t dataLength);
+  uint32_t eth_callDelegate(
+    int64_t gas,
+    uint32_t addressOffset,
+    uint32_t dataOffset,
+    size_t dataLength);
+  uint32_t eth_callStatic(
+    int64_t gas,
+    uint32_t addressOffset,
+    uint32_t dataOffset,
+    size_t dataLength);
+  uint32_t eth_create(
+    uint32_t valueOffset,
+    uint32_t dataOffset,
+    size_t length,
+    uint32_t resultOffset);
+
+  void eth_callDataCopy(
+    uint32_t resultOffset,
+    uint32_t dataOffset,
+    size_t length);
+  size_t eth_getCallDataSize();
+
+  void eth_codeCopy(uint32_t resultOffset, uint32_t codeOffset, size_t length);
+  size_t eth_getCodeSize();
+
+  void eth_externalCodeCopy(
+    uint32_t addressOffset,
+    uint32_t resultOffset,
+    uint32_t codeOffset,
+    size_t length);
+  size_t eth_getExternalCodeSize(uint32_t addressOffset);
+  
+  void eth_getCaller(uint32_t resultOffset);
+  void eth_getCallValue(uint32_t resultOffset);
+  
+  void eth_getBlockDifficulty(uint32_t offset);
+  void eth_getBlockCoinbase(uint32_t resultOffset);
+  int64_t eth_getBlockNumber();
+  int64_t eth_getBlockGasLimit();
+  int64_t eth_getBlockTimestamp();
+
+  void eth_getTxGasPrice(uint32_t valueOffset);
+  void eth_getTxOrigin(uint32_t resultOffset);
+
+  void eth_storageStore(uint32_t pathOffset, uint32_t valueOffset);
+  void eth_storageLoad(uint32_t pathOffset, uint32_t resultOffset);
+
+  void eth_log(
+    uint32_t dataOffset,
+    size_t length
+    uint32_t numberOfTopics,
+    uint32_t topic1,
+    uint32_t topic2,
+    uint32_t topic3,
+    uint32_t topic4);
+
+  size_t eth_getReturnDataSize();
+  void eth_returnDataCopy(uint32_t resultOffset,
+    uint32_t dataOffset,
+    size_t length);
+
+  void eth_return(uint32_t dataOffset, size_t length);
+  void eth_revert(uint32_t dataOffset, size_t length);
+
+  void eth_selfDestruct(uint32_t addressOffset);
+
   evmc_context *context;
   std::vector<uint8_t> const& code;
   evmc_message const& msg;

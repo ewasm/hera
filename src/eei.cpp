@@ -206,12 +206,10 @@ string toHex(evmc_uint256be const& value) {
 #endif
 
     heraAssert(import->module == Name("ethereum"), "Only imports from the 'ethereum' namespace are allowed.");
-
-    string funcName = string(import->base.str);
-#if HERA_DEBUGGING
-    cout << "calling " << funcName << endl;
-#endif
-
+/* FIXME: Use this later for the host function map
+ *  string funcName = string(import->base.str);
+ *  cout << "calling " << funcName << endl;
+ */
     if (import->base == Name("useGas")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
