@@ -297,8 +297,8 @@ evmc_result hera_execute(
         heraAssert(_code.size() > 5, "Transcompiling via evm2wasm failed");
       } else {
         ret.status_code = hera->fallback ? EVMC_REJECTED : EVMC_FAILURE;
+        return ret;
       }
-      return ret;
     }
 
     heraAssert(rev == EVMC_BYZANTIUM, "Only Byzantium supported.");
