@@ -47,7 +47,7 @@ struct EthereumInterface : ShellExternalInterface {
     std::vector<uint8_t> const& _code,
     evmc_message const& _msg,
     ExecutionResult & _result,
-    bool _meterGas = true
+    bool _meterGas
   ):
     ShellExternalInterface(),
     context(_context),
