@@ -934,7 +934,8 @@ string toHex(evmc_uint256be const& value) {
 
   void EthereumInterface::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
   {
-    heraAssert(!exceedsUint128(src), "Value at src cannot exceed 2^128-1");
+    // TODO: use a specific error code here?
+    ensureCondition(!exceedsUint128(src), OutOfGasException, "Value exceeds 128 bits.");
     storeMemory(src.bytes + 16, dstOffset, 16);
   }
 
@@ -950,7 +951,8 @@ string toHex(evmc_uint256be const& value) {
 
   uint64_t EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
   {
-    heraAssert(!exceedsUint128(value), "Value exceeds 128 bits.");
+    // TODO: use a specific error code here?
+    ensureCondition(!exceedsUint128(value), OutOfGasException, "Value exceeds 128 bits.");
     uint64_t ret = 0;
     for (unsigned i = 16; i < 32; i++) {
       ret <<= 8;
