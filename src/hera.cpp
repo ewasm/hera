@@ -217,65 +217,6 @@ vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
   return ret;
 }
 
-void execute(
-  evmc_context* context,
-  vector<uint8_t> const& code,
-  evmc_message const& msg,
-  ExecutionResult & result,
-  bool meterInterfaceGas
-) {
-#if HERA_DEBUGGING
-  cerr << "Executing..." << endl;
-#endif
-
-  Module module;
-
-  // Load module
-  try {
-    WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(code), false);
-    parser.read();
-  } catch (ParseException &p) {
-    ensureCondition(
-      false,
-      ContractValidationFailure,
-      "Error in parsing WASM binary: '" +
-      p.text +
-      "' at " +
-      to_string(p.line) +
-      ":" +
-      to_string(p.col)
-    );
-  }
-
-  // Print
-  // WasmPrinter::printModule(module);
-
-  // Validate
-  ensureCondition(
-    WasmValidator().validate(module),
-    ContractValidationFailure,
-    "Module is not valid."
-  );
-
-  // This should be caught during deployment time by the Sentinel.
-  // TODO: validate for other conditions too?
-  ensureCondition(
-    module.getExportOrNull(Name("main")) != nullptr,
-    ContractValidationFailure,
-    "Contract entry point (\"main\") missing."
-  );
-
-  // NOTE: DO NOT use the optimiser here, it will conflict with metering
-
-  // Interpet
-  EthereumInterface interface(context, code, msg, result, meterInterfaceGas);
-  ModuleInstance instance(module, &interface);
-
-  Name main = Name("main");
-  LiteralList args;
-  instance.callExport(main, args);
-}
-
 void hera_destroy_result(evmc_result const* result)
 {
   delete[] result->output_data;
@@ -299,12 +240,8 @@ evmc_result hera_execute(
     heraAssert(msg->gas >= 0, "Negative startgas?");
 
     bool meterInterfaceGas = true;
-    ExecutionResult result;
-    result.gasLeft = (uint64_t)msg->gas;
+    vector<uint8_t> _code(code, code + code_size);
 
-  vector<uint8_t> _code(code, code + code_size);
-
-  try {
     heraAssert(msg->gas >= 0, "Negative startgas?");
     // ensure we can only handle WebAssembly version 1
     if (!hasWasmPreamble(_code)) {
@@ -367,7 +304,7 @@ evmc_result hera_execute(
         // Meter the deployed code
         returnValue = hera->metering ? sentinel(context, vmresult.returnValue) : move(vmresult.returnValue);
 
-        heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
+        ensureCondition(returnValue.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
       } else {
         returnValue = move(vmresult.returnValue);
       }
