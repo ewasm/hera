@@ -228,8 +228,9 @@ void execute(
     WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(code), false);
     parser.read();
   } catch (ParseException &p) {
-    heraAssert(
+    ensureCondition(
       false,
+      ContractValidationFailure,
       "Error in parsing WASM binary: '" +
       p.text +
       "' at " +
@@ -243,11 +244,19 @@ void execute(
   // WasmPrinter::printModule(module);
 
   // Validate
-  heraAssert(WasmValidator().validate(module), "Module is not valid.");
+  ensureCondition(
+    WasmValidator().validate(module),
+    ContractValidationFailure,
+    "Module is not valid."
+  );
 
   // This should be caught during deployment time by the Sentinel.
   // TODO: validate for other conditions too?
-  heraAssert(module.getExportOrNull(Name("main")) != nullptr, "Contract entry point (\"main\") missing.");
+  ensureCondition(
+    module.getExportOrNull(Name("main")) != nullptr,
+    ContractValidationFailure,
+    "Contract entry point (\"main\") missing."
+  );
 
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
@@ -279,6 +288,7 @@ evmc_result hera_execute(
   memset(&ret, 0, sizeof(evmc_result));
 
   try {
+    heraAssert(rev == EVMC_BYZANTIUM, "Only Byzantium supported.");
     heraAssert(msg->gas >= 0, "Negative startgas?");
 
     ExecutionResult result;
@@ -294,20 +304,18 @@ evmc_result hera_execute(
           _code = evm2wasm_js(_code, hera->use_evm2wasm_js_trace);
         else
           _code = evm2wasm(context, _code);
-        heraAssert(_code.size() > 5, "Transcompiling via evm2wasm failed");
+        ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
       } else {
         ret.status_code = hera->fallback ? EVMC_REJECTED : EVMC_FAILURE;
         return ret;
       }
     }
 
-    heraAssert(rev == EVMC_BYZANTIUM, "Only Byzantium supported.");
-
     if (msg->kind == EVMC_CREATE) {
       // Meter the deployment (constructor) code
       if (hera->metering)
         _code = sentinel(context, _code);
-      heraAssert(_code.size() > 5, "Invalid contract or metering failed.");
+      ensureCondition(_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
     }
 
     execute(context, _code, *msg, result);
@@ -319,7 +327,7 @@ evmc_result hera_execute(
       if (msg->kind == EVMC_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
         // Meter the deployed code
         returnValue = hera->metering ? sentinel(context, result.returnValue) : move(result.returnValue);
-        heraAssert(returnValue.size() > 5, "Invalid contract or metering failed.");
+        ensureCondition(returnValue.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
       } else {
         returnValue = move(result.returnValue);
       }
@@ -336,6 +344,11 @@ evmc_result hera_execute(
     ret.gas_left = result.gasLeft;
   } catch (OutOfGasException const& e) {
     ret.status_code = EVMC_OUT_OF_GAS;
+#if HERA_DEBUGGING
+    cerr << e.what() << endl;
+#endif
+  } catch (ContractValidationFailure const& e) {
+    ret.status_code = EVMC_CONTRACT_VALIDATION_FAILURE;
 #if HERA_DEBUGGING
     cerr << e.what() << endl;
 #endif

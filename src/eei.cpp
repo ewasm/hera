@@ -437,7 +437,7 @@ string toHex(evmc_uint256be const& value) {
 
       ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "log");
 
-      heraAssert(numberOfTopics <= 4, "Too many topics specified");
+      ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
 
       array<evmc_uint256be, 4> topics;
       for (size_t i = 0; i < numberOfTopics; ++i) {
