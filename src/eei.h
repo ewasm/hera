@@ -39,6 +39,16 @@ using namespace wasm;
 
 namespace HeraVM {
 
+struct ExecutionResult {
+  ExecutionResult() { }
+  ExecutionResult(uint64_t _gasLeft):
+    gasLeft(_gasLeft)
+  { }
+  uint64_t gasLeft = 0;
+  std::vector<uint8_t> returnValue;
+  bool isRevert = false;
+};
+
 /* Base class for EEI implementations */
 class EEI {
 public:
@@ -144,7 +154,7 @@ protected:
 
   void eth_log(
     uint32_t dataOffset,
-    size_t length
+    size_t length,
     uint32_t numberOfTopics,
     uint32_t topic1,
     uint32_t topic2,
@@ -165,16 +175,8 @@ protected:
   std::vector<uint8_t> const& code;
   evmc_message const& msg;
   std::vector<uint8_t> lastReturnData;
+  ExecutionResult & result;
   bool meterGas;
-};
-
-struct ExecutionResult {
-  ExecutionResult(uint64_t _gasLeft):
-    gasLeft(_gasLeft)
-  { }
-  uint64_t gasLeft = 0;
-  std::vector<uint8_t> returnValue;
-  bool isRevert = false;
 };
 
 struct BinaryenEEI : ShellExternalInterface, public EEI {
@@ -228,9 +230,6 @@ private:
 
   /* Checks if 256 bit value is all zeroes */
   static bool isZeroUint256(evmc_uint256be const& value);
-
-  ExecutionResult & result;
-  bool meterGas = true;
 };
 
 struct GasSchedule {
