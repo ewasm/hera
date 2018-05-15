@@ -72,7 +72,7 @@ string toHex(evmc_uint256be const& value) {
   
   uint64_t EEI::eth_getGasLeft()
   {
-    HERA_DEBUG << "getGasLeft" << endl;
+    HERA_DEBUG << "getGasLeft\n";
 
     static_assert(is_same<decltype(result.gasLeft), uint64_t>::value, "uint64_t type expected");
 
