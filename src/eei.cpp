@@ -435,8 +435,7 @@ string toHex(evmc_uint256be const& value) {
 
       HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
 
-      if (msg.flags & EVMC_STATIC)
-        throw StaticModeViolation{"log"};
+      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "log");
 
       heraAssert(numberOfTopics <= 4, "Too many topics specified");
 
@@ -507,8 +506,7 @@ string toHex(evmc_uint256be const& value) {
 
       HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
 
-      if (msg.flags & EVMC_STATIC)
-        throw StaticModeViolation{"storageStore"};
+      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
 
       evmc_uint256be path = loadUint256(pathOffset);
       evmc_uint256be value = loadUint256(valueOffset);
@@ -610,8 +608,9 @@ string toHex(evmc_uint256be const& value) {
         call_message.value = loadUint128(valueOffset);
         call_message.kind = (import->base == Name("callCode")) ? EVMC_CALLCODE : EVMC_CALL;
 
-        if ((msg.flags & EVMC_STATIC) && import->base == Name("call") && !isZeroUint256(call_message.value))
-          throw StaticModeViolation{"call"};
+        if (import->base == Name("call") && !isZeroUint256(call_message.value)) {
+          ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "call");
+        }
 
         ensureSenderBalance(call_message.value);
       } else {
@@ -689,8 +688,7 @@ string toHex(evmc_uint256be const& value) {
 
       HERA_DEBUG << "create " << hex << valueOffset << " " << dataOffset << " " << length << dec << " " << resultOffset << dec << "\n";
 
-      if (msg.flags & EVMC_STATIC)
-        throw StaticModeViolation{"create"};
+      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "create");
 
       evmc_message create_message;
 
@@ -749,8 +747,7 @@ string toHex(evmc_uint256be const& value) {
 
       HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
 
-      if (msg.flags & EVMC_STATIC)
-        throw StaticModeViolation{"selfDestruct"};
+      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "selfDestruct");
 
       evmc_address address = loadUint160(addressOffset);
 
