@@ -774,7 +774,7 @@ string toHex(evmc_uint256be const& value) {
 
   void EthereumInterface::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
   {
-    heraAssert((srcOffset + length) > srcOffset, "Out of bounds (source) memory copy.");
+    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
 
     if (!length)
       HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec << "\n";
@@ -786,8 +786,8 @@ string toHex(evmc_uint256be const& value) {
 
   void EthereumInterface::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
   {
-    heraAssert((srcOffset + length) >= srcOffset, "Out of bounds (source) memory copy.");
-    heraAssert(dst.size() >= length, "Out of bounds (destination) memory copy.");
+    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition(dst.size() >= length, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
 
     if (!length)
       HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec <<"\n";
@@ -799,8 +799,8 @@ string toHex(evmc_uint256be const& value) {
 
   void EthereumInterface::storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length)
   {
-    heraAssert((dstOffset + length) >= dstOffset, "Out of bounds (destination) memory copy.");
-    heraAssert(memory.size() >= (dstOffset + length), "Out of bounds (destination) memory copy.");
+    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+    ensureCondition(memory.size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
 
     if (!length)
       HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
@@ -812,10 +812,10 @@ string toHex(evmc_uint256be const& value) {
 
   void EthereumInterface::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
   {
-    heraAssert((srcOffset + length) >= srcOffset, "Out of bounds (source) memory copy.");
-    heraAssert(src.size() >= (srcOffset + length), "Out of bounds (source) memory copy.");
-    heraAssert((dstOffset + length) >= dstOffset, "Out of bounds (destination) memory copy.");
-    heraAssert(memory.size() >= (dstOffset + length), "Out of bounds (destination) memory copy.");
+    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition(src.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+    ensureCondition(memory.size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
 
     if (!length)
       HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
