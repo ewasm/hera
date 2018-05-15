@@ -69,6 +69,16 @@ string toHex(evmc_uint256be const& value) {
 
     result.gasLeft -= gas;
   }
+  
+  uint64_t EEI::eth_getGasLeft()
+  {
+    HERA_DEBUG << "getGasLeft" << endl;
+
+    static_assert(is_same<decltype(result.gasLeft), uint64_t>::value, "uint64_t type expected");
+
+    eth_useGas(GasSchedule::base);
+    return result.gasLeft;
+  }
 
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
@@ -234,13 +244,7 @@ string toHex(evmc_uint256be const& value) {
     if (import->base == Name("getGasLeft")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getGasLeft\n";
-
-      static_assert(is_same<decltype(result.gasLeft), uint64_t>::value, "uint64_t type expected");
-
-      eth_useGas(GasSchedule::base);
-
-      return Literal(result.gasLeft);
+      return Literal(eth_getGasLeft());
     }
 
     if (import->base == Name("getAddress")) {
