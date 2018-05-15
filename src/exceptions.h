@@ -26,35 +26,18 @@
 
 namespace HeraVM {
 
-class OutOfGas : public std::exception {
+class HeraException : public std::exception {
 public:
-  explicit OutOfGas(std::string _msg):
-    msg(std::move(_msg))
-  {}
+  explicit HeraException(std::string _msg): msg(std::move(_msg)) {}
   const char* what() const noexcept override { return msg.c_str(); }
 private:
   std::string msg;
 };
 
-class ContractValidationFailure : public std::exception {
-public:
-  explicit ContractValidationFailure(std::string _msg):
-    msg(std::move(_msg))
-  {}
-  const char* what() const noexcept override { return msg.c_str(); }
-private:
-  std::string msg;
-};
-
-class InvalidMemoryAccess : public std::exception {
-public:
-  explicit InvalidMemoryAccess(std::string _msg):
-    msg(std::move(_msg))
-  {}
-  const char* what() const noexcept override { return msg.c_str(); }
-private:
-  std::string msg;
-};
+class InternalErrorException : public HeraException {};
+class OutOfGas : public HeraException {};
+class ContractValidationFailure : public HeraException {};
+class InvalidMemoryAccess : public HeraException {};
 
 /// Static Mode Violation.
 ///
@@ -65,14 +48,6 @@ public:
   explicit StaticModeViolation(std::string const& _functionName):
     msg("Static mode violation in " + _functionName + ".")
   {}
-  const char* what() const noexcept override { return msg.c_str(); }
-private:
-  std::string msg;
-};
-
-class InternalErrorException : public std::exception {
-public:
-  explicit InternalErrorException(std::string _msg): msg(std::move(_msg)) {}
   const char* what() const noexcept override { return msg.c_str(); }
 private:
   std::string msg;
