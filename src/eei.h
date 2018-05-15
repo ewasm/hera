@@ -204,8 +204,6 @@ struct BinaryenEEI : ShellExternalInterface, public EEI {
   }
 
 private:
-  void takeGas(uint64_t gas);
-
   void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length);
   void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length);
   void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length);
