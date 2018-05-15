@@ -51,9 +51,16 @@ int BinaryenVM::execute()
   }
 
   /* Validation */
-  heraAssert(WasmValidator().validate(module), "Module is not valid.");
-  heraAssert(module.getExportOrNull(Name("main")) != nullptr, 
-    "Contract entry point (\"main\") missing.");
+  ensureCondition(
+    WasmValidator().validate(module),
+    ContractValidationFailure, 
+    "Module is not valid."
+  );
+  ensureCondition(
+    module.getExportOrNull(Name("main")) != nullptr,
+    ContractValidationFailure,
+    "Contract entry point (\"main\") missing."
+  );
 
   BinaryenEEI interface(context, code, msg, output);
   ModuleInstance instance(module, &interface);
