@@ -339,6 +339,11 @@ evmc_result hera_execute(
 #if HERA_DEBUGGING
     cerr << e.what() << endl;
 #endif
+  } catch (InvalidMemoryAccess const& e) {
+    ret.status_code = EVMC_INVALID_MEMORY_ACCESS;
+#if HERA_DEBUGGING
+    cerr << e.what() << endl;
+#endif
   } catch (StaticModeViolation const& e) {
     ret.status_code = EVMC_STATIC_MODE_VIOLATION;
 #if HERA_DEBUGGING
