@@ -47,12 +47,16 @@ using namespace std;
 using namespace wasm;
 using namespace HeraVM;
 
+enum hera_evm_mode {
+  EVM_FALLBACK,
+  EVM2WASM,
+  EVM2WASM_JS,
+  EVM2WASM_JS_TRACING
+};
+
 struct hera_instance : evmc_instance {
-  bool fallback = false;
+  hera_evm_mode evm_mode;
   bool metering = false;
-  bool evm2wasm = false;
-  bool use_evm2wasm_js = false;
-  bool use_evm2wasm_js_trace = false;
 
   hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr}) {}
 };
@@ -298,15 +302,21 @@ evmc_result hera_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (!hasWasmPreamble(_code)) {
-      if (hera->evm2wasm) {
-        // Translate EVM bytecode to WASM
-        if (hera->use_evm2wasm_js)
-          _code = evm2wasm_js(_code, hera->use_evm2wasm_js_trace);
-        else
-          _code = evm2wasm(context, _code);
+      switch (hera->evm_mode) {
+      case EVM2WASM:
+        _code = evm2wasm(context, _code);
         ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
-      } else {
-        ret.status_code = hera->fallback ? EVMC_REJECTED : EVMC_FAILURE;
+        break;
+      case EVM2WASM_JS:
+      case EVM2WASM_JS_TRACING:
+        _code = evm2wasm_js(_code, hera->evm_mode == EVM2WASM_JS_TRACING);
+        ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
+        break;
+      case EVM_FALLBACK:
+        ret.status_code = EVMC_REJECTED;
+        return ret;
+      default:
+        ret.status_code = EVMC_FAILURE;
         return ret;
       }
     }
@@ -389,22 +399,26 @@ int hera_set_option(
 ) {
   hera_instance* hera = static_cast<hera_instance*>(instance);
   if (strcmp(name, "fallback") == 0) {
-    hera->fallback = strcmp(value, "true") == 0;
+    if (strcmp(value, "true") == 0)
+      hera->evm_mode = EVM_FALLBACK;
     return 1;
   }
 
   if (strcmp(name, "evm2wasm") == 0) {
-    hera->evm2wasm = strcmp(value, "true") == 0;
+    if (strcmp(value, "true") == 0)
+      hera->evm_mode = EVM2WASM;
     return 1;
   }
 
   if (strcmp(name, "evm2wasm.js") == 0) {
-    hera->use_evm2wasm_js = strcmp(value, "true") == 0;
+    if (strcmp(value, "true") == 0)
+      hera->evm_mode = EVM2WASM_JS;
     return 1;
   }
 
   if (strcmp(name, "evm2wasm.js-trace") == 0) {
-    hera->use_evm2wasm_js_trace = strcmp(value, "true") == 0;
+    if (strcmp(value, "true") == 0)
+      hera->evm_mode = EVM2WASM_JS_TRACING;
     return 1;
   }
 
