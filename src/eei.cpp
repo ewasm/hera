@@ -275,9 +275,10 @@ string toHex(evmc_uint256be const& value) {
 
       HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
 
-      heraAssert(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, "Gas charge overflow");
-      heraAssert(
+      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
+      ensureCondition(
         numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
+        OutOfGasException,
         "Gas charge overflow"
       );
       takeGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
@@ -317,9 +318,10 @@ string toHex(evmc_uint256be const& value) {
 
       HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
-      heraAssert(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, "Gas charge overflow");
-      heraAssert(
+      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
+      ensureCondition(
         numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
+        OutOfGasException,
         "Gas charge overflow"
       );
       takeGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
@@ -344,8 +346,8 @@ string toHex(evmc_uint256be const& value) {
 
       HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
-      heraAssert(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, "Gas charge overflow");
-      heraAssert(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), "Gas charge overflow");
+      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
+      ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGasException, "Gas charge overflow");
       takeGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
 
       evmc_address address = loadUint160(addressOffset);
@@ -447,9 +449,10 @@ string toHex(evmc_uint256be const& value) {
       vector<uint8_t> data(length);
       loadMemory(dataOffset, data, length);
 
-      heraAssert(ffs(length) + ffs(GasSchedule::logData) <= 64, "Gas charge overflow");
-      heraAssert(
+      ensureCondition(ffs(length) + ffs(GasSchedule::logData) <= 64, OutOfGasException, "Gas charge overflow");
+      ensureCondition(
         numeric_limits<uint64_t>::max() - (GasSchedule::log + GasSchedule::logTopic * numberOfTopics) >= static_cast<uint64_t>(length) * GasSchedule::logData,
+        OutOfGasException,
         "Gas charge overflow"
       );
       takeGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
@@ -764,9 +767,7 @@ string toHex(evmc_uint256be const& value) {
 
   void EthereumInterface::takeGas(uint64_t gas)
   {
-    if (gas > result.gasLeft)
-      throw OutOfGasException{};
-
+    ensureCondition(gas <= result.gasLeft, OutOfGasException, "Out of gas.");
     result.gasLeft -= gas;
   }
 
@@ -777,7 +778,7 @@ string toHex(evmc_uint256be const& value) {
   void EthereumInterface::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
   {
     heraAssert((srcOffset + length) > srcOffset, "Out of bounds (source) memory copy.");
-    
+
     if (!length)
       HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec << "\n";
 
@@ -875,8 +876,7 @@ string toHex(evmc_uint256be const& value) {
   {
     evmc_uint256be balance;
     context->fn_table->get_balance(&balance, context, &msg.destination);
-    if (safeLoadUint128(balance) < safeLoadUint128(value))
-      throw OutOfGasException{};
+    ensureCondition(safeLoadUint128(balance) >= safeLoadUint128(value), OutOfGasException, "Out of gas.");
   }
 
   uint64_t EthereumInterface::safeLoadUint128(evmc_uint256be const& value)

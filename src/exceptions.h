@@ -28,7 +28,7 @@ namespace HeraVM {
 
 class OutOfGasException : public std::exception {
 public:
-  explicit OutOfGasException(std::string _msg = "Out of gas."):
+  explicit OutOfGasException(std::string _msg):
     msg(std::move(_msg))
   {}
   const char* what() const noexcept override { return msg.c_str(); }
@@ -59,7 +59,11 @@ private:
 };
 
 #define heraAssert(condition, msg) { \
-  if (!(condition)) throw InternalErrorException(msg); \
+  if (!(condition)) throw InternalErrorException{msg}; \
+}
+
+#define ensureCondition(condition, ex, msg) { \
+  if (!(condition)) throw ex{msg}; \
 }
 
 }
