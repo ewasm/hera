@@ -36,6 +36,16 @@ private:
   std::string msg;
 };
 
+class ContractValidationFailure : public std::exception {
+public:
+  explicit ContractValidationFailure(std::string _msg):
+    msg(std::move(_msg))
+  {}
+  const char* what() const noexcept override { return msg.c_str(); }
+private:
+  std::string msg;
+};
+
 class InvalidMemoryAccess : public std::exception {
 public:
   explicit InvalidMemoryAccess(std::string _msg):
