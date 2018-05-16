@@ -49,8 +49,7 @@ public:
     output(_msg.gas)
   { }
   
-  /* Each WASM engine overrides this method */
-  virtual int execute();
+  virtual int execute() = 0;
 
   ExecutionResult & getResult() { return output; }
 

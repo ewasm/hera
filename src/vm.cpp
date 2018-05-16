@@ -28,9 +28,6 @@ using namespace std;
 using namespace wasm;
 using namespace HeraVM;
 
-// generic virtual method to be overridden
-int WasmEngine::execute() { return 0; }
-
 int BinaryenVM::execute()
 {
   Module module;
