@@ -100,6 +100,18 @@ string toHex(evmc_uint256be const& value) {
     storeUint128(result, resultOffset);
   }
 
+  void EEI::eth_getBlockHash(int64_t number, uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getBlockHash " << number << " " << hex << resultOffset << dec << "\n";
+
+    evmc_uint256be blockhash;
+
+    eth_useGas(GasSchedule::blockhash);
+    context->fn_table->get_block_hash(&blockhash, context, number);
+
+    storeUint256(blockhash, resultOffset);
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -294,13 +306,7 @@ string toHex(evmc_uint256be const& value) {
       int64_t number = arguments[0].geti64();
       uint32_t resultOffset = arguments[1].geti32();
 
-      HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
-
-      evmc_uint256be blockhash;
-
-      eth_useGas(GasSchedule::blockhash);
-      context->fn_table->get_block_hash(&blockhash, context, number);
-      storeUint256(blockhash, resultOffset);
+      eth_getBlockHash(number, resultOffset);
 
       return Literal();
     }
