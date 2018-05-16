@@ -82,10 +82,22 @@ string toHex(evmc_uint256be const& value) {
 
   void EEI::eth_getAddress(uint32_t resultOffset)
   {
-    HERA_DEBUG << "getAddress" << hex << resultOffset << dec << "\n";
+    HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
 
     eth_useGas(GasSchedule::base);
     storeUint160(msg.destination, resultOffset);
+  }
+
+  void EEI::eth_getBalance(uint32_t addressOffset, uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
+
+    evmc_address address = loadUint160(addressOffset);
+    evmc_uint256be result;
+
+    eth_useGas(GasSchedule::balance);
+    context->fn_table->get_balance(&result, context, &address);
+    storeUint128(result, resultOffset);
   }
 
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
@@ -271,14 +283,7 @@ string toHex(evmc_uint256be const& value) {
       uint32_t addressOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
 
-      HERA_DEBUG << "getBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
-
-      evmc_address address = loadUint160(addressOffset);
-      evmc_uint256be result;
-
-      eth_useGas(GasSchedule::balance);
-      context->fn_table->get_balance(&result, context, &address);
-      storeUint128(result, resultOffset);
+      eth_getBalance(addressOffset, resultOffset);
 
       return Literal();
     }
