@@ -44,14 +44,12 @@ struct ExecutionResult {
 struct EthereumInterface : ShellExternalInterface {
   EthereumInterface(
     evmc_context* _context,
-    std::vector<uint8_t> const& _code,
     evmc_message const& _msg,
     ExecutionResult & _result,
     bool _meterGas
   ):
     ShellExternalInterface(),
     context(_context),
-    code(_code),
     msg(_msg),
     result(_result),
     meterGas(_meterGas)
@@ -97,7 +95,6 @@ private:
   static bool isZeroUint256(evmc_uint256be const& value);
 
   evmc_context* context = nullptr;
-  std::vector<uint8_t> const& code;
   evmc_message const& msg;
   std::vector<uint8_t> lastReturnData;
   ExecutionResult & result;
