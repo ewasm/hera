@@ -175,30 +175,30 @@ protected:
  * Helper functions (virtual)
  * FIXME: Having each WASM engine's EEI implement each of these requires more work on specification. Maybe retire some of these
  */
-  virtual void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length);
-  virtual void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length);
-  virtual void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length);
-  virtual void storeMemory(std::vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length);
+  virtual void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length) = 0;
+  virtual void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length) = 0;
+  virtual void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length) = 0;
+  virtual void storeMemory(std::vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length) = 0;
 
-  virtual evmc_uint256be loadUint256(uint32_t srcOffset);
-  virtual void storeUint256(evmc_uint256be const& src, uint32_t dstOffset);
-  virtual evmc_address loadUint160(uint32_t srcOffset);
-  virtual void storeUint160(evmc_address const& src, uint32_t dstOffset);
-  virtual evmc_uint256be loadUint128(uint32_t srcOffset);
-  virtual void storeUint128(evmc_uint256be const& src, uint32_t dstOffset);
+  virtual evmc_uint256be loadUint256(uint32_t srcOffset) = 0;
+  virtual void storeUint256(evmc_uint256be const& src, uint32_t dstOffset) = 0;
+  virtual evmc_address loadUint160(uint32_t srcOffset) = 0;
+  virtual void storeUint160(evmc_address const& src, uint32_t dstOffset) = 0;
+  virtual evmc_uint256be loadUint128(uint32_t srcOffset) = 0;
+  virtual void storeUint128(evmc_uint256be const& src, uint32_t dstOffset) = 0;
 
-  virtual void ensureSenderBalance(evmc_uint256be const& value);
+  virtual void ensureSenderBalance(evmc_uint256be const& value) = 0;
 
-  virtual uint64_t safeLoadUint128(evmc_uint256be const& value);
+  virtual uint64_t safeLoadUint128(evmc_uint256be const& value) = 0;
 
   /* Checks if host supplied 256 bit value exceeds UINT64_MAX */
-  virtual bool exceedsUint64(evmc_uint256be const& value);
+  virtual bool exceedsUint64(evmc_uint256be const& value) = 0;
 
   /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
-  virtual bool exceedsUint128(evmc_uint256be const& value);
+  virtual bool exceedsUint128(evmc_uint256be const& value) = 0;
 
   /* Checks if 256 bit value is all zeroes */
-  virtual bool isZeroUint256(evmc_uint256be const& value);
+  virtual bool isZeroUint256(evmc_uint256be const& value) = 0;
 
   evmc_context *context;
   std::vector<uint8_t> const& code;
