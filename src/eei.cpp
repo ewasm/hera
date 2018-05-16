@@ -80,6 +80,14 @@ string toHex(evmc_uint256be const& value) {
     return result.gasLeft;
   }
 
+  void EEI::eth_getAddress(uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getAddress" << hex << resultOffset << dec << "\n";
+
+    eth_useGas(GasSchedule::base);
+    storeUint160(msg.destination, resultOffset);
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -252,11 +260,7 @@ string toHex(evmc_uint256be const& value) {
 
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
-
-      storeUint160(msg.destination, resultOffset);
-
-      eth_useGas(GasSchedule::base);
+      eth_getAddress(resultOffset);
 
       return Literal();
     }

@@ -171,6 +171,35 @@ protected:
 
   void eth_selfDestruct(uint32_t addressOffset);
 
+/*
+ * Helper functions (virtual)
+ * FIXME: Having each WASM engine's EEI implement each of these requires more work on specification. Maybe retire some of these
+ */
+  virtual void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length);
+  virtual void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length);
+  virtual void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length);
+  virtual void storeMemory(std::vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length);
+
+  virtual evmc_uint256be loadUint256(uint32_t srcOffset);
+  virtual void storeUint256(evmc_uint256be const& src, uint32_t dstOffset);
+  virtual evmc_address loadUint160(uint32_t srcOffset);
+  virtual void storeUint160(evmc_address const& src, uint32_t dstOffset);
+  virtual evmc_uint256be loadUint128(uint32_t srcOffset);
+  virtual void storeUint128(evmc_uint256be const& src, uint32_t dstOffset);
+
+  virtual void ensureSenderBalance(evmc_uint256be const& value);
+
+  virtual uint64_t safeLoadUint128(evmc_uint256be const& value);
+
+  /* Checks if host supplied 256 bit value exceeds UINT64_MAX */
+  virtual bool exceedsUint64(evmc_uint256be const& value);
+
+  /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
+  virtual bool exceedsUint128(evmc_uint256be const& value);
+
+  /* Checks if 256 bit value is all zeroes */
+  virtual bool isZeroUint256(evmc_uint256be const& value);
+
   evmc_context *context;
   std::vector<uint8_t> const& code;
   evmc_message const& msg;
@@ -204,50 +233,30 @@ struct BinaryenEEI : ShellExternalInterface, public EEI {
   }
 
 private:
-  void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length);
-  void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length);
-  void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length);
-  void storeMemory(std::vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length);
+  void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length) override;
+  void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length) override;
+  void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length) override;
+  void storeMemory(std::vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length) override;
 
-  evmc_uint256be loadUint256(uint32_t srcOffset);
-  void storeUint256(evmc_uint256be const& src, uint32_t dstOffset);
-  evmc_address loadUint160(uint32_t srcOffset);
-  void storeUint160(evmc_address const& src, uint32_t dstOffset);
-  evmc_uint256be loadUint128(uint32_t srcOffset);
-  void storeUint128(evmc_uint256be const& src, uint32_t dstOffset);
+  evmc_uint256be loadUint256(uint32_t srcOffset) override;
+  void storeUint256(evmc_uint256be const& src, uint32_t dstOffset) override;
+  evmc_address loadUint160(uint32_t srcOffset) override;
+  void storeUint160(evmc_address const& src, uint32_t dstOffset) override;
+  evmc_uint256be loadUint128(uint32_t srcOffset) override;
+  void storeUint128(evmc_uint256be const& src, uint32_t dstOffset) override;
 
-  void ensureSenderBalance(evmc_uint256be const& value);
+  void ensureSenderBalance(evmc_uint256be const& value) override;
 
-  static uint64_t safeLoadUint128(evmc_uint256be const& value);
+  uint64_t safeLoadUint128(evmc_uint256be const& value) override;
 
   /* Checks if host supplied 256 bit value exceeds UINT64_MAX */
-  static bool exceedsUint64(evmc_uint256be const& value);
+  bool exceedsUint64(evmc_uint256be const& value) override;
 
   /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
-  static bool exceedsUint128(evmc_uint256be const& value);
+  bool exceedsUint128(evmc_uint256be const& value) override;
 
   /* Checks if 256 bit value is all zeroes */
-  static bool isZeroUint256(evmc_uint256be const& value);
-};
-
-struct GasSchedule {
-  static constexpr unsigned storageLoad = 200;
-  static constexpr unsigned storageStoreCreate = 20000;
-  static constexpr unsigned storageStoreChange = 5000;
-  static constexpr unsigned log = 375;
-  static constexpr unsigned logData = 8;
-  static constexpr unsigned logTopic = 375;
-  static constexpr unsigned create = 32000;
-  static constexpr unsigned call = 700;
-  static constexpr unsigned copy = 3;
-  static constexpr unsigned blockhash = 800;
-  static constexpr unsigned balance = 400;
-  static constexpr unsigned base = 2;
-  static constexpr unsigned verylow = 3;
-  static constexpr unsigned extcode = 700;
-  static constexpr unsigned selfdestruct = 5000;
-  static constexpr unsigned valuetransfer = 9000;
-  static constexpr unsigned callNewAccount = 25000;
+  bool isZeroUint256(evmc_uint256be const& value) override;
 };
 
 }
