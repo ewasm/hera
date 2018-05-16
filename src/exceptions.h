@@ -79,11 +79,11 @@ private:
 };
 
 #define heraAssert(condition, msg) { \
-  if (!(condition)) throw InternalErrorException{msg}; \
+  if (!(condition)) throw HeraVM::InternalErrorException{msg}; \
 }
 
 #define ensureCondition(condition, ex, msg) { \
-  if (!(condition)) throw ex{msg}; \
+  if (!(condition)) throw HeraVM::ex{msg}; \
 }
 
 }
