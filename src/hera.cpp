@@ -220,7 +220,7 @@ void execute(
   vector<uint8_t> const& code,
   evmc_message const& msg,
   ExecutionResult & result,
-  bool meterGas
+  bool meterInterfaceGas
 ) {
 #if HERA_DEBUGGING
   cerr << "Executing..." << endl;
@@ -266,7 +266,7 @@ void execute(
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
   // Interpet
-  EthereumInterface interface(context, code, msg, result, meterGas);
+  EthereumInterface interface(context, code, msg, result, meterInterfaceGas);
   ModuleInstance instance(module, &interface);
 
   Name main = Name("main");
@@ -296,7 +296,7 @@ evmc_result hera_execute(
     heraAssert(rev == EVMC_BYZANTIUM, "Only Byzantium supported.");
     heraAssert(msg->gas >= 0, "Negative startgas?");
 
-    bool meterGas = true;
+    bool meterInterfaceGas = true;
     ExecutionResult result;
     result.gasLeft = (uint64_t)msg->gas;
 
@@ -308,13 +308,13 @@ evmc_result hera_execute(
       case EVM2WASM:
         _code = evm2wasm(context, _code);
         ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
-        meterGas = false;
+        meterInterfaceGas = false;
         break;
       case EVM2WASM_JS:
       case EVM2WASM_JS_TRACING:
         _code = evm2wasm_js(_code, hera->evm_mode == EVM2WASM_JS_TRACING);
         ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
-        meterGas = false;
+        meterInterfaceGas = false;
         break;
       case EVM_FALLBACK:
         ret.status_code = EVMC_REJECTED;
@@ -332,7 +332,7 @@ evmc_result hera_execute(
       ensureCondition(_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
     }
 
-    execute(context, _code, *msg, result, meterGas);
+    execute(context, _code, *msg, result, meterInterfaceGas);
 
     // copy call result
     if (result.returnValue.size() > 0) {
