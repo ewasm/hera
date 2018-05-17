@@ -31,6 +31,11 @@ defaults:
       working_directory: ~/build
       command: cmake --build . -- -j $BUILD_PARALLEL_JOBS
 
+  store-hera: &store-hera
+    store_artifacts:
+      path: ~/build/src/libhera.so
+      destination: libhera.so
+
   save-deps-cache: &save-deps-cache
     cache-save:
       name: "Save dependencies cache"
@@ -108,14 +113,25 @@ defaults:
         echo "run tests script."
         ./scripts/tests.sh
 
-  linux-steps: &linux-steps
-    - checkout
-    - *update-submodules
-    - *environment-info
-    - *restore-deps-cache
-    - *configure
-    - *build
-    - *save-deps-cache
+  install-cpp-ethereum: &install-cpp-ethereum
+    run:
+      name: "Install cpp-ethereum"
+      command: |
+        URL=https://github.com/ethereum/cpp-ethereum/releases/download/v1.4.0.dev0/cpp-ethereum-1.4.0.dev0-linux.tar.gz
+        curl -L $URL | sudo tar xz -C /usr/local
+
+  fetch-tests: &fetch-tests
+    run:
+      name: "Fetch eWASM tests"
+      command: |
+        git clone https://github.com/ewasm/tests -b wasm-tests --single-branch --depth 1
+
+  test: &test
+    run:
+      name: "Test shared Hera"
+      command: |
+        testeth --version
+        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium
 
 
 version: 2
@@ -143,14 +159,14 @@ jobs:
       - *save-eth-cache
       - *test-ewasm
 
-  linux-clang-shared:
+  linux-clang-shared-release:
     environment:
       - BUILD_TYPE: Release
       - CXX: clang++
       - CC:  clang
       - GENERATOR: Ninja
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF -DBUILD_SHARED_LIBS=ON
+      - CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF
     docker:
       - image: ethereum/cpp-build-env
     steps:
@@ -161,9 +177,33 @@ jobs:
       - *configure
       - *build
       - *save-deps-cache
-      - store_artifacts:
-          path: ~/build/src/libhera.so
-          destination: libhera.so
+      - *install-cpp-ethereum
+      - *store-hera
+      - *fetch-tests
+      - *test
+
+  linux-clang-shared-debug:
+    environment:
+      - BUILD_TYPE: Debug
+      - CXX: clang++
+      - CC:  clang
+      - GENERATOR: Ninja
+      - BUILD_PARALLEL_JOBS: 4
+      - CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON
+    docker:
+      - image: ethereum/cpp-build-env
+    steps:
+      - checkout
+      - *update-submodules
+      - *environment-info
+      - *restore-deps-cache
+      - *configure
+      - *build
+      - *save-deps-cache
+      - *install-cpp-ethereum
+      - *store-hera
+      - *fetch-tests
+      - *test
 
   linux-gcc-debug:
     environment:
@@ -175,12 +215,20 @@ jobs:
       - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON
     docker:
       - image: ethereum/cpp-build-env
-    steps: *linux-steps
+    steps:
+      - checkout
+      - *update-submodules
+      - *environment-info
+      - *restore-deps-cache
+      - *configure
+      - *build
+      - *save-deps-cache
 
 workflows:
   version: 2
-  cpp-ethereum:
+  hera:
     jobs:
-      - linux-clang-shared
+      - linux-clang-shared-release
+      - linux-clang-shared-debug
       - linux-gcc-debug
       - ewasm-tests
