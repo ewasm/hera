@@ -373,7 +373,7 @@ evmc_result hera_execute(
     cerr << e.what() << endl;
 #endif
   } catch (InternalErrorException const& e) {
-    ret.status_code = EVMC_INTERNAL_ERROR;
+    ret.status_code = EVMC_FAILURE;
 #if HERA_DEBUGGING
     cerr << "InternalError: " << e.what() << endl;
 #endif
