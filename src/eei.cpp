@@ -112,6 +112,15 @@ string toHex(evmc_uint256be const& value) {
     storeUint256(blockhash, resultOffset);
   }
 
+  size_t EEI::eth_getCallDataSize()
+  {
+    HERA_DEBUG << "getCallDataSize\n";
+
+    eth_useGas(GasSchedule::base);
+
+    return msg.input_size;
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -314,11 +323,7 @@ string toHex(evmc_uint256be const& value) {
     if (import->base == Name("getCallDataSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "callDataSize\n";
-
-      eth_useGas(GasSchedule::base);
-
-      return Literal(static_cast<uint32_t>(msg.input_size));
+      return Literal(eth_getCallDataSize());
     }
 
     if (import->base == Name("callDataCopy")) {
