@@ -847,7 +847,6 @@ string toHex(evmc_uint256be const& value) {
   void EthereumInterface::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
   {
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
-    // int oob_source = (srcOffset + length)
 
     if (!length)
       HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec << "\n";
@@ -885,8 +884,6 @@ string toHex(evmc_uint256be const& value) {
 
   void EthereumInterface::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
   {
-    //ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
-    //ensureCondition(src.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
     ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
     ensureCondition(memory.size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
 
@@ -901,14 +898,9 @@ string toHex(evmc_uint256be const& value) {
       nonZeroFill = src.size() > srcOffset ? src.size() - srcOffset : 0;
     }
 
-    cout << "src offset " << srcOffset << endl << "dst offset" << dstOffset << endl << "length " << length << endl;
-    cout << "zero fill: " << zeroFill << endl << "non-zero fill: " << nonZeroFill << endl << "dst offset: " << dstOffset << endl << length;
-
     for (long unsigned int i = 0; i < nonZeroFill; i++) {
       memory.set<uint8_t>(dstOffset + i, src[srcOffset + i]);
     }
-
-    cout << "foobar\n";
 
     for (long unsigned int i = nonZeroFill; i < nonZeroFill + zeroFill; i++) {
       memory.set<uint8_t>(dstOffset + i, 0);
