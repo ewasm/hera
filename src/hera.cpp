@@ -58,7 +58,7 @@ enum hera_evm_mode {
 struct hera_instance : evmc_instance {
   hera_evm_mode evm_mode;
   bool metering = false;
-  wasm_vm vm = BINARYEN;
+  wasm_vm vm = VM_BINARYEN;
 
   hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr}) {}
 };
