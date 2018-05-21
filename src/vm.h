@@ -55,8 +55,6 @@ public:
 
   ExecutionResult & getResult() { return output; }
 
-  ExecutionResult & getResult() { return output; }
-
 protected:
   wasm_vm vm;
   vector<uint8_t> code;
