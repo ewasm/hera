@@ -112,13 +112,29 @@ string toHex(evmc_uint256be const& value) {
     storeUint256(blockhash, resultOffset);
   }
 
-  size_t EEI::eth_getCallDataSize()
+  uint32_t EEI::eth_getCallDataSize()
   {
     HERA_DEBUG << "getCallDataSize\n";
 
     eth_useGas(GasSchedule::base);
 
-    return msg.input_size;
+    return static_cast<uint32_t>(msg.input_size);
+  }
+
+  void EEI::eth_callDataCopy(uint32_t resultOffset, uint32_t dataOffset, uint32_t length)
+  {
+    HERA_DEBUG << "callDataCopy" << hex << resultOffset << " " << dataOffset << dec << length << "\n";
+    
+    ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
+    ensureCondition(
+      numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
+      OutOfGasException,
+      "Gas charge overflow"
+    );
+    eth_useGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+
+    vector<uint8_t> input(msg.input_data, msg.input_data + msg.input_size);
+    storeMemory(input, dataOffset, resultOffset, length);
   }
 
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
@@ -323,7 +339,7 @@ string toHex(evmc_uint256be const& value) {
     if (import->base == Name("getCallDataSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      return Literal(uint32_t(eth_getCallDataSize()));
+      return Literal(eth_getCallDataSize());
     }
 
     if (import->base == Name("callDataCopy")) {
@@ -333,18 +349,7 @@ string toHex(evmc_uint256be const& value) {
       uint32_t dataOffset = arguments[1].geti32();
       uint32_t length = arguments[2].geti32();
 
-      HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
-
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
-      ensureCondition(
-        numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
-        OutOfGasException,
-        "Gas charge overflow"
-      );
-      eth_useGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
-
-      vector<uint8_t> input(msg.input_data, msg.input_data + msg.input_size);
-      storeMemory(input, dataOffset, resultOffset, length);
+      eth_callDataCopy(resultOffset, dataOffset, length);
 
       return Literal();
     }

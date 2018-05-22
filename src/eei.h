@@ -98,44 +98,44 @@ protected:
     uint32_t addressOffset,
     uint32_t valueOffset,
     uint32_t dataOffset,
-    size_t dataLength);
+    uint32_t dataLength);
   uint32_t eth_callCode(
     int64_t gas,
     uint32_t addressOffset,
     uint32_t valueOffset,
     uint32_t dataOffset,
-    size_t dataLength);
+    uint32_t dataLength);
   uint32_t eth_callDelegate(
     int64_t gas,
     uint32_t addressOffset,
     uint32_t dataOffset,
-    size_t dataLength);
+    uint32_t dataLength);
   uint32_t eth_callStatic(
     int64_t gas,
     uint32_t addressOffset,
     uint32_t dataOffset,
-    size_t dataLength);
+    uint32_t dataLength);
   uint32_t eth_create(
     uint32_t valueOffset,
     uint32_t dataOffset,
-    size_t length,
+    uint32_t length,
     uint32_t resultOffset);
 
   void eth_callDataCopy(
     uint32_t resultOffset,
     uint32_t dataOffset,
-    size_t length);
-  size_t eth_getCallDataSize();
+    uint32_t length);
+  uint32_t eth_getCallDataSize();
 
-  void eth_codeCopy(uint32_t resultOffset, uint32_t codeOffset, size_t length);
-  size_t eth_getCodeSize();
+  void eth_codeCopy(uint32_t resultOffset, uint32_t codeOffset, uint32_t length);
+  uint32_t eth_getCodeSize();
 
   void eth_externalCodeCopy(
     uint32_t addressOffset,
     uint32_t resultOffset,
     uint32_t codeOffset,
-    size_t length);
-  size_t eth_getExternalCodeSize(uint32_t addressOffset);
+    uint32_t length);
+  uint32_t eth_getExternalCodeSize(uint32_t addressOffset);
   
   void eth_getCaller(uint32_t resultOffset);
   void eth_getCallValue(uint32_t resultOffset);
@@ -154,20 +154,20 @@ protected:
 
   void eth_log(
     uint32_t dataOffset,
-    size_t length,
+    uint32_t length,
     uint32_t numberOfTopics,
     uint32_t topic1,
     uint32_t topic2,
     uint32_t topic3,
     uint32_t topic4);
 
-  size_t eth_getReturnDataSize();
+  uint32_t eth_getReturnDataSize();
   void eth_returnDataCopy(uint32_t resultOffset,
     uint32_t dataOffset,
-    size_t length);
+    uint32_t length);
 
-  void eth_return(uint32_t dataOffset, size_t length);
-  void eth_revert(uint32_t dataOffset, size_t length);
+  void eth_return(uint32_t dataOffset, uint32_t length);
+  void eth_revert(uint32_t dataOffset, uint32_t length);
 
   void eth_selfDestruct(uint32_t addressOffset);
 
