@@ -323,7 +323,7 @@ string toHex(evmc_uint256be const& value) {
     if (import->base == Name("getCallDataSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      return Literal(eth_getCallDataSize());
+      return Literal(uint32_t(eth_getCallDataSize()));
     }
 
     if (import->base == Name("callDataCopy")) {
