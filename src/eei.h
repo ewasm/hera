@@ -46,13 +46,15 @@ struct EthereumInterface : ShellExternalInterface {
     evmc_context* _context,
     std::vector<uint8_t> const& _code,
     evmc_message const& _msg,
-    ExecutionResult & _result
+    ExecutionResult & _result,
+    bool _meterGas
   ):
     ShellExternalInterface(),
     context(_context),
     code(_code),
     msg(_msg),
-    result(_result)
+    result(_result),
+    meterGas(_meterGas)
   { }
 
   Literal callImport(Import *import, LiteralList& arguments) override;
@@ -99,6 +101,7 @@ private:
   evmc_message const& msg;
   std::vector<uint8_t> lastReturnData;
   ExecutionResult & result;
+  bool meterGas = true;
 };
 
 struct GasSchedule {

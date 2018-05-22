@@ -836,6 +836,8 @@ string toHex(evmc_uint256be const& value) {
 
   void EthereumInterface::takeGas(uint64_t gas)
   {
+    if (!meterGas)
+      return;
     ensureCondition(gas <= result.gasLeft, OutOfGasException, "Out of gas.");
     result.gasLeft -= gas;
   }
