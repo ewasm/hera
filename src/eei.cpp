@@ -360,6 +360,28 @@ string toHex(evmc_uint256be const& value) {
     storeUint256(result, resultOffset);
   }
 
+/*
+ * Separate return and revert methods for clarity
+ */
+  void EEI::eth_return(uint32_t dataOffset, uint32_t length)
+  {
+    HERA_DEBUG << "return " << hex << dataOffset << " " << length << dec << "\n";
+    result.isRevert = false;
+    result.returnValue = vector<uint8_t>(length);
+    loadMemory(dataOffset, result.returnValue, length);
+  }
+
+  void EEI::eth_revert(uint32_t dataOffset, uint32_t length)
+  {
+    HERA_DEBUG << "revert " << hex << dataOffset << " " << length << dec << "\n";
+    result.isRevert = true;
+    result.returnValue = vector<uint8_t>(length);
+    loadMemory(dataOffset, result.returnValue, length);
+  }
+
+/*
+ * Binaryen EEI Implementation
+ */
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -735,16 +757,14 @@ string toHex(evmc_uint256be const& value) {
     if (import->base == Name("return") || import->base == Name("revert")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t offset = arguments[0].geti32();
-      uint32_t size = arguments[1].geti32();
-
-      HERA_DEBUG << (import->base == Name("revert") ? "revert " : "return ") << hex << offset << " " << size << dec << "\n";
-
-      result.returnValue = vector<uint8_t>(size);
-      loadMemory(offset, result.returnValue, size);
-
-      result.isRevert = import->base == Name("revert");
-
+      uint32_t dataOffset = arguments[0].geti32();
+      uint32_t length = arguments[1].geti32();
+      
+      if (import->base == Name("revert"))
+        eth_revert(dataOffset, length);
+      else
+        eth_return(dataOffset, length);
+      
       return Literal();
     }
 
