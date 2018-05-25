@@ -240,6 +240,17 @@ string toHex(evmc_uint256be const& value) {
     return tx_context.block_gas_limit;
   }
 
+  void EEI::eth_getTxGasPrice(uint32_t valueOffset)
+  {
+    HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
+
+    evmc_tx_context tx_context;
+
+    eth_useGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+    storeUint128(tx_context.tx_gas_price, valueOffset);
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -547,13 +558,7 @@ string toHex(evmc_uint256be const& value) {
 
       uint32_t valueOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      eth_useGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-      storeUint128(tx_context.tx_gas_price, valueOffset);
+      eth_getTxGasPrice(valueOffset);
 
       return Literal();
     }
