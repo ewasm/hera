@@ -387,6 +387,14 @@ string toHex(evmc_uint256be const& value) {
     
     return static_cast<uint32_t>(lastReturnData.size());
   }
+
+  void EEI::eth_returnDataCopy(uint32_t resultOffset, uint32_t dataOffset, uint32_t length)
+  {
+    HERA_DEBUG << "returnDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
+
+    eth_useGas(GasSchedule::verylow);
+    storeMemory(lastReturnData, dataOffset, resultOffset, length);
+  }
 /*
  * Binaryen EEI Implementation
  */
@@ -785,15 +793,12 @@ string toHex(evmc_uint256be const& value) {
     if (import->base == Name("returnDataCopy")) {
       heraAssert(arguments.size() == 3, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t dataOffset = arguments[0].geti32();
-      uint32_t offset = arguments[1].geti32();
-      uint32_t size = arguments[2].geti32();
-
-      HERA_DEBUG << "returnDataCopy " << hex << dataOffset << " " << offset << " " << size << dec << "\n";
-
-      eth_useGas(GasSchedule::verylow);
-      storeMemory(lastReturnData, offset, dataOffset, size);
-
+      uint32_t resultOffset = arguments[0].geti32();
+      uint32_t dataOffset = arguments[1].geti32();
+      uint32_t length = arguments[2].geti32();
+      
+      eth_returnDataCopy(resultOffset, dataOffset, length);
+      
       return Literal();
     }
 
