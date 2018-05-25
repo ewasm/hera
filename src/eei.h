@@ -31,10 +31,6 @@
 #include "hera.h"
 #include "exceptions.h"
 
-#define heraAssert(condition, msg) { \
-  if (!(condition)) throw InternalErrorException(msg); \
-}
-
 using namespace wasm;
 
 namespace HeraVM {
@@ -55,10 +51,12 @@ public:
   EEI(evmc_context *_context,
     std::vector<uint8_t> const& _code,
     evmc_message const& _msg,
+    ExecutionResult & _result,
     bool _meterGas) :
     context(_context),
     code(_code),
     msg(_msg),
+    result(_result),
     meterGas(_meterGas)
     { }
 
@@ -217,8 +215,7 @@ struct BinaryenEEI : ShellExternalInterface, public EEI {
     bool _meterGas
   ):
     ShellExternalInterface(),
-    EEI(_context, _code, _msg, _meterGas),
-    result(_result)
+    EEI(_context, _code, _msg, _result, _meterGas)
   { }
 
   Literal callImport(Import *import, LiteralList& arguments) override;
