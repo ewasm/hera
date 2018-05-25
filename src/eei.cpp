@@ -178,6 +178,23 @@ string toHex(evmc_uint256be const& value) {
     return static_cast<uint32_t>(code.size());
   }
 
+  void EEI::eth_externalCodeCopy(uint32_t addressOffset, uint32_t resultOffset, uint32_t codeOffset, uint32_t length)
+  {
+      HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
+
+      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
+      ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGasException, "Gas charge overflow");
+      eth_useGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+
+      evmc_address address = loadUint160(addressOffset);
+      // FIXME: optimise this so not vector needs to be created
+      vector<uint8_t> codeBuffer(length);
+      size_t numCopied = context->fn_table->copy_code(context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
+      fill_n(&codeBuffer[numCopied], length - numCopied, 0);
+
+      storeMemory(codeBuffer, codeOffset, resultOffset, length);
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -441,19 +458,7 @@ string toHex(evmc_uint256be const& value) {
       uint32_t codeOffset = arguments[2].geti32();
       uint32_t length = arguments[3].geti32();
 
-      HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
-
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
-      ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGasException, "Gas charge overflow");
-      eth_useGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
-
-      evmc_address address = loadUint160(addressOffset);
-      // FIXME: optimise this so not vector needs to be created
-      vector<uint8_t> codeBuffer(length);
-      size_t numCopied = context->fn_table->copy_code(context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
-      fill_n(&codeBuffer[numCopied], length - numCopied, 0);
-
-      storeMemory(codeBuffer, codeOffset, resultOffset, length);
+      eth_externalCodeCopy(addressOffset, resultOffset, codeOffset, length);
 
       return Literal();
     }
