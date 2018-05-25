@@ -204,6 +204,17 @@ string toHex(evmc_uint256be const& value) {
     return static_cast<uint32_t>(context->fn_table->get_code_size(context, &address));
   }
 
+  void EEI::eth_getBlockCoinbase(uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
+
+    evmc_tx_context tx_context;
+
+    eth_useGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+    storeUint160(tx_context.block_coinbase, resultOffset);
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -485,13 +496,7 @@ string toHex(evmc_uint256be const& value) {
 
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      eth_useGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-      storeUint160(tx_context.block_coinbase, resultOffset);
+      eth_getBlockCoinbase(resultOffset);
 
       return Literal();
     }
