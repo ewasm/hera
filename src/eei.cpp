@@ -251,6 +251,41 @@ string toHex(evmc_uint256be const& value) {
     storeUint128(tx_context.tx_gas_price, valueOffset);
   }
 
+  void EEI::eth_log(
+    uint32_t dataOffset,
+    uint32_t length,
+    uint32_t numberOfTopics,
+    uint32_t topic1,
+    uint32_t topic2,
+    uint32_t topic3,
+    uint32_t topic4)
+  {
+    HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
+
+    ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "log");
+
+    ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
+
+    array<evmc_uint256be, 4> topics;
+
+    topics[0] = (numberOfTopics >= 1) ? loadUint256(topic1) : evmc_uint256be{};
+    topics[1] = (numberOfTopics >= 2) ? loadUint256(topic2) : evmc_uint256be{};
+    topics[2] = (numberOfTopics >= 3) ? loadUint256(topic3) : evmc_uint256be{};
+    topics[3] = (numberOfTopics == 4) ? loadUint256(topic4) : evmc_uint256be{};
+
+    vector<uint8_t> data(length);
+    loadMemory(dataOffset, data, length);
+
+    ensureCondition(ffs(length) + ffs(GasSchedule::logData) <= 64, OutOfGasException, "Gas charge overflow");
+    ensureCondition(
+      numeric_limits<uint64_t>::max() - (GasSchedule::log + GasSchedule::logTopic * numberOfTopics) >= static_cast<uint64_t>(length) * GasSchedule::logData,
+      OutOfGasException,
+      "Gas charge overflow"
+    );
+    eth_useGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
+    context->fn_table->emit_log(context, &msg.destination, data.data(), length, topics.data(), numberOfTopics);
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -569,30 +604,12 @@ string toHex(evmc_uint256be const& value) {
       uint32_t dataOffset = arguments[0].geti32();
       uint32_t length = arguments[1].geti32();
       uint32_t numberOfTopics = arguments[2].geti32();
+      uint32_t topic1 = arguments[3].geti32();
+      uint32_t topic2 = arguments[4].geti32();
+      uint32_t topic3 = arguments[5].geti32();
+      uint32_t topic4 = arguments[6].geti32();
 
-      HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
-
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "log");
-
-      ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
-
-      array<evmc_uint256be, 4> topics;
-      for (size_t i = 0; i < numberOfTopics; ++i) {
-        uint32_t topicOffset = arguments[3 + i].geti32();
-        topics[i] = loadUint256(topicOffset);
-      }
-
-      vector<uint8_t> data(length);
-      loadMemory(dataOffset, data, length);
-
-      ensureCondition(ffs(length) + ffs(GasSchedule::logData) <= 64, OutOfGasException, "Gas charge overflow");
-      ensureCondition(
-        numeric_limits<uint64_t>::max() - (GasSchedule::log + GasSchedule::logTopic * numberOfTopics) >= static_cast<uint64_t>(length) * GasSchedule::logData,
-        OutOfGasException,
-        "Gas charge overflow"
-      );
-      eth_useGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
-      context->fn_table->emit_log(context, &msg.destination, data.data(), length, topics.data(), numberOfTopics);
+      eth_log(dataOffset, length, numberOfTopics, topic1, topic2, topic3, topic4);
 
       return Literal();
     }
