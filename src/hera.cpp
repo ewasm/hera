@@ -323,10 +323,8 @@ evmc_result hera_execute(
         ret.status_code = EVMC_FAILURE;
         return ret;
       }
-    }
-
-    if (msg->kind == EVMC_CREATE) {
-      // Meter the deployment (constructor) code
+    } else if (msg->kind == EVMC_CREATE) {
+      // Meter the deployment (constructor) code if it is WebAssembly
       if (hera->metering)
         _code = sentinel(context, _code);
       ensureCondition(_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
@@ -339,7 +337,7 @@ evmc_result hera_execute(
       vector<uint8_t> returnValue;
 
       if (msg->kind == EVMC_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
-        // Meter the deployed code
+        // Meter the deployed code if it is WebAssembly
         returnValue = hera->metering ? sentinel(context, result.returnValue) : move(result.returnValue);
         ensureCondition(returnValue.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
       } else {
