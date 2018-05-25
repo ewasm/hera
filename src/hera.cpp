@@ -266,7 +266,7 @@ void execute(
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
   // Interpet
-  EthereumInterface interface(context, code, msg, result, meterInterfaceGas);
+  EthereumInterface interface(context, msg, result, meterInterfaceGas);
   ModuleInstance instance(module, &interface);
 
   Name main = Name("main");

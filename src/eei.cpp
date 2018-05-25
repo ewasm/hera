@@ -355,7 +355,14 @@ string toHex(evmc_uint256be const& value) {
         "Gas charge overflow"
       );
       takeGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
-      storeMemory(code, codeOffset, resultOffset, length);
+
+      evmc_address address = msg.destination;
+      // FIXME: optimise this so not vector needs to be created
+      vector<uint8_t> codeBuffer(length);
+      size_t numCopied = context->fn_table->copy_code(context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
+      fill_n(&codeBuffer[numCopied], length - numCopied, 0);
+
+      storeMemory(codeBuffer, codeOffset, resultOffset, length);
 
       return Literal();
     }
@@ -367,7 +374,10 @@ string toHex(evmc_uint256be const& value) {
 
       takeGas(GasSchedule::base);
 
-      return Literal(static_cast<uint32_t>(code.size()));
+      evmc_address address = msg.destination;
+      size_t code_size = context->fn_table->get_code_size(context, &address);
+
+      return Literal(static_cast<uint32_t>(code_size));
     }
 
     if (import->base == Name("externalCodeCopy")) {
