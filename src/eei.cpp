@@ -379,6 +379,14 @@ string toHex(evmc_uint256be const& value) {
     loadMemory(dataOffset, result.returnValue, length);
   }
 
+  uint32_t EEI::eth_getReturnDataSize()
+  {
+    HERA_DEBUG << "getReturnDataSize\n";
+
+    eth_useGas(GasSchedule::base);
+    
+    return static_cast<uint32_t>(lastReturnData.size());
+  }
 /*
  * Binaryen EEI Implementation
  */
@@ -771,11 +779,7 @@ string toHex(evmc_uint256be const& value) {
     if (import->base == Name("getReturnDataSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getReturnDataSize\n";
-
-      eth_useGas(GasSchedule::base);
-
-      return Literal(static_cast<uint32_t>(lastReturnData.size()));
+      return Literal(eth_getReturnDataSize());
     }
 
     if (import->base == Name("returnDataCopy")) {
