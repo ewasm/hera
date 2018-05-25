@@ -347,6 +347,19 @@ string toHex(evmc_uint256be const& value) {
     context->fn_table->set_storage(context, &msg.destination, &path, &value);
   }
 
+  void EEI::eth_storageLoad(uint32_t pathOffset, uint32_t resultOffset)
+  {
+    HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
+
+    evmc_uint256be path = loadUint256(pathOffset);
+    evmc_uint256be result;
+
+    eth_useGas(GasSchedule::storageLoad);
+    context->fn_table->get_storage(&result, context, &msg.destination, &path);
+
+    storeUint256(result, resultOffset);
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -714,15 +727,7 @@ string toHex(evmc_uint256be const& value) {
       uint32_t pathOffset = arguments[0].geti32();
       uint32_t resultOffset = arguments[1].geti32();
 
-      HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
-
-      evmc_uint256be path = loadUint256(pathOffset);
-      evmc_uint256be result;
-
-      eth_useGas(GasSchedule::storageLoad);
-      context->fn_table->get_storage(&result, context, &msg.destination, &path);
-
-      storeUint256(result, resultOffset);
+      eth_storageLoad(pathOffset, resultOffset);
 
       return Literal();
     }
