@@ -215,6 +215,17 @@ string toHex(evmc_uint256be const& value) {
     storeUint160(tx_context.block_coinbase, resultOffset);
   }
 
+  void EEI::eth_getBlockDifficulty(uint32_t offset)
+  {
+    HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
+
+    evmc_tx_context tx_context;
+
+    eth_useGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+    storeUint256(tx_context.block_difficulty, offset);
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -505,15 +516,9 @@ string toHex(evmc_uint256be const& value) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t offset = arguments[0].geti32();
-
-      HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      eth_useGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-      storeUint256(tx_context.block_difficulty, offset);
-
+      
+      eth_getBlockDifficulty(offset);
+      
       return Literal();
     }
 
