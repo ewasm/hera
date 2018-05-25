@@ -300,6 +300,20 @@ string toHex(evmc_uint256be const& value) {
     return tx_context.block_number;
   }
 
+  int64_t EEI::eth_getBlockTimestamp()
+  {
+    HERA_DEBUG << "getBlockTimestamp\n";
+
+    evmc_tx_context tx_context;
+
+    eth_useGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+
+    static_assert(is_same<decltype(tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
+    
+    return tx_context.block_timestamp;
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -636,17 +650,8 @@ string toHex(evmc_uint256be const& value) {
 
     if (import->base == Name("getBlockTimestamp")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
-
-      HERA_DEBUG << "getBlockTimestamp\n";
-
-      evmc_tx_context tx_context;
-
-      eth_useGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-
-      static_assert(is_same<decltype(tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
-
-      return Literal(tx_context.block_timestamp);
+      
+      return Literal(eth_getBlockTimestamp());
     }
 
     if (import->base == Name("getTxOrigin")) {
