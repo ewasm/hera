@@ -195,6 +195,15 @@ string toHex(evmc_uint256be const& value) {
       storeMemory(codeBuffer, codeOffset, resultOffset, length);
   }
 
+  uint32_t EEI::eth_getExternalCodeSize(uint32_t addressOffset)
+  {
+    HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
+
+    evmc_address address = loadUint160(addressOffset);
+    eth_useGas(GasSchedule::extcode);
+    return static_cast<uint32_t>(context->fn_table->get_code_size(context, &address));
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -468,13 +477,7 @@ string toHex(evmc_uint256be const& value) {
 
       uint32_t addressOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
-
-      evmc_address address = loadUint160(addressOffset);
-      eth_useGas(GasSchedule::extcode);
-      size_t code_size = context->fn_table->get_code_size(context, &address);
-
-      return Literal(static_cast<uint32_t>(code_size));
+      return Literal(eth_getExternalCodeSize(addressOffset));
     }
 
     if (import->base == Name("getBlockCoinbase")) {
