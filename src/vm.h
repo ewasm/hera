@@ -83,14 +83,9 @@ class WabtVM : public WasmEngine
 public:
   WabtVM(vector<uint8_t> const& _code,
     evmc_message const& msg,
-<<<<<<< HEAD
     evmc_context *_context,
     bool _meterGas) :
     WasmEngine(VM_WABT, _code, _msg, _context, _meterGas)
-=======
-    evmc_context *_context) :
-    WasmEngine(VM_WABT, _code, _msg, _context)
->>>>>>> fix rebase
     { }
 
   int execute();
