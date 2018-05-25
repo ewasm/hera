@@ -155,6 +155,20 @@ string toHex(evmc_uint256be const& value) {
     storeUint128(msg.value, resultOffset);
   }
 
+  void EEI::eth_codeCopy(uint32_t resultOffset, uint32_t codeOffset, uint32_t length)
+  {
+    HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
+
+      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
+      ensureCondition(
+        numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
+        OutOfGasException,
+        "Gas charge overflow"
+      );
+      eth_useGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+      storeMemory(code, codeOffset, resultOffset, length);
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -399,16 +413,7 @@ string toHex(evmc_uint256be const& value) {
       uint32_t codeOffset = arguments[1].geti32();
       uint32_t length = arguments[2].geti32();
 
-      HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
-
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
-      ensureCondition(
-        numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
-        OutOfGasException,
-        "Gas charge overflow"
-      );
-      eth_useGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
-      storeMemory(code, codeOffset, resultOffset, length);
+      eth_codeCopy(resultOffset, codeOffset, length);
 
       return Literal();
     }
