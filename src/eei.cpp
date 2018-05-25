@@ -226,6 +226,20 @@ string toHex(evmc_uint256be const& value) {
     storeUint256(tx_context.block_difficulty, offset);
   }
 
+  int64_t EEI::eth_getBlockGasLimit()
+  {
+    HERA_DEBUG << "getBlockGasLimit\n";
+
+    evmc_tx_context tx_context;
+
+    eth_useGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+
+    static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
+    
+    return tx_context.block_gas_limit;
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -524,17 +538,8 @@ string toHex(evmc_uint256be const& value) {
 
     if (import->base == Name("getBlockGasLimit")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
-
-      HERA_DEBUG << "getBlockGasLimit\n";
-
-      evmc_tx_context tx_context;
-
-      eth_useGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-
-      static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
-
-      return Literal(tx_context.block_gas_limit);
+      
+      return Literal(eth_getBlockGasLimit());
     }
 
     if (import->base == Name("getTxGasPrice")) {
