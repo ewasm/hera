@@ -59,7 +59,7 @@ int BinaryenVM::execute()
     "Contract entry point (\"main\") missing."
   );
 
-  BinaryenEEI interface(context, code, msg, output);
+  BinaryenEEI interface(context, code, msg, output, meterGas);
   ModuleInstance instance(module, &interface);
 
   Name main = Name("main");

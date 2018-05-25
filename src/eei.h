@@ -40,10 +40,12 @@ class EEI {
 public:
   EEI(evmc_context *_context,
     std::vector<uint8_t> const& _code,
-    evmc_message const& _msg) :
+    evmc_message const& _msg,
+    bool _meterGas) :
     context(_context),
     code(_code),
-    msg(_msg)
+    msg(_msg),
+    meterGas(_meterGas)
     { }
 
 protected:
@@ -71,6 +73,7 @@ protected:
   std::vector<uint8_t> const& code;
   evmc_message const& msg;
   std::vector<uint8_t> lastReturnData;
+  bool meterGas;
 };
 
 struct ExecutionResult {
@@ -92,7 +95,7 @@ struct BinaryenEEI : ShellExternalInterface, public EEI {
     bool _meterGas
   ):
     ShellExternalInterface(),
-    EEI(_context, _code, _msg),
+    EEI(_context, _code, _msg, _meterGas),
     result(_result)
   { }
 

@@ -280,18 +280,18 @@ evmc_result hera_execute(
     switch (hera->vm) {
     #if WABT_SUPPORTED
     case VM_WABT:
-      WabtVM vm = WabtVM(_code, *msg, context);
+      WabtVM vm = WabtVM(_code, *msg, context, meterInterfaceGas);
       vm.execute();
       vmresult = vm.getResult();
     #endif
     #if WAVM_SUPPORTED
     case VM_WAVM:
-      WavmVM vm = WavmVM(_code, *msg, context);
+      WavmVM vm = WavmVM(_code, *msg, context, meterInterfaceGas);
       vm.execute();
       vmresult = vm.getResult();
     #endif
     default:
-      BinaryenVM vm = BinaryenVM(_code, *msg, context);
+      BinaryenVM vm = BinaryenVM(_code, *msg, context, meterInterfaceGas);
       vm.execute();
       vmresult = vm.getResult();
     }

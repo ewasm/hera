@@ -40,13 +40,15 @@ public:
   WasmEngine(wasm_vm const _vm, 
     vector<uint8_t> const& _code, 
     evmc_message const& _msg,
-    evmc_context *_context
+    evmc_context *_context,
+    bool _meterGas
   ):
     vm(_vm),
     code(_code),
     msg(_msg),
     context(_context),
-    output(_msg.gas)
+    output(_msg.gas),
+    meterGas(_meterGas)
   { }
   
   virtual int execute() = 0;
@@ -58,8 +60,8 @@ protected:
   vector<uint8_t> code;
   evmc_message msg;
   evmc_context *context;
-
   ExecutionResult output;
+  bool meterGas;
 };
 
 class BinaryenVM : public WasmEngine
@@ -67,8 +69,9 @@ class BinaryenVM : public WasmEngine
 public:
   BinaryenVM(vector<uint8_t> const& _code,
     evmc_message const& _msg,
-    evmc_context *_context) : 
-    WasmEngine(VM_BINARYEN, _code, _msg, _context)
+    evmc_context *_context,
+    bool _meterGas) : 
+    WasmEngine(VM_BINARYEN, _code, _msg, _context, _meterGas)
     { }
   
   int execute();
@@ -80,8 +83,9 @@ class WabtVM : public WasmEngine
 public:
   WabtVM(vector<uint8_t> const& _code,
     evmc_message const& msg,
-    evmc_context *_context) :
-    WasmEngine(VM_WABT, _code, _msg, _context)
+    evmc_context *_context,
+    bool _meterGas) :
+    WasmEngine(VM_WABT, _code, _msg, _context, _meterGas)
     { }
 
   int execute();
