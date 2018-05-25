@@ -325,6 +325,28 @@ string toHex(evmc_uint256be const& value) {
     storeUint160(tx_context.tx_origin, resultOffset);
   }
 
+  void EEI::eth_storageStore(uint32_t pathOffset, uint32_t valueOffset)
+  {
+    HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
+
+    ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
+
+    evmc_uint256be path = loadUint256(pathOffset);
+    evmc_uint256be value = loadUint256(valueOffset);
+    evmc_uint256be current;
+
+    context->fn_table->get_storage(&current, context, &msg.destination, &path);
+
+    // We do not need to take care about the delete case (gas refund), the client does it.
+    eth_useGas(
+      (isZeroUint256(current) && !isZeroUint256(value)) ?
+      GasSchedule::storageStoreCreate :
+      GasSchedule::storageStoreChange
+    );
+
+    context->fn_table->set_storage(context, &msg.destination, &path, &value);
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -680,26 +702,9 @@ string toHex(evmc_uint256be const& value) {
 
       uint32_t pathOffset = arguments[0].geti32();
       uint32_t valueOffset = arguments[1].geti32();
-
-      HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
-
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
-
-      evmc_uint256be path = loadUint256(pathOffset);
-      evmc_uint256be value = loadUint256(valueOffset);
-      evmc_uint256be current;
-
-      context->fn_table->get_storage(&current, context, &msg.destination, &path);
-
-      // We do not need to take care about the delete case (gas refund), the client does it.
-      eth_useGas(
-        (isZeroUint256(current) && !isZeroUint256(value)) ?
-        GasSchedule::storageStoreCreate :
-        GasSchedule::storageStoreChange
-      );
-
-      context->fn_table->set_storage(context, &msg.destination, &path, &value);
-
+      
+      eth_storageStore(pathOffset, valueOffset);
+      
       return Literal();
     }
 
