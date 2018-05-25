@@ -314,6 +314,17 @@ string toHex(evmc_uint256be const& value) {
     return tx_context.block_timestamp;
   }
 
+  void EEI::eth_getTxOrigin(uint32_t resultOffset)
+  {
+    HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
+
+    evmc_tx_context tx_context;
+
+    eth_useGas(GasSchedule::base);
+    context->fn_table->get_tx_context(&tx_context, context);
+    storeUint160(tx_context.tx_origin, resultOffset);
+  }
+
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
@@ -659,13 +670,7 @@ string toHex(evmc_uint256be const& value) {
 
       uint32_t resultOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      eth_useGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
-      storeUint160(tx_context.tx_origin, resultOffset);
+      eth_getTxOrigin(resultOffset);
 
       return Literal();
     }
