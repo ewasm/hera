@@ -59,11 +59,13 @@ class EEI {
 public:
   EEI(evmc_context *_context,
     std::vector<uint8_t> const& _code,
+    std::vector<uint8_t> const& _state_code,
     evmc_message const& _msg,
     ExecutionResult & _result,
     bool _meterGas) :
     context(_context),
     code(_code),
+    state_code(_state_code),
     msg(_msg),
     result(_result),
     meterGas(_meterGas)
@@ -230,6 +232,7 @@ protected:
 
   evmc_context *context;
   std::vector<uint8_t> const& code;
+  std::vector<uint8_t> const& state_code;
   evmc_message const& msg;
   std::vector<uint8_t> lastReturnData;
   ExecutionResult & result;
@@ -244,12 +247,13 @@ struct BinaryenEEI : ShellExternalInterface, public EEI {
   BinaryenEEI(
     evmc_context* _context,
     std::vector<uint8_t> const& _code,
+    std::vector<uint8_t> const& _state_code,
     evmc_message const& _msg,
     ExecutionResult & _result,
     bool _meterGas
   ):
     ShellExternalInterface(),
-    EEI(_context, _code, _msg, _result, _meterGas)
+    EEI(_context, _code, _state_code, _msg, _result, _meterGas)
   { }
 
   Literal callImport(Import *import, LiteralList& arguments) override;

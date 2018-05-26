@@ -267,6 +267,7 @@ evmc_result hera_execute(
     bool meterInterfaceGas = true;
 
     vector<uint8_t> _code(code, code + code_size);
+    vector<uint8_t> _state_code(code, code + code_size);
 
     // ensure we can only handle WebAssembly version 1
     if (!hasWasmPreamble(_code)) {
@@ -315,18 +316,18 @@ evmc_result hera_execute(
     switch (hera->vm) {
     #if WABT_SUPPORTED
     case VM_WABT:
-      WabtVM vm = WabtVM(_code, *msg, context, meterInterfaceGas);
+      WabtVM vm = WabtVM(_code, _state_code, *msg, context, meterInterfaceGas);
       vm.execute();
       vmresult = vm.getResult();
     #endif
     #if WAVM_SUPPORTED
     case VM_WAVM:
-      WavmVM vm = WavmVM(_code, *msg, context, meterInterfaceGas);
+      WavmVM vm = WavmVM(_code, _state_code, *msg, context, meterInterfaceGas);
       vm.execute();
       vmresult = vm.getResult();
     #endif
     default:
-      BinaryenVM vm = BinaryenVM(_code, *msg, context, meterInterfaceGas);
+      BinaryenVM vm = BinaryenVM(_code, _state_code, *msg, context, meterInterfaceGas);
       vm.execute();
       vmresult = vm.getResult();
     }

@@ -63,7 +63,7 @@ int BinaryenVM::execute()
   );
   
   /* Instantiate EEI object */
-  BinaryenEEI interface(context, code, msg, output, meterGas);
+  BinaryenEEI interface(context, code, state_code, msg, output, meterGas);
   
   ModuleInstance instance(module, &interface);
   

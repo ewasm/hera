@@ -41,12 +41,14 @@ class WasmEngine
 public:
   WasmEngine(wasm_vm const _vm, 
     vector<uint8_t> const& _code, 
+    vector<uint8_t> const& _state_code,
     evmc_message const& _msg,
     evmc_context *_context,
     bool _meterGas
   ):
     vm(_vm),
     code(_code),
+    state_code(_state_code),
     msg(_msg),
     context(_context),
     output(_msg.gas),
@@ -69,6 +71,7 @@ public:
 protected:
   wasm_vm vm;
   vector<uint8_t> code;
+  vector<uint8_t> state_code;
   evmc_message msg;
   evmc_context *context;
   ExecutionResult output;
@@ -82,10 +85,11 @@ class BinaryenVM : public WasmEngine
 {
 public:
   BinaryenVM(vector<uint8_t> const& _code,
+    vector<uint8_t> const& _state_code,
     evmc_message const& _msg,
     evmc_context *_context,
     bool _meterGas) : 
-    WasmEngine(VM_BINARYEN, _code, _msg, _context, _meterGas)
+    WasmEngine(VM_BINARYEN, _code, _state_code, _msg, _context, _meterGas)
     { }
   
   int execute() override;
@@ -99,10 +103,11 @@ class WabtVM : public WasmEngine
 {
 public:
   WabtVM(vector<uint8_t> const& _code,
+    vector<uint8_t> const& _state_code,
     evmc_message const& msg,
     evmc_context *_context,
     bool _meterGas) :
-    WasmEngine(VM_WABT, _code, _msg, _context, _meterGas)
+    WasmEngine(VM_WABT, _code, _state_code, _msg, _context, _meterGas)
     { }
 
   int execute() override;
@@ -117,9 +122,11 @@ class WavmVM : public WasmEngine
 {
 public:
   WavmVM(vector<uint8_t> const& _code,
+    vector<uint8_t> const& _state_code,
     evmc_message const& msg,
-    evmc_context *_context) :
-    WasmEngine(VM_WAVM, _code, _msg, _context)
+    evmc_context *_context,
+    bool _meterGas) :
+    WasmEngine(VM_WAVM, _code, _state_code, _msg, _context, _meterGas)
     { }
 
   int execute() override;
