@@ -133,6 +133,7 @@ vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
 }
 
 // NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
+/*
 string mktemp_string(string pattern) {
   const unsigned long len = pattern.size();
   char tmp[len + 1];
@@ -141,14 +142,15 @@ string mktemp_string(string pattern) {
      return string();
   return string(tmp, strlen(tmp));
 }
+*/
 
 vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
 #if HERA_DEBUGGING
   cerr << "Calling evm2wasm.js (input " << input.size() << " bytes)..." << endl;
 #endif
 
-  string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXX");
-  string fileWASM = mktemp_string("/tmp/hera.evm2wasm.wasm.XXXXXX");
+  string fileEVM = "/tmp/hera.evm2wasm.evm";
+  string fileWASM = "/tmp/hera.evm2wasm.wasm";
 
   if (fileEVM.size() == 0 || fileWASM.size() == 0)
     return vector<uint8_t>();
