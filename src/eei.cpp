@@ -395,6 +395,64 @@ string toHex(evmc_uint256be const& value) {
     eth_useGas(GasSchedule::verylow);
     storeMemory(lastReturnData, dataOffset, resultOffset, length);
   }
+
+  uint32_t EEI::eth_create(uint32_t valueOffset, uint32_t dataOffset, uint32_t length, uint32_t resultOffset)
+  {
+    HERA_DEBUG << "create " << hex << valueOffset << " " << dataOffset << " " << length << dec << " " << resultOffset << dec << "\n";
+
+    ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "create");
+
+    evmc_message create_message;
+
+    create_message.destination = {};
+    create_message.sender = msg.destination;
+    create_message.value = loadUint128(valueOffset);
+
+    ensureSenderBalance(create_message.value);
+
+    if (length) {
+      vector<uint8_t> contract_code(length);
+      loadMemory(dataOffset, contract_code, length);
+      create_message.input_data = contract_code.data();
+      create_message.input_size = length;
+    } else {
+      create_message.input_data = nullptr;
+      create_message.input_size = 0;
+    }
+
+    create_message.code_hash = {};
+    create_message.gas = result.gasLeft - (result.gasLeft / 64);
+    create_message.depth = msg.depth + 1;
+    create_message.kind = EVMC_CREATE;
+    create_message.flags = 0;
+
+    evmc_result create_result;
+
+    eth_useGas(create_message.gas);
+    eth_useGas(GasSchedule::create);
+    context->fn_table->call(&create_result, context, &create_message);
+
+    if (create_result.status_code == EVMC_SUCCESS) {
+      storeUint160(create_result.create_address, resultOffset);
+      lastReturnData.clear();
+    } else if (create_result.output_data) {
+      lastReturnData.assign(create_result.output_data, create_result.output_data + create_result.output_size);
+    } else {
+      lastReturnData.clear();
+    }
+
+    if (create_result.release)
+      create_result.release(&create_result);
+
+    switch (create_result.status_code) {
+      case EVMC_SUCCESS:
+        return 0;
+      case EVMC_REVERT:
+        return 2;
+      default:
+        return 1;
+    }
+  }
 /*
  * Binaryen EEI Implementation
  */
@@ -918,60 +976,7 @@ string toHex(evmc_uint256be const& value) {
       uint32_t length = arguments[2].geti32();
       uint32_t resultOffset = arguments[3].geti32();
 
-      HERA_DEBUG << "create " << hex << valueOffset << " " << dataOffset << " " << length << dec << " " << resultOffset << dec << "\n";
-
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "create");
-
-      evmc_message create_message;
-
-      create_message.destination = {};
-      create_message.sender = msg.destination;
-      create_message.value = loadUint128(valueOffset);
-
-      ensureSenderBalance(create_message.value);
-
-      if (length) {
-        vector<uint8_t> contract_code(length);
-        loadMemory(dataOffset, contract_code, length);
-        create_message.input_data = contract_code.data();
-        create_message.input_size = length;
-      } else {
-        create_message.input_data = nullptr;
-        create_message.input_size = 0;
-      }
-
-      create_message.code_hash = {};
-      create_message.gas = result.gasLeft - (result.gasLeft / 64);
-      create_message.depth = msg.depth + 1;
-      create_message.kind = EVMC_CREATE;
-      create_message.flags = 0;
-
-      evmc_result create_result;
-
-      eth_useGas(create_message.gas);
-      eth_useGas(GasSchedule::create);
-      context->fn_table->call(&create_result, context, &create_message);
-
-      if (create_result.status_code == EVMC_SUCCESS) {
-        storeUint160(create_result.create_address, resultOffset);
-        lastReturnData.clear();
-      } else if (create_result.output_data) {
-        lastReturnData.assign(create_result.output_data, create_result.output_data + create_result.output_size);
-      } else {
-        lastReturnData.clear();
-      }
-
-      if (create_result.release)
-        create_result.release(&create_result);
-
-      switch (create_result.status_code) {
-      case EVMC_SUCCESS:
-        return Literal(uint32_t(0));
-      case EVMC_REVERT:
-        return Literal(uint32_t(2));
-      default:
-        return Literal(uint32_t(1));
-      }
+      return Literal(eth_create(valueOffset, dataOffset, length, resultOffset)); 
     }
 
     if (import->base == Name("selfDestruct")) {
