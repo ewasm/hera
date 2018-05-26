@@ -467,6 +467,267 @@ string toHex(evmc_uint256be const& value) {
     eth_useGas(GasSchedule::selfdestruct);
     context->fn_table->selfdestruct(context, &msg.destination, &address);   
   }
+
+  uint32_t EEI::eth_call(
+    int64_t gas, 
+    uint32_t addressOffset, 
+    uint32_t valueOffset, 
+    uint32_t dataOffset, 
+    uint32_t dataLength)
+  {
+    heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+
+    evmc_message call_message;
+
+    call_message.destination = loadUint160(addressOffset);
+    call_message.flags = msg.flags;
+    call_message.code_hash = { };
+    call_message.gas = gas - (gas / 64);
+    call_message.depth = msg.depth + 1;
+    call_message.sender = msg.destination;
+    call_message.value = loadUint128(valueOffset);
+    call_message.kind = EVMC_CALL;
+    
+    if (!isZeroUint256(call_message.value))
+      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "call");
+    ensureSenderBalance(call_message.value);
+
+    HERA_DEBUG << "call " << hex <<
+      gas << " " <<
+      addressOffset << " " <<
+      valueOffset << " " <<
+      dataOffset << " " <<
+      dataLength << dec << "\n";
+    
+    call_message.input_size = dataLength;
+    if (dataLength > 0) {
+      vector<uint8_t> input_data(dataLength);
+      loadMemory(dataOffset, input_data, dataLength);
+      call_message.input_data = input_data.data();
+    } else {
+      call_message.input_data = nullptr;
+    }
+
+    evmc_result call_result;
+
+    if (!context->fn_table->account_exists(context, &call_message.destination))
+      eth_useGas(GasSchedule::callNewAccount);
+    if (!isZeroUint256(call_message.value))
+      eth_useGas(GasSchedule::valuetransfer);
+
+    eth_useGas(GasSchedule::call);
+    eth_useGas(call_message.gas);
+
+    context->fn_table->call(&call_result, context, &call_message);
+
+    if (call_result.output_data)
+      lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
+    else
+      lastReturnData.clear();
+
+    if (call_result.release)
+      call_result.release(&call_result);
+
+    result.gasLeft += call_result.gas_left;
+
+    switch (call_result.status_code) {
+    case EVMC_SUCCESS:
+      return 0;
+    case EVMC_REVERT:
+      return 2;
+    default:
+      return 1;
+    }
+  }
+
+  uint32_t EEI::eth_callCode(
+    int64_t gas,
+    uint32_t addressOffset,
+    uint32_t valueOffset,
+    uint32_t dataOffset,
+    uint32_t dataLength)
+  {
+    heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+
+    evmc_message call_message;
+
+    call_message.destination = loadUint160(addressOffset);
+    call_message.flags = msg.flags;
+    call_message.code_hash = { };
+    call_message.gas = gas - (gas / 64);
+    call_message.depth = msg.depth + 1;
+    call_message.sender = msg.destination;
+    call_message.value = loadUint128(valueOffset);
+    call_message.kind = EVMC_CALLCODE;
+
+    ensureSenderBalance(call_message.value);
+
+    HERA_DEBUG << "callCode " << hex <<
+      gas << " " <<
+      addressOffset << " " <<
+      valueOffset << " " <<
+      dataOffset << " " <<
+      dataLength << dec << "\n";
+    
+    call_message.input_size = dataLength;
+    if (dataLength > 0) {
+      vector<uint8_t> input_data(dataLength);
+      loadMemory(dataOffset, input_data, dataLength);
+      call_message.input_data = input_data.data();
+    } else {
+      call_message.input_data = nullptr;
+    }
+
+    evmc_result call_result;
+
+    if (!isZeroUint256(call_message.value))
+      eth_useGas(GasSchedule::valuetransfer);
+
+    eth_useGas(GasSchedule::call);
+    eth_useGas(call_message.gas);
+
+    context->fn_table->call(&call_result, context, &call_message);
+
+    if (call_result.output_data)
+      lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
+    else
+      lastReturnData.clear();
+
+    if (call_result.release)
+      call_result.release(&call_result);
+
+    result.gasLeft += call_result.gas_left;
+
+    switch (call_result.status_code) {
+    case EVMC_SUCCESS:
+      return 0;
+    case EVMC_REVERT:
+      return 2;
+    default:
+      return 1;
+    }
+  }
+
+  uint32_t EEI::eth_callDelegate(int64_t gas, uint32_t addressOffset, uint32_t dataOffset, uint32_t dataLength)
+  {
+    heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+
+    evmc_message call_message;
+
+    call_message.destination = loadUint160(addressOffset);
+    call_message.flags = msg.flags;
+    call_message.code_hash = { };
+    call_message.gas = gas - (gas / 64);
+    call_message.depth = msg.depth + 1;
+    call_message.sender = msg.sender;
+    call_message.value = msg.value;
+    call_message.kind = EVMC_DELEGATECALL;
+
+    HERA_DEBUG << "callDelegate " << hex <<
+      gas << " " <<
+      addressOffset << " " <<
+      dataOffset << " " <<
+      dataLength << dec << "\n";
+    
+    call_message.input_size = dataLength;
+    if (dataLength > 0) {
+      vector<uint8_t> input_data(dataLength);
+      loadMemory(dataOffset, input_data, dataLength);
+      call_message.input_data = input_data.data();
+    } else {
+      call_message.input_data = nullptr;
+    }
+
+    evmc_result call_result;
+
+    if(!isZeroUint256(call_message.value))
+      eth_useGas(GasSchedule::valuetransfer);
+
+    eth_useGas(GasSchedule::call);
+    eth_useGas(call_message.gas);
+
+    context->fn_table->call(&call_result, context, &call_message);
+
+    if (call_result.output_data)
+      lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
+    else
+      lastReturnData.clear();
+
+    if (call_result.release)
+      call_result.release(&call_result);
+
+    result.gasLeft += call_result.gas_left;
+
+    switch (call_result.status_code) {
+    case EVMC_SUCCESS:
+      return 0;
+    case EVMC_REVERT:
+      return 2;
+    default:
+      return 1;
+    }
+  }
+
+  uint32_t EEI::eth_callStatic(int64_t gas, uint32_t addressOffset, uint32_t dataOffset, uint32_t dataLength)
+  {
+    heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+
+    evmc_message call_message;
+
+    call_message.destination = loadUint160(addressOffset);
+    call_message.flags = msg.flags;
+    call_message.code_hash = { };
+    call_message.gas = gas - (gas / 64);
+    call_message.depth = msg.depth + 1;
+    call_message.sender = msg.destination;
+    call_message.value = { };
+    call_message.kind = EVMC_CALL;
+    call_message.flags |= EVMC_STATIC;
+
+    HERA_DEBUG << "callDelegate " << hex <<
+      gas << " " <<
+      addressOffset << " " <<
+      dataOffset << " " <<
+      dataLength << dec << "\n";
+
+    call_message.input_size = dataLength;
+    if (dataLength > 0) {
+      vector<uint8_t> input_data(dataLength);
+      loadMemory(dataOffset, input_data, dataLength);
+      call_message.input_data = input_data.data();
+    } else {
+      call_message.input_data = nullptr;
+    }
+
+    evmc_result call_result;
+
+    if(!isZeroUint256(call_message.value))
+      eth_useGas(GasSchedule::valuetransfer);
+
+    eth_useGas(GasSchedule::call);
+    eth_useGas(call_message.gas);
+
+    context->fn_table->call(&call_result, context, &call_message);
+
+    if (call_result.output_data)
+      lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
+    else
+      lastReturnData.clear();
+
+    if (call_result.release)
+      call_result.release(&call_result);
+
+    result.gasLeft += call_result.gas_left;
+
+    switch (call_result.status_code) {
+    case EVMC_SUCCESS:
+      return 0;
+    case EVMC_REVERT:
+      return 2;
+    default:
+      return 1;
+    }
+  }
 /*
  * Binaryen EEI Implementation
  */
@@ -874,112 +1135,50 @@ string toHex(evmc_uint256be const& value) {
       return Literal();
     }
 
-    if (
-      import->base == Name("call") ||
-      import->base == Name("callCode") ||
-      import->base == Name("callDelegate") ||
-      import->base == Name("callStatic")
-    ) {
-      if (import->base == Name("call") || import->base == Name("callCode")) {
-        heraAssert(arguments.size() == 5, string("Argument count mismatch in: ") + import->base.str);
-      } else {
-        heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
-      }
+    if (import->base == Name("call")) {
+      heraAssert(arguments.size() == 5, string("Argument count mismatch in: ") + import->base.str);
 
       int64_t gas = arguments[0].geti64();
       uint32_t addressOffset = arguments[1].geti32();
-      uint32_t valueOffset;
-      uint32_t dataOffset;
-      uint32_t dataLength;
+      uint32_t valueOffset = arguments[2].geti32();
+      uint32_t dataOffset = arguments[3].geti32();
+      uint32_t dataLength = arguments[4].geti32();
 
-      heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+      return Literal(eth_call(gas, addressOffset, valueOffset, dataOffset, dataLength));
+    }
 
-      evmc_message call_message;
-      call_message.destination = loadUint160(addressOffset);
-      call_message.flags = msg.flags;
-      call_message.code_hash = {};
-      call_message.gas = gas - (gas / 64);
-      call_message.depth = msg.depth + 1;
+    if (import->base == Name("callCode")) {
+      heraAssert(arguments.size() == 5, string("Argument count mismatch in: ") + import->base.str);
 
-      if (import->base == Name("call") || import->base == Name("callCode")) {
-        valueOffset = arguments[2].geti32();
-        dataOffset = arguments[3].geti32();
-        dataLength = arguments[4].geti32();
+      int64_t gas = arguments[0].geti64();
+      uint32_t addressOffset = arguments[1].geti32();
+      uint32_t valueOffset = arguments[2].geti32();
+      uint32_t dataOffset = arguments[3].geti32();
+      uint32_t dataLength = arguments[4].geti32();
 
-        call_message.sender = msg.destination;
-        call_message.value = loadUint128(valueOffset);
-        call_message.kind = (import->base == Name("callCode")) ? EVMC_CALLCODE : EVMC_CALL;
+      return Literal(eth_callCode(gas, addressOffset, valueOffset, dataOffset, dataLength));
+    }
 
-        if (import->base == Name("call") && !isZeroUint256(call_message.value)) {
-          ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "call");
-        }
+    if (import->base == Name("callDelegate")) {
+      heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
 
-        ensureSenderBalance(call_message.value);
-      } else {
-        valueOffset = 0;
-        dataOffset = arguments[2].geti32();
-        dataLength = arguments[3].geti32();
+      int64_t gas = arguments[0].geti64();
+      uint32_t addressOffset = arguments[1].geti32();
+      uint32_t dataOffset = arguments[2].geti32();
+      uint32_t dataLength = arguments[3].geti32();
 
-        if (import->base == Name("callDelegate")) {
-          call_message.sender = msg.sender;
-          call_message.value = msg.value;
-          call_message.kind = EVMC_DELEGATECALL;
-        } else if (import->base == Name("callStatic")) {
-          call_message.sender = msg.destination;
-          call_message.value = {};
-          call_message.kind = EVMC_CALL;
-          call_message.flags |= EVMC_STATIC;
-        }
-      }
+      return Literal(eth_callDelegate(gas, addressOffset, dataOffset, dataLength));
+    }
 
-      HERA_DEBUG <<
-        import->base << " " << hex <<
-        gas << " " <<
-        addressOffset << " " <<
-        valueOffset << " " <<
-        dataOffset << " " <<
-        dataLength << dec << "\n";
+    if (import->base == Name("callStatic")) {
+      heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
 
-      if (dataLength) {
-        vector<uint8_t> input_data(dataLength);
-        loadMemory(dataOffset, input_data, dataLength);
-        call_message.input_data = input_data.data();
-        call_message.input_size = dataLength;
-      } else {
-        call_message.input_data = nullptr;
-        call_message.input_size = 0;
-      }
+      int64_t gas = arguments[0].geti64();
+      uint32_t addressOffset = arguments[1].geti32();
+      uint32_t dataOffset = arguments[2].geti32();
+      uint32_t dataLength = arguments[3].geti32();
 
-      evmc_result call_result;
-
-      if (import->base == Name("call") && !context->fn_table->account_exists(context, &call_message.destination))
-        eth_useGas(GasSchedule::callNewAccount);
-      if (!isZeroUint256(call_message.value))
-        eth_useGas(GasSchedule::valuetransfer);
-      eth_useGas(call_message.gas);
-      eth_useGas(GasSchedule::call);
-      context->fn_table->call(&call_result, context, &call_message);
-
-      if (call_result.output_data) {
-        lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
-      } else {
-        lastReturnData.clear();
-      }
-
-      if (call_result.release)
-        call_result.release(&call_result);
-
-      /* Return unspent gas */
-      result.gasLeft += call_result.gas_left;
-
-      switch (call_result.status_code) {
-      case EVMC_SUCCESS:
-        return Literal(uint32_t(0));
-      case EVMC_REVERT:
-        return Literal(uint32_t(2));
-      default:
-        return Literal(uint32_t(1));
-      }
+      return Literal(eth_callStatic(gas, addressOffset, dataOffset, dataLength));
     }
 
     if (import->base == Name("create")) {
