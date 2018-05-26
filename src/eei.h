@@ -173,30 +173,34 @@ protected:
  * Helper functions (virtual)
  * FIXME: Having each WASM engine's EEI implement each of these requires more work on specification. Maybe retire some of these
  */
-  virtual void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length) = 0;
-  virtual void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length) = 0;
-  virtual void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length) = 0;
-  virtual void storeMemory(std::vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length) = 0;
+  void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length);
+  void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length);
+  void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length);
+  void storeMemory(std::vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length);
 
-  virtual evmc_uint256be loadUint256(uint32_t srcOffset) = 0;
-  virtual void storeUint256(evmc_uint256be const& src, uint32_t dstOffset) = 0;
-  virtual evmc_address loadUint160(uint32_t srcOffset) = 0;
-  virtual void storeUint160(evmc_address const& src, uint32_t dstOffset) = 0;
-  virtual evmc_uint256be loadUint128(uint32_t srcOffset) = 0;
-  virtual void storeUint128(evmc_uint256be const& src, uint32_t dstOffset) = 0;
+  evmc_uint256be loadUint256(uint32_t srcOffset);
+  void storeUint256(evmc_uint256be const& src, uint32_t dstOffset);
+  evmc_address loadUint160(uint32_t srcOffset);
+  void storeUint160(evmc_address const& src, uint32_t dstOffset);
+  evmc_uint256be loadUint128(uint32_t srcOffset);
+  void storeUint128(evmc_uint256be const& src, uint32_t dstOffset);
 
-  virtual void ensureSenderBalance(evmc_uint256be const& value) = 0;
+  void ensureSenderBalance(evmc_uint256be const& value);
 
-  virtual uint64_t safeLoadUint128(evmc_uint256be const& value) = 0;
+  uint64_t safeLoadUint128(evmc_uint256be const& value);
 
   /* Checks if host supplied 256 bit value exceeds UINT64_MAX */
-  virtual bool exceedsUint64(evmc_uint256be const& value) = 0;
+  bool exceedsUint64(evmc_uint256be const& value);
 
   /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
-  virtual bool exceedsUint128(evmc_uint256be const& value) = 0;
+  bool exceedsUint128(evmc_uint256be const& value);
 
   /* Checks if 256 bit value is all zeroes */
-  virtual bool isZeroUint256(evmc_uint256be const& value) = 0;
+  bool isZeroUint256(evmc_uint256be const& value);
+
+  virtual uint8_t memory_getbyte(uint32_t offset) = 0;
+  virtual void memory_setbyte(uint32_t offset, uint8_t val) = 0;
+  virtual size_t memory_size() = 0;
 
   evmc_context *context;
   std::vector<uint8_t> const& code;
@@ -230,30 +234,9 @@ struct BinaryenEEI : ShellExternalInterface, public EEI {
   }
 
 private:
-  void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length) override;
-  void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length) override;
-  void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length) override;
-  void storeMemory(std::vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length) override;
-
-  evmc_uint256be loadUint256(uint32_t srcOffset) override;
-  void storeUint256(evmc_uint256be const& src, uint32_t dstOffset) override;
-  evmc_address loadUint160(uint32_t srcOffset) override;
-  void storeUint160(evmc_address const& src, uint32_t dstOffset) override;
-  evmc_uint256be loadUint128(uint32_t srcOffset) override;
-  void storeUint128(evmc_uint256be const& src, uint32_t dstOffset) override;
-
-  void ensureSenderBalance(evmc_uint256be const& value) override;
-
-  uint64_t safeLoadUint128(evmc_uint256be const& value) override;
-
-  /* Checks if host supplied 256 bit value exceeds UINT64_MAX */
-  bool exceedsUint64(evmc_uint256be const& value) override;
-
-  /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
-  bool exceedsUint128(evmc_uint256be const& value) override;
-
-  /* Checks if 256 bit value is all zeroes */
-  bool isZeroUint256(evmc_uint256be const& value) override;
+  uint8_t memory_getbyte(uint32_t offset) override;
+  void memory_setbyte(uint32_t offset, uint8_t val) override;
+  size_t memory_size() override;
 };
 
 }
