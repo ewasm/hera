@@ -185,6 +185,8 @@ protected:
 
   void eth_selfDestruct(uint32_t addressOffset);
 
+  void takeInterfaceGas(uint64_t gas);
+
 /*
  * Memory access helper functions usable by any WASM engine.
  * Dependent on memory_getbyte, memory_setbyte, and memory_size virtual methods.

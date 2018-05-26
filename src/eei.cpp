@@ -66,9 +66,6 @@ string toHex(evmc_uint256be const& value) {
  */
   void EEI::eth_useGas(uint64_t gas) 
   {
-    if (!meterGas)
-      return;
-    
     ensureCondition(gas <= result.gasLeft, OutOfGasException, "Out of gas.");
 
     result.gasLeft -= gas;
@@ -80,7 +77,7 @@ string toHex(evmc_uint256be const& value) {
 
     static_assert(is_same<decltype(result.gasLeft), uint64_t>::value, "uint64_t type expected");
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
     return result.gasLeft;
   }
 
@@ -88,7 +85,7 @@ string toHex(evmc_uint256be const& value) {
   {
     HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
     storeUint160(msg.destination, resultOffset);
   }
 
@@ -99,7 +96,7 @@ string toHex(evmc_uint256be const& value) {
     evmc_address address = loadUint160(addressOffset);
     evmc_uint256be result;
 
-    eth_useGas(GasSchedule::balance);
+    takeInterfaceGas(GasSchedule::balance);
     context->fn_table->get_balance(&result, context, &address);
     storeUint128(result, resultOffset);
   }
@@ -110,7 +107,7 @@ string toHex(evmc_uint256be const& value) {
 
     evmc_uint256be blockhash;
 
-    eth_useGas(GasSchedule::blockhash);
+    takeInterfaceGas(GasSchedule::blockhash);
     context->fn_table->get_block_hash(&blockhash, context, number);
 
     storeUint256(blockhash, resultOffset);
@@ -120,7 +117,7 @@ string toHex(evmc_uint256be const& value) {
   {
     HERA_DEBUG << "getCallDataSize\n";
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
 
     return static_cast<uint32_t>(msg.input_size);
   }
@@ -135,7 +132,7 @@ string toHex(evmc_uint256be const& value) {
       OutOfGasException,
       "Gas charge overflow"
     );
-    eth_useGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+    takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
 
     vector<uint8_t> input(msg.input_data, msg.input_data + msg.input_size);
     storeMemory(input, dataOffset, resultOffset, length);
@@ -145,7 +142,7 @@ string toHex(evmc_uint256be const& value) {
   {
     HERA_DEBUG << "getCaller " << hex << resultOffset << dec << "\n";
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
 
     storeUint160(msg.sender, resultOffset);
   }
@@ -154,7 +151,7 @@ string toHex(evmc_uint256be const& value) {
   {
     HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
 
     storeUint128(msg.value, resultOffset);
   }
@@ -169,7 +166,7 @@ string toHex(evmc_uint256be const& value) {
       OutOfGasException,
       "Gas charge overflow"
     );
-    eth_useGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+    takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
     storeMemory(code, codeOffset, resultOffset, length);
   }
 
@@ -177,7 +174,7 @@ string toHex(evmc_uint256be const& value) {
   {
     HERA_DEBUG << "getCodeSize\n";
     
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
 
     return static_cast<uint32_t>(code.size());
   }
@@ -188,7 +185,7 @@ string toHex(evmc_uint256be const& value) {
 
     ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
     ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGasException, "Gas charge overflow");
-    eth_useGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+    takeInterfaceGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
 
     evmc_address address = loadUint160(addressOffset);
     // FIXME: optimise this so not vector needs to be created
@@ -204,7 +201,7 @@ string toHex(evmc_uint256be const& value) {
     HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
 
     evmc_address address = loadUint160(addressOffset);
-    eth_useGas(GasSchedule::extcode);
+    takeInterfaceGas(GasSchedule::extcode);
     return static_cast<uint32_t>(context->fn_table->get_code_size(context, &address));
   }
 
@@ -214,7 +211,7 @@ string toHex(evmc_uint256be const& value) {
 
     evmc_tx_context tx_context;
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
     context->fn_table->get_tx_context(&tx_context, context);
     storeUint160(tx_context.block_coinbase, resultOffset);
   }
@@ -225,7 +222,7 @@ string toHex(evmc_uint256be const& value) {
 
     evmc_tx_context tx_context;
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
     context->fn_table->get_tx_context(&tx_context, context);
     storeUint256(tx_context.block_difficulty, offset);
   }
@@ -236,7 +233,7 @@ string toHex(evmc_uint256be const& value) {
 
     evmc_tx_context tx_context;
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
     context->fn_table->get_tx_context(&tx_context, context);
 
     static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
@@ -250,7 +247,7 @@ string toHex(evmc_uint256be const& value) {
 
     evmc_tx_context tx_context;
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
     context->fn_table->get_tx_context(&tx_context, context);
     storeUint128(tx_context.tx_gas_price, valueOffset);
   }
@@ -286,7 +283,7 @@ string toHex(evmc_uint256be const& value) {
       OutOfGasException,
       "Gas charge overflow"
     );
-    eth_useGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
+    takeInterfaceGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
     context->fn_table->emit_log(context, &msg.destination, data.data(), length, topics.data(), numberOfTopics);
   }
 
@@ -296,7 +293,7 @@ string toHex(evmc_uint256be const& value) {
 
     evmc_tx_context tx_context;
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
     context->fn_table->get_tx_context(&tx_context, context);
 
     static_assert(is_same<decltype(tx_context.block_number), int64_t>::value, "int64_t type expected");
@@ -310,7 +307,7 @@ string toHex(evmc_uint256be const& value) {
 
     evmc_tx_context tx_context;
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
     context->fn_table->get_tx_context(&tx_context, context);
 
     static_assert(is_same<decltype(tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
@@ -324,7 +321,7 @@ string toHex(evmc_uint256be const& value) {
 
     evmc_tx_context tx_context;
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
     context->fn_table->get_tx_context(&tx_context, context);
     storeUint160(tx_context.tx_origin, resultOffset);
   }
@@ -342,7 +339,7 @@ string toHex(evmc_uint256be const& value) {
     context->fn_table->get_storage(&current, context, &msg.destination, &path);
 
     // We do not need to take care about the delete case (gas refund), the client does it.
-    eth_useGas(
+    takeInterfaceGas(
       (isZeroUint256(current) && !isZeroUint256(value)) ?
       GasSchedule::storageStoreCreate :
       GasSchedule::storageStoreChange
@@ -358,7 +355,7 @@ string toHex(evmc_uint256be const& value) {
     evmc_uint256be path = loadUint256(pathOffset);
     evmc_uint256be result;
 
-    eth_useGas(GasSchedule::storageLoad);
+    takeInterfaceGas(GasSchedule::storageLoad);
     context->fn_table->get_storage(&result, context, &msg.destination, &path);
 
     storeUint256(result, resultOffset);
@@ -386,7 +383,7 @@ string toHex(evmc_uint256be const& value) {
   {
     HERA_DEBUG << "getReturnDataSize\n";
 
-    eth_useGas(GasSchedule::base);
+    takeInterfaceGas(GasSchedule::base);
     
     return static_cast<uint32_t>(lastReturnData.size());
   }
@@ -395,7 +392,7 @@ string toHex(evmc_uint256be const& value) {
   {
     HERA_DEBUG << "returnDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
 
-    eth_useGas(GasSchedule::verylow);
+    takeInterfaceGas(GasSchedule::verylow);
     storeMemory(lastReturnData, dataOffset, resultOffset, length);
   }
 
@@ -431,8 +428,8 @@ string toHex(evmc_uint256be const& value) {
 
     evmc_result create_result;
 
-    eth_useGas(create_message.gas);
-    eth_useGas(GasSchedule::create);
+    takeInterfaceGas(create_message.gas);
+    takeInterfaceGas(GasSchedule::create);
     context->fn_table->call(&create_result, context, &create_message);
 
     if (create_result.status_code == EVMC_SUCCESS) {
@@ -466,8 +463,8 @@ string toHex(evmc_uint256be const& value) {
     evmc_address address = loadUint160(addressOffset);
 
     if (!context->fn_table->account_exists(context, &address))
-      eth_useGas(GasSchedule::callNewAccount);
-    eth_useGas(GasSchedule::selfdestruct);
+      takeInterfaceGas(GasSchedule::callNewAccount);
+    takeInterfaceGas(GasSchedule::selfdestruct);
     context->fn_table->selfdestruct(context, &msg.destination, &address);   
   }
   /* 
@@ -517,12 +514,12 @@ string toHex(evmc_uint256be const& value) {
     evmc_result call_result;
 
     if (!context->fn_table->account_exists(context, &call_message.destination))
-      eth_useGas(GasSchedule::callNewAccount);
+      takeInterfaceGas(GasSchedule::callNewAccount);
     if (!isZeroUint256(call_message.value))
-      eth_useGas(GasSchedule::valuetransfer);
+      takeInterfaceGas(GasSchedule::valuetransfer);
 
-    eth_useGas(GasSchedule::call);
-    eth_useGas(call_message.gas);
+    takeInterfaceGas(GasSchedule::call);
+    takeInterfaceGas(call_message.gas);
 
     context->fn_table->call(&call_result, context, &call_message);
 
@@ -587,10 +584,10 @@ string toHex(evmc_uint256be const& value) {
     evmc_result call_result;
 
     if (!isZeroUint256(call_message.value))
-      eth_useGas(GasSchedule::valuetransfer);
+      takeInterfaceGas(GasSchedule::valuetransfer);
 
-    eth_useGas(GasSchedule::call);
-    eth_useGas(call_message.gas);
+    takeInterfaceGas(GasSchedule::call);
+    takeInterfaceGas(call_message.gas);
 
     context->fn_table->call(&call_result, context, &call_message);
 
@@ -647,10 +644,10 @@ string toHex(evmc_uint256be const& value) {
     evmc_result call_result;
 
     if(!isZeroUint256(call_message.value))
-      eth_useGas(GasSchedule::valuetransfer);
+      takeInterfaceGas(GasSchedule::valuetransfer);
 
-    eth_useGas(GasSchedule::call);
-    eth_useGas(call_message.gas);
+    takeInterfaceGas(GasSchedule::call);
+    takeInterfaceGas(call_message.gas);
 
     context->fn_table->call(&call_result, context, &call_message);
 
@@ -708,10 +705,10 @@ string toHex(evmc_uint256be const& value) {
     evmc_result call_result;
 
     if(!isZeroUint256(call_message.value))
-      eth_useGas(GasSchedule::valuetransfer);
+      takeInterfaceGas(GasSchedule::valuetransfer);
 
-    eth_useGas(GasSchedule::call);
-    eth_useGas(call_message.gas);
+    takeInterfaceGas(GasSchedule::call);
+    takeInterfaceGas(call_message.gas);
 
     context->fn_table->call(&call_result, context, &call_message);
 
@@ -738,6 +735,13 @@ string toHex(evmc_uint256be const& value) {
   /*
    * Abstract helper functions used in the EEI
    */
+
+  void EEI::takeInterfaceGas(uint64_t gas)
+  {
+    if(!meterGas)
+      return;
+    eth_useGas(gas);
+  }
   void EEI::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
   {
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
