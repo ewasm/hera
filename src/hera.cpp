@@ -313,13 +313,15 @@ evmc_result hera_execute(
       case EVM2WASM:
         _code = evm2wasm(context, _code);
         ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
-        meterInterfaceGas = false;
+        // TODO: enable this once evm2wasm does metering of interfaces
+        // meterInterfaceGas = false;
         break;
       case EVM2WASM_JS:
       case EVM2WASM_JS_TRACING:
         _code = evm2wasm_js(_code, hera->evm_mode == EVM2WASM_JS_TRACING);
         ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
-        meterInterfaceGas = false;
+        // TODO: enable this once evm2wasm does metering of interfaces
+        // meterInterfaceGas = false;
         break;
       case EVM_FALLBACK:
         ret.status_code = EVMC_REJECTED;
