@@ -453,6 +453,20 @@ string toHex(evmc_uint256be const& value) {
         return 1;
     }
   }
+
+  void EEI::eth_selfDestruct(uint32_t addressOffset)
+  {
+    HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
+
+    ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "selfDestruct");
+
+    evmc_address address = loadUint160(addressOffset);
+
+    if (!context->fn_table->account_exists(context, &address))
+      eth_useGas(GasSchedule::callNewAccount);
+    eth_useGas(GasSchedule::selfdestruct);
+    context->fn_table->selfdestruct(context, &msg.destination, &address);   
+  }
 /*
  * Binaryen EEI Implementation
  */
@@ -984,16 +998,7 @@ string toHex(evmc_uint256be const& value) {
 
       uint32_t addressOffset = arguments[0].geti32();
 
-      HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
-
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "selfDestruct");
-
-      evmc_address address = loadUint160(addressOffset);
-
-      if (!context->fn_table->account_exists(context, &address))
-        eth_useGas(GasSchedule::callNewAccount);
-      eth_useGas(GasSchedule::selfdestruct);
-      context->fn_table->selfdestruct(context, &msg.destination, &address);
+      eth_selfDestruct(addressOffset);
 
       return Literal();
     }
