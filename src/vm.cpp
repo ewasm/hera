@@ -31,7 +31,8 @@ using namespace HeraVM;
 int BinaryenVM::execute()
 {
   Module module;
-
+  
+  /* Parse WASM bytecode */
   try {
     WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(this->code), false);
     parser.read();
@@ -47,22 +48,26 @@ int BinaryenVM::execute()
       to_string(p.col));
   }
 
-  /* Validation */
+  /* Validate WASM binary */
   ensureCondition(
     WasmValidator().validate(module),
     ContractValidationFailure, 
     "Module is not valid."
   );
+
+  /* Ensure ewasm contract entry point exists */
   ensureCondition(
     module.getExportOrNull(Name("main")) != nullptr,
     ContractValidationFailure,
     "Contract entry point (\"main\") missing."
   );
-
+  
+  /* Instantiate EEI object */
   BinaryenEEI interface(context, code, msg, output, meterGas);
-
+  
   ModuleInstance instance(module, &interface);
-
+  
+  /* Call 'main' symbol */
   Name main = Name("main");
   LiteralList args;
   instance.callExport(main, args);

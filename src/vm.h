@@ -33,7 +33,9 @@
 using namespace std;
 using namespace HeraVM;
 
-/* Base class for WASM Execution Engines */
+/*
+ * Base class for WASM execution engines.
+ */
 class WasmEngine
 {
 public:
@@ -50,9 +52,18 @@ public:
     output(_msg.gas),
     meterGas(_meterGas)
   { }
-  
+ 
+ /* 
+  * Pure virtual method implemented by child classes of WasmEngine
+  * Calling this should trigger execution of the wasm code provided in the constructor
+  *   and instantiation of an EEI object.
+  */
   virtual int execute() = 0;
 
+ /*
+  * Method releasing execution output data. 
+  * This should not be called until execution has occurred.
+  */
   ExecutionResult & getResult() { return output; }
 
 protected:
@@ -64,6 +75,9 @@ protected:
   bool meterGas;
 };
 
+/*
+ * Binaryen interpreter class called by default. 
+ */
 class BinaryenVM : public WasmEngine
 {
 public:
@@ -74,10 +88,13 @@ public:
     WasmEngine(VM_BINARYEN, _code, _msg, _context, _meterGas)
     { }
   
-  int execute();
+  int execute() override;
 };
 
 #if WABT_SUPPORTED
+/*
+ * WABT interpreter.
+ */
 class WabtVM : public WasmEngine
 {
 public:
@@ -88,11 +105,14 @@ public:
     WasmEngine(VM_WABT, _code, _msg, _context, _meterGas)
     { }
 
-  int execute();
+  int execute() override;
 };
 #endif
 
 #if WAVM_SUPPORTED
+/*
+ * WAVM JIT compiler.
+ */
 class WavmVM : public WasmEngine
 {
 public:
@@ -102,7 +122,7 @@ public:
     WasmEngine(VM_WAVM, _code, _msg, _context)
     { }
 
-  int execute();
+  int execute() override;
 };
 #endif
 

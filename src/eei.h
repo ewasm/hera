@@ -35,6 +35,9 @@ using namespace wasm;
 
 namespace HeraVM {
 
+/*
+ * Execution output data structure. Used in WasmEngine class
+ */
 struct ExecutionResult {
   ExecutionResult() { }
   ExecutionResult(uint64_t _gasLeft):
@@ -45,7 +48,13 @@ struct ExecutionResult {
   bool isRevert = false;
 };
 
-/* Base class for EEI implementations */
+/* 
+ * Base class for EEI implementations.
+ * Children of this class implement WASM engine-specific code for byte memory access
+ *   and passing EEI arguments and returns between the WASM module and the abstract interface.
+ *
+ *   See eei.cpp for example
+ */
 class EEI {
 public:
   EEI(evmc_context *_context,
@@ -61,6 +70,9 @@ public:
     { }
 
 protected:
+/*
+ * Gas charge schedule.
+ */
   struct GasSchedule {
     static constexpr unsigned storageLoad = 200;
     static constexpr unsigned storageStoreCreate = 20000;
@@ -82,7 +94,11 @@ protected:
   };
 
 /*
- * Generic EEI function prototypes
+ * EEI host functions.
+ * WASM-engine specific code is only responsible for validating imports,
+ * passing arguments to these functions, and passing their return values.
+ *
+ * See https://github.com/ewasm/design/blob/master/eth_interface.md
  */
   void eth_useGas(uint64_t gas);
   uint64_t eth_getGasLeft();
@@ -170,8 +186,8 @@ protected:
   void eth_selfDestruct(uint32_t addressOffset);
 
 /*
- * Helper functions (virtual)
- * FIXME: Having each WASM engine's EEI implement each of these requires more work on specification. Maybe retire some of these
+ * Memory access helper functions usable by any WASM engine.
+ * Dependent on memory_getbyte, memory_setbyte, and memory_size virtual methods.
  */
   void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length);
   void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length);
@@ -185,6 +201,9 @@ protected:
   evmc_uint256be loadUint128(uint32_t srcOffset);
   void storeUint128(evmc_uint256be const& src, uint32_t dstOffset);
 
+/*
+ * Arithmetic checks. 
+ */
   void ensureSenderBalance(evmc_uint256be const& value);
 
   uint64_t safeLoadUint128(evmc_uint256be const& value);
@@ -198,6 +217,11 @@ protected:
   /* Checks if 256 bit value is all zeroes */
   bool isZeroUint256(evmc_uint256be const& value);
 
+/*
+ * Pure virtual methods for writing/reading bytes in memory. 
+ * Must be implemented for each WASM engine.
+ * Used in high-level memory access helpers.
+ */
   virtual uint8_t memory_getbyte(uint32_t offset) = 0;
   virtual void memory_setbyte(uint32_t offset, uint8_t val) = 0;
   virtual size_t memory_size() = 0;
@@ -210,6 +234,10 @@ protected:
   bool meterGas;
 };
 
+/*
+ * Binaryen EEI object.
+ * Inherits abstract EEI interface and implements some Binaryen callbacks. 
+ */
 struct BinaryenEEI : ShellExternalInterface, public EEI {
   BinaryenEEI(
     evmc_context* _context,

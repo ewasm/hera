@@ -45,6 +45,9 @@ extern "C" {
 HERA_EXPORT
 struct evmc_instance* evmc_create_hera(void);
 
+/*
+ * Enum for WASM engine runtime option
+ */
 typedef enum wasm_vm {
 #if WABT_SUPPORTED
   VM_WABT,

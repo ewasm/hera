@@ -307,10 +307,11 @@ evmc_result hera_execute(
       ensureCondition(_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
     }
 
-    //execute(context, _code, *msg, result);
+    /*
+     * Instantiate, execute, and extract results from the correct WASM engine
+     */
     ExecutionResult vmresult;
-    
-    /* This should probably be cleaned up a bit */
+
     switch (hera->vm) {
     #if WABT_SUPPORTED
     case VM_WABT:

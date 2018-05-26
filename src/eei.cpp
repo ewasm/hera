@@ -60,6 +60,10 @@ string toHex(evmc_uint256be const& value) {
 #endif
 
 }
+
+/*
+ * Abstract EEI methods called by corresponding WASM import.
+ */
   void EEI::eth_useGas(uint64_t gas) 
   {
     if (!meterGas)
@@ -159,14 +163,14 @@ string toHex(evmc_uint256be const& value) {
   {
     HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
-      ensureCondition(
-        numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
-        OutOfGasException,
-        "Gas charge overflow"
-      );
-      eth_useGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
-      storeMemory(code, codeOffset, resultOffset, length);
+    ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
+    ensureCondition(
+      numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
+      OutOfGasException,
+      "Gas charge overflow"
+    );
+    eth_useGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+    storeMemory(code, codeOffset, resultOffset, length);
   }
 
   uint32_t EEI::eth_getCodeSize()
@@ -180,19 +184,19 @@ string toHex(evmc_uint256be const& value) {
 
   void EEI::eth_externalCodeCopy(uint32_t addressOffset, uint32_t resultOffset, uint32_t codeOffset, uint32_t length)
   {
-      HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
+    HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
-      ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGasException, "Gas charge overflow");
-      eth_useGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+    ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
+    ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGasException, "Gas charge overflow");
+    eth_useGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
 
-      evmc_address address = loadUint160(addressOffset);
-      // FIXME: optimise this so not vector needs to be created
-      vector<uint8_t> codeBuffer(length);
-      size_t numCopied = context->fn_table->copy_code(context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
-      fill_n(&codeBuffer[numCopied], length - numCopied, 0);
+    evmc_address address = loadUint160(addressOffset);
+    // FIXME: optimise this so not vector needs to be created
+    vector<uint8_t> codeBuffer(length);
+    size_t numCopied = context->fn_table->copy_code(context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
+    fill_n(&codeBuffer[numCopied], length - numCopied, 0);
 
-      storeMemory(codeBuffer, codeOffset, resultOffset, length);
+    storeMemory(codeBuffer, codeOffset, resultOffset, length);
   }
 
   uint32_t EEI::eth_getExternalCodeSize(uint32_t addressOffset)
@@ -360,9 +364,8 @@ string toHex(evmc_uint256be const& value) {
     storeUint256(result, resultOffset);
   }
 
-/*
- * Separate return and revert methods for clarity
- */
+
+/* Separate return and revert methods for clarity */
   void EEI::eth_return(uint32_t dataOffset, uint32_t length)
   {
     HERA_DEBUG << "return " << hex << dataOffset << " " << length << dec << "\n";
@@ -467,7 +470,10 @@ string toHex(evmc_uint256be const& value) {
     eth_useGas(GasSchedule::selfdestruct);
     context->fn_table->selfdestruct(context, &msg.destination, &address);   
   }
-
+  /* 
+   * yes, i know the call* methods are repetitive. 
+   * this is better than mashing them together into unreadable spaghetti.
+   */
   uint32_t EEI::eth_call(
     int64_t gas, 
     uint32_t addressOffset, 
@@ -728,8 +734,163 @@ string toHex(evmc_uint256be const& value) {
       return 1;
     }
   }
+
+  /*
+   * Abstract helper functions used in the EEI
+   */
+  void EEI::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
+  {
+    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+
+    if (!length)
+      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec << "\n";
+
+    for (uint32_t i = 0; i < length; ++i) {
+      dst[length - (i + 1)] = memory_getbyte(srcOffset + i);
+    }
+  }
+
+  void EEI::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
+  {
+    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition(dst.size() >= length, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+
+    if (!length)
+      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec <<"\n";
+
+    for (uint32_t i = 0; i < length; ++i) {
+      dst[i] = memory_getbyte(srcOffset + i);
+    }
+  }
+
+  void EEI::storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length)
+  {
+    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+    ensureCondition(memory_size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+
+    if (!length)
+      HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
+
+    for (uint32_t i = 0; i < length; ++i) {
+      memory_setbyte(dstOffset + length - (i + 1), src[i]);
+    }
+  }
+
+  void EEI::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
+  {
+    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition(src.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+    ensureCondition(memory_size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+
+    if (!length)
+      HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
+
+    for (uint32_t i = 0; i < length; i++) {
+      memory_setbyte(dstOffset + i, src[srcOffset + i]);
+    }
+  }
+
+  /*
+   * Memory Op Wrapper Functions
+   */
+
+  evmc_uint256be EEI::loadUint256(uint32_t srcOffset)
+  {
+    evmc_uint256be dst = {};
+    loadMemory(srcOffset, dst.bytes, 32);
+    return dst;
+  }
+
+  void EEI::storeUint256(evmc_uint256be const& src, uint32_t dstOffset)
+  {
+    storeMemory(src.bytes, dstOffset, 32);
+  }
+
+  evmc_address EEI::loadUint160(uint32_t srcOffset)
+  {
+    evmc_address dst = {};
+    loadMemory(srcOffset, dst.bytes, 20);
+    return dst;
+  }
+
+  void EEI::storeUint160(evmc_address const& src, uint32_t dstOffset)
+  {
+    storeMemory(src.bytes, dstOffset, 20);
+  }
+
+  evmc_uint256be EEI::loadUint128(uint32_t srcOffset)
+  {
+    evmc_uint256be dst = {};
+    loadMemory(srcOffset, dst.bytes + 16, 16);
+    return dst;
+  }
+
+  void EEI::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
+  {
+    // TODO: use a specific error code here?
+    ensureCondition(!exceedsUint128(src), OutOfGasException, "Value exceeds 128 bits.");
+    storeMemory(src.bytes + 16, dstOffset, 16);
+  }
+
+  /*
+   * Numeric checks.
+   */
+  void EEI::ensureSenderBalance(evmc_uint256be const& value)
+  {
+    evmc_uint256be balance;
+    context->fn_table->get_balance(&balance, context, &msg.destination);
+    ensureCondition(safeLoadUint128(balance) >= safeLoadUint128(value), OutOfGasException, "Out of gas.");
+  }
+
+  uint64_t EEI::safeLoadUint128(evmc_uint256be const& value)
+  {
+    // TODO: use a specific error code here?
+    ensureCondition(!exceedsUint128(value), OutOfGasException, "Value exceeds 128 bits.");
+    uint64_t ret = 0;
+    for (unsigned i = 16; i < 32; i++) {
+      ret <<= 8;
+      ret |= value.bytes[i];
+    }
+    return ret;
+  }
+
+  bool EEI::exceedsUint64(evmc_uint256be const& value)
+  {
+    for (unsigned i = 0; i < 24; i++) {
+      if (value.bytes[i])
+        return true;
+    }
+    return false;
+  }
+
+  bool EEI::exceedsUint128(evmc_uint256be const& value)
+  {
+    for (unsigned i = 0; i < 16; i++) {
+      if (value.bytes[i])
+        return true;
+    }
+    return false;
+  }
+
+  bool EEI::isZeroUint256(evmc_uint256be const& value)
+  {
+    for (unsigned i = 0; i < 32; i++) {
+      if (value.bytes[i] != 0)
+        return false;
+    }
+    return true;
+  }
+
 /*
- * Binaryen EEI Implementation
+ * Binaryen-specific implementation of byte-level memory access functions.
+ */
+  uint8_t BinaryenEEI::memory_getbyte(uint32_t offset) { return memory.get<uint8_t>(offset); }
+  void BinaryenEEI::memory_setbyte(uint32_t offset, uint8_t val) { memory.set<uint8_t>(offset, val); }
+  size_t BinaryenEEI::memory_size() { return memory.size(); }
+
+/*
+ * Binaryen EEI imports.
  */
   void BinaryenEEI::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
@@ -868,6 +1029,11 @@ string toHex(evmc_uint256be const& value) {
   }
 #endif
 
+/*
+ * Binaryen-specific function import callback.
+ * In our case, the number of arguments is verified depending on the import name
+ * and said arguments are passed to the correct abstract interface function.
+ */
   Literal BinaryenEEI::callImport(Import *import, LiteralList& arguments) {
 #if HERA_DEBUGGING
     if (import->module == Name("debug"))
@@ -876,10 +1042,7 @@ string toHex(evmc_uint256be const& value) {
 #endif
 
     heraAssert(import->module == Name("ethereum"), "Only imports from the 'ethereum' namespace are allowed.");
-/* FIXME: Use this later for the host function map
- *  string funcName = string(import->base.str);
- *  cout << "calling " << funcName << endl;
- */
+
     if (import->base == Name("useGas")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
@@ -1205,155 +1368,4 @@ string toHex(evmc_uint256be const& value) {
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
   }
 
-  /*
-   * Memory Operations
-   */
-
-  uint8_t BinaryenEEI::memory_getbyte(uint32_t offset) { return memory.get<uint8_t>(offset); }
-  void BinaryenEEI::memory_setbyte(uint32_t offset, uint8_t val) { memory.set<uint8_t>(offset, val); }
-  size_t BinaryenEEI::memory_size() { return memory.size(); }
-
-  void EEI::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
-  {
-    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
-
-    if (!length)
-      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec << "\n";
-
-    for (uint32_t i = 0; i < length; ++i) {
-      dst[length - (i + 1)] = memory_getbyte(srcOffset + i);
-    }
-  }
-
-  void EEI::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
-  {
-    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
-    ensureCondition(dst.size() >= length, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
-
-    if (!length)
-      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec <<"\n";
-
-    for (uint32_t i = 0; i < length; ++i) {
-      dst[i] = memory_getbyte(srcOffset + i);
-    }
-  }
-
-  void EEI::storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length)
-  {
-    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
-    ensureCondition(memory_size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
-
-    if (!length)
-      HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
-
-    for (uint32_t i = 0; i < length; ++i) {
-      memory_setbyte(dstOffset + length - (i + 1), src[i]);
-    }
-  }
-
-  void EEI::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
-  {
-    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
-    ensureCondition(src.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
-    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
-    ensureCondition(memory_size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
-
-    if (!length)
-      HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
-
-    for (uint32_t i = 0; i < length; i++) {
-      memory_setbyte(dstOffset + i, src[srcOffset + i]);
-    }
-  }
-
-  /*
-   * Memory Op Wrapper Functions
-   */
-
-  evmc_uint256be EEI::loadUint256(uint32_t srcOffset)
-  {
-    evmc_uint256be dst = {};
-    loadMemory(srcOffset, dst.bytes, 32);
-    return dst;
-  }
-
-  void EEI::storeUint256(evmc_uint256be const& src, uint32_t dstOffset)
-  {
-    storeMemory(src.bytes, dstOffset, 32);
-  }
-
-  evmc_address EEI::loadUint160(uint32_t srcOffset)
-  {
-    evmc_address dst = {};
-    loadMemory(srcOffset, dst.bytes, 20);
-    return dst;
-  }
-
-  void EEI::storeUint160(evmc_address const& src, uint32_t dstOffset)
-  {
-    storeMemory(src.bytes, dstOffset, 20);
-  }
-
-  evmc_uint256be EEI::loadUint128(uint32_t srcOffset)
-  {
-    evmc_uint256be dst = {};
-    loadMemory(srcOffset, dst.bytes + 16, 16);
-    return dst;
-  }
-
-  void EEI::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
-  {
-    // TODO: use a specific error code here?
-    ensureCondition(!exceedsUint128(src), OutOfGasException, "Value exceeds 128 bits.");
-    storeMemory(src.bytes + 16, dstOffset, 16);
-  }
-
-  /*
-   * Utilities
-   */
-  void EEI::ensureSenderBalance(evmc_uint256be const& value)
-  {
-    evmc_uint256be balance;
-    context->fn_table->get_balance(&balance, context, &msg.destination);
-    ensureCondition(safeLoadUint128(balance) >= safeLoadUint128(value), OutOfGasException, "Out of gas.");
-  }
-
-  uint64_t EEI::safeLoadUint128(evmc_uint256be const& value)
-  {
-    // TODO: use a specific error code here?
-    ensureCondition(!exceedsUint128(value), OutOfGasException, "Value exceeds 128 bits.");
-    uint64_t ret = 0;
-    for (unsigned i = 16; i < 32; i++) {
-      ret <<= 8;
-      ret |= value.bytes[i];
-    }
-    return ret;
-  }
-
-  bool EEI::exceedsUint64(evmc_uint256be const& value)
-  {
-    for (unsigned i = 0; i < 24; i++) {
-      if (value.bytes[i])
-        return true;
-    }
-    return false;
-  }
-
-  bool EEI::exceedsUint128(evmc_uint256be const& value)
-  {
-    for (unsigned i = 0; i < 16; i++) {
-      if (value.bytes[i])
-        return true;
-    }
-    return false;
-  }
-
-  bool EEI::isZeroUint256(evmc_uint256be const& value)
-  {
-    for (unsigned i = 0; i < 32; i++) {
-      if (value.bytes[i] != 0)
-        return false;
-    }
-    return true;
-  }
 }
