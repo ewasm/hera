@@ -1,15 +1,18 @@
 cmake_minimum_required(VERSION 3.5)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+include(cmake/cable/bootstrap.cmake)
 
-# Require C++11.
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-set(CMAKE_CXX_EXTENSIONS Off)
+include(CableBuildType)
+include(CableCompilerSettings)
+include(CableToolchains)
 
-add_compile_options(-Wall -Wextra -Wconversion -Wno-sign-conversion -Wno-unknown-pragmas)
+cable_configure_toolchain(DEFAULT cxx11)
 
 project(hera)
+
+cable_set_build_type(DEFAULT RelWithDebInfo CONFIGURATION_TYPES Release RelWithDebInfo Debug)
+
+cable_configure_compiler()
 
 include(ProjectBinaryen)
 
