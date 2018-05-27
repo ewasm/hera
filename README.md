@@ -1,4 +1,4 @@
-# Hera
+# Hera ![Status](https://circleci.com/gh/ewasm/hera.svg?style=shield&circle-token=:circle-token)
 
 Hera is an [ewasm](https://github.com/ewasm/design) virtual machine implemented in C++ conforming to [EVMC](https://github.com/ethereum/evmc/).
 
