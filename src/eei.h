@@ -264,7 +264,7 @@ struct BinaryenEEI : ShellExternalInterface, public EEI {
   void importGlobals(std::map<Name, Literal>& globals, Module& wasm) override;
 
   void trap(const char* why) override {
-    throw InternalErrorException(std::string("Trap condition: ") + why);
+    ensureCondition(false, OutOfGasException, std::string("Trap condition: ") + why);
   }
 
 private:
