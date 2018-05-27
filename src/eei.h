@@ -65,7 +65,8 @@ struct EthereumInterface : ShellExternalInterface {
   void importGlobals(std::map<Name, Literal>& globals, Module& wasm) override;
 
   void trap(const char* why) override {
-    throw InternalErrorException(std::string("Trap condition: ") + why);
+    // TODO: use a specific error code here?
+    ensureCondition(false, OutOfGasException, std::string("Trap condition: ") + why);
   }
 
 private:
