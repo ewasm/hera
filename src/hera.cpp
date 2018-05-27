@@ -39,6 +39,8 @@
 
 #include <evmc/evmc.h>
 
+#include <evm2wasm.h>
+
 #include "hera.h"
 #include "eei.h"
 #include "exceptions.h"
@@ -50,6 +52,8 @@ using namespace HeraVM;
 enum hera_evm_mode {
   EVM_FALLBACK,
   EVM2WASM,
+  EVM2WASM_CPP,
+  EVM2WASM_CPP_TRACING,
   EVM2WASM_JS,
   EVM2WASM_JS_TRACING
 };
@@ -194,6 +198,26 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
   return vector<uint8_t>(str.begin(), str.end());
 }
 
+vector<uint8_t> evm2wasm_cpp(vector<uint8_t> const& input, bool evmTrace) {
+#if HERA_DEBUGGING
+  cerr << "Calling evm2wasm.cpp (input " << input.size() << " bytes)..." << endl;
+#endif
+
+  ostringstream os;
+  // print as a hex sting
+  os << hex;
+  for (uint8_t byte: input)
+    os << setfill('0') << setw(2) << static_cast<int>(byte);
+
+  string str = evm2wasm::evm2wasm(os.str(), evmTrace);
+
+#if HERA_DEBUGGING
+  cerr << "evm2wasm.cpp done (output " << str.length() << " bytes)" << endl;
+#endif
+
+  return vector<uint8_t>(str.begin(), str.end());
+}
+
 vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
 #if HERA_DEBUGGING
   cerr << "Calling evm2wasm (input " << input.size() << " bytes)..." << endl;
@@ -316,6 +340,13 @@ evmc_result hera_execute(
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
+      case EVM2WASM_CPP:
+      case EVM2WASM_CPP_TRACING:
+        _code = evm2wasm_cpp(_code, hera->evm_mode == EVM2WASM_CPP_TRACING);
+        ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.cpp failed");
+        // TODO: enable this once evm2wasm does metering of interfaces
+        // meterInterfaceGas = false;
+        break;
       case EVM2WASM_JS:
       case EVM2WASM_JS_TRACING:
         _code = evm2wasm_js(_code, hera->evm_mode == EVM2WASM_JS_TRACING);
@@ -416,6 +447,18 @@ int hera_set_option(
   if (strcmp(name, "evm2wasm") == 0) {
     if (strcmp(value, "true") == 0)
       hera->evm_mode = EVM2WASM;
+    return 1;
+  }
+
+  if (strcmp(name, "evm2wasm.cpp") == 0) {
+    if (strcmp(value, "true") == 0)
+      hera->evm_mode = EVM2WASM_CPP;
+    return 1;
+  }
+
+  if (strcmp(name, "evm2wasm.cpp-trace") == 0) {
+    if (strcmp(value, "true") == 0)
+      hera->evm_mode = EVM2WASM_CPP_TRACING;
     return 1;
   }
 
