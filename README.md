@@ -20,6 +20,8 @@ These are to be used via EVM-C `set_option`:
 - `fallback=true` will allow EVM bytecode to be passed through to the client for execution (if set to `false`, the default, it will be rejected as invalid) (note: is ignored if `evm2wasm` is `true`)
 - `evm2wasm.js=true` will use a `evm2wasm.js` as an external commandline tool instead of the system contract
 - `evm2wasm.js-trace=true` will turn on EVM tracing for `evm2wasm.js`
+- `evm2wasm.cpp=true` will use a `evm2wasm` as a compiled-in dependency instead of the system contract
+- `evm2wasm.cpp-trace=true` will turn on EVM tracing for `evm2wasm.cpp`
 
 ## Interfaces
 
