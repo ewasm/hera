@@ -50,6 +50,7 @@ using namespace wasm;
 using namespace HeraVM;
 
 enum hera_evm_mode {
+  EVM_REJECT,
   EVM_FALLBACK,
   EVM2WASM_CONTRACT,
   EVM2WASM_CPP,
@@ -59,7 +60,7 @@ enum hera_evm_mode {
 };
 
 struct hera_instance : evmc_instance {
-  hera_evm_mode evm_mode;
+  hera_evm_mode evm_mode = EVM_REJECT;
   bool metering = false;
 
   hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr}) {}
@@ -357,9 +358,11 @@ evmc_result hera_execute(
       case EVM_FALLBACK:
         ret.status_code = EVMC_REJECTED;
         return ret;
-      default:
+      case EVM_REJECT:
         ret.status_code = EVMC_FAILURE;
         return ret;
+      default:
+        heraAssert(false, "");
       }
     } else if (msg->kind == EVMC_CREATE) {
       // Meter the deployment (constructor) code if it is WebAssembly
