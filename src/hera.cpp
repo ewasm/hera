@@ -240,6 +240,40 @@ vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
   return ret;
 }
 
+// NOTE: This should be caught during deployment time by the Sentinel.
+void validate_contract(Module & module)
+{
+  ensureCondition(
+    module.getExportOrNull(Name("main")) != nullptr,
+    ContractValidationFailure,
+    "Contract entry point (\"main\") missing."
+  );
+
+  ensureCondition(
+    module.getExportOrNull(Name("memory")) != nullptr,
+    ContractValidationFailure,
+    "Contract export (\"memory\") missing."
+  );
+
+  ensureCondition(
+    module.exports.size() == 2,
+    ContractValidationFailure,
+    "Contract exports more than (\"main\") and (\"memory\")."
+  );
+
+  for (auto const& import: module.imports) {
+    ensureCondition(
+      import->module == Name("ethereum")
+#if HERA_DEBUGGING
+      || import->module == Name("debug")
+#endif
+      ,
+      ContractValidationFailure,
+      "Import from invalid namespace."
+    );
+  }
+}
+
 void execute(
   evmc_context* context,
   vector<uint8_t> const& code,
@@ -281,17 +315,12 @@ void execute(
     "Module is not valid."
   );
 
-  // This should be caught during deployment time by the Sentinel.
-  // TODO: validate for other conditions too?
-  ensureCondition(
-    module.getExportOrNull(Name("main")) != nullptr,
-    ContractValidationFailure,
-    "Contract entry point (\"main\") missing."
-  );
+  // NOTE: This should be caught during deployment time by the Sentinel.
+  validate_contract(module);
 
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
-  // Interpet
+  // Interpret
   EthereumInterface interface(context, state_code, msg, result, meterInterfaceGas);
   ModuleInstance instance(module, &interface);
 
