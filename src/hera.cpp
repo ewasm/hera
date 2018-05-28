@@ -51,7 +51,7 @@ using namespace HeraVM;
 
 enum hera_evm_mode {
   EVM_FALLBACK,
-  EVM2WASM,
+  EVM2WASM_CONTRACT,
   EVM2WASM_CPP,
   EVM2WASM_CPP_TRACING,
   EVM2WASM_JS,
@@ -334,7 +334,7 @@ evmc_result hera_execute(
     // ensure we can only handle WebAssembly version 1
     if (!hasWasmPreamble(_code)) {
       switch (hera->evm_mode) {
-      case EVM2WASM:
+      case EVM2WASM_CONTRACT:
         _code = evm2wasm(context, _code);
         ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
         // TODO: enable this once evm2wasm does metering of interfaces
@@ -446,7 +446,7 @@ int hera_set_option(
 
   if (strcmp(name, "evm2wasm") == 0) {
     if (strcmp(value, "true") == 0)
-      hera->evm_mode = EVM2WASM;
+      hera->evm_mode = EVM2WASM_CONTRACT;
     return 1;
   }
 
