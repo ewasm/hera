@@ -113,6 +113,20 @@ defaults:
         echo "run tests script."
         ./scripts/tests.sh
 
+  test-evm2wasm: &test-evm2wasm
+    run:
+      name: "Run evm2wasm state tests"
+      working_directory: ~/project
+      command: |
+        echo "print working directory:"
+        pwd
+        echo "list files in working directory:"
+        ls -al .
+        echo "check testeth command"
+        testeth --help
+        echo "run tests script."
+        ./scripts/evm2wasm-tests.sh
+
   install-cpp-ethereum: &install-cpp-ethereum
     run:
       name: "Install cpp-ethereum"
@@ -158,6 +172,27 @@ jobs:
       - *build-cpp-eth
       - *save-eth-cache
       - *test-ewasm
+
+  evm2wasm-tests:
+    environment:
+      - BUILD_TYPE: Release
+      - CXX: clang++
+      - CC:  clang
+      - GENERATOR: Ninja
+      - BUILD_PARALLEL_JOBS: 4
+      - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF
+    docker:
+      - image: cdetrio/nodejs-cpp-build-env
+    steps:
+      - checkout
+      - *update-submodules
+      - *environment-info
+      - *checkout-cpp-eth
+      - *restore-eth-cache
+      - *link-hera
+      - *build-cpp-eth
+      - *save-eth-cache
+      - *test-evm2wasm
 
   linux-clang-shared-release:
     environment:
@@ -232,3 +267,4 @@ workflows:
       - linux-clang-shared-debug
       - linux-gcc-debug
       - ewasm-tests
+      - evm2wasm-tests
