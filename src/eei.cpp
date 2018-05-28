@@ -59,6 +59,10 @@ string toHex(evmc_uint256be const& value) {
 }
 #endif
 
+inline int64_t maxCallGas(int64_t gas) {
+  return gas - (gas / 64);
+}
+
 }
 
   void EthereumInterface::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
@@ -664,7 +668,6 @@ string toHex(evmc_uint256be const& value) {
       call_message.destination = loadUint160(addressOffset);
       call_message.flags = msg.flags;
       call_message.code_hash = {};
-      call_message.gas = gas - (gas / 64);
       call_message.depth = msg.depth + 1;
 
       if (import->base == Name("call") || import->base == Name("callCode")) {
@@ -717,13 +720,28 @@ string toHex(evmc_uint256be const& value) {
       }
 
       evmc_result call_result;
+      int64_t extra_gas = 0;
 
       if (import->base == Name("call") && !context->fn_table->account_exists(context, &call_message.destination))
-        takeInterfaceGas(GasSchedule::callNewAccount);
+        extra_gas += GasSchedule::callNewAccount;
       if (!isZeroUint256(call_message.value))
-        takeInterfaceGas(GasSchedule::valuetransfer);
-      takeInterfaceGas(call_message.gas);
-      takeInterfaceGas(GasSchedule::call);
+        extra_gas += GasSchedule::valuetransfer;
+      extra_gas += GasSchedule::call;
+
+      // this check is in EIP150 but not in the YellowPaper
+      takeInterfaceGas(extra_gas);
+
+      // retain one 64th gas (EIP150)
+      gas = std::min(gas, maxCallGas(result.gasLeft));
+
+      takeInterfaceGas(gas);
+
+      // add 2300 gas stipend for value transfers
+      if (!isZeroUint256(call_message.value))
+        gas += 2300;
+
+      call_message.gas = gas;
+
       context->fn_table->call(&call_result, context, &call_message);
 
       if (call_result.output_data) {
