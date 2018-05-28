@@ -62,13 +62,15 @@ public:
     std::vector<uint8_t> const& _state_code,
     evmc_message const& _msg,
     ExecutionResult & _result,
-    bool _meterGas) :
+    bool _meterGas,
+    DebugStream & _debug) :
     context(_context),
     code(_code),
     state_code(_state_code),
     msg(_msg),
     result(_result),
-    meterGas(_meterGas)
+    meterGas(_meterGas),
+    hera_debug(_debug)
     { }
 
 protected:
@@ -237,6 +239,7 @@ protected:
   std::vector<uint8_t> lastReturnData;
   ExecutionResult & result;
   bool meterGas;
+  DebugStream & hera_debug;
 };
 
 /*
@@ -250,10 +253,11 @@ struct BinaryenEEI : ShellExternalInterface, public EEI {
     std::vector<uint8_t> const& _state_code,
     evmc_message const& _msg,
     ExecutionResult & _result,
-    bool _meterGas
+    bool _meterGas,
+    DebugStream & _debug
   ):
     ShellExternalInterface(),
-    EEI(_context, _code, _state_code, _msg, _result, _meterGas)
+    EEI(_context, _code, _state_code, _msg, _result, _meterGas, _debug)
   { }
 
   Literal callImport(Import *import, LiteralList& arguments) override;

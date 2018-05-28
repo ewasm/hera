@@ -26,6 +26,7 @@
 #define __HERA_H
 
 #include <evmc/evmc.h>
+#include <iostream>
 
 #if defined _MSC_VER || defined __MINGW32__
 # define HERA_EXPORT __declspec(dllexport)
@@ -61,5 +62,20 @@ typedef enum wasm_vm {
 #if __cplusplus
 }
 #endif
+
+class DebugStream
+{
+public:
+  DebugStream(bool _debug) : debug(_debug) { }
+  template<typename T> DebugStream& operator<<(const T& out) { 
+#if HERA_DEBUGGING
+    if (debug)
+      std::cerr << out;
+#endif
+    return *this;
+  }
+private:
+  bool debug;
+};
 
 #endif
