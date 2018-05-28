@@ -31,19 +31,7 @@
 using namespace std;
 using namespace wasm;
 
-#if HERA_DEBUGGING
-
-#define HERA_DEBUG cerr
-
-#else
-
-struct NullStream {
-  template<typename T> NullStream& operator<<(const T&) { return *this; }
-};
-
-#define HERA_DEBUG NullStream()
-
-#endif
+#define HERA_DEBUG EEI::hera_debug
 
 namespace HeraVM {
 

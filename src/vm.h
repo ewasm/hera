@@ -44,7 +44,8 @@ public:
     vector<uint8_t> const& _state_code,
     evmc_message const& _msg,
     evmc_context *_context,
-    bool _meterGas
+    bool _meterGas,
+    DebugStream & _debug
   ):
     vm(_vm),
     code(_code),
@@ -52,7 +53,8 @@ public:
     msg(_msg),
     context(_context),
     output(_msg.gas),
-    meterGas(_meterGas)
+    meterGas(_meterGas),
+    hera_debug(_debug)
   { }
  
  /* 
@@ -76,6 +78,7 @@ protected:
   evmc_context *context;
   ExecutionResult output;
   bool meterGas;
+  DebugStream & hera_debug;
 };
 
 /*
@@ -88,8 +91,9 @@ public:
     vector<uint8_t> const& _state_code,
     evmc_message const& _msg,
     evmc_context *_context,
-    bool _meterGas) : 
-    WasmEngine(VM_BINARYEN, _code, _state_code, _msg, _context, _meterGas)
+    bool _meterGas,
+    DebugStream _debug) : 
+    WasmEngine(VM_BINARYEN, _code, _state_code, _msg, _context, _meterGas, _debug)
     { }
   
   int execute() override;
@@ -106,8 +110,9 @@ public:
     vector<uint8_t> const& _state_code,
     evmc_message const& msg,
     evmc_context *_context,
-    bool _meterGas) :
-    WasmEngine(VM_WABT, _code, _state_code, _msg, _context, _meterGas)
+    bool _meterGas,
+    DebugStream & _debug) :
+    WasmEngine(VM_WABT, _code, _state_code, _msg, _context, _meterGas, _debug)
     { }
 
   int execute() override;
@@ -125,8 +130,9 @@ public:
     vector<uint8_t> const& _state_code,
     evmc_message const& msg,
     evmc_context *_context,
-    bool _meterGas) :
-    WasmEngine(VM_WAVM, _code, _state_code, _msg, _context, _meterGas)
+    bool _meterGas,
+    DebugStream & _debug) :
+    WasmEngine(VM_WAVM, _code, _state_code, _msg, _context, _meterGas, _debug)
     { }
 
   int execute() override;

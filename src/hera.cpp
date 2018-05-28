@@ -63,6 +63,7 @@ enum hera_evm_mode {
 struct hera_instance : evmc_instance {
   hera_evm_mode evm_mode = EVM_REJECT;
   bool metering = false;
+  bool debug = false;
   wasm_vm vm = VM_BINARYEN;
 
   hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr}) {}
@@ -257,6 +258,9 @@ evmc_result hera_execute(
 ) {
   hera_instance* hera = static_cast<hera_instance*>(instance);
 
+  /* Construct debugging stream with runtime option */
+  DebugStream hera_debug(hera->debug);
+
   evmc_result ret;
   memset(&ret, 0, sizeof(evmc_result));
 
@@ -316,18 +320,18 @@ evmc_result hera_execute(
     switch (hera->vm) {
     #if WABT_SUPPORTED
     case VM_WABT:
-      WabtVM vm = WabtVM(_code, _state_code, *msg, context, meterInterfaceGas);
+      WabtVM vm = WabtVM(_code, _state_code, *msg, context, meterInterfaceGas, hera_debug);
       vm.execute();
       vmresult = vm.getResult();
     #endif
     #if WAVM_SUPPORTED
     case VM_WAVM:
-      WavmVM vm = WavmVM(_code, _state_code, *msg, context, meterInterfaceGas);
+      WavmVM vm = WavmVM(_code, _state_code, *msg, context, meterInterfaceGas, hera_debug);
       vm.execute();
       vmresult = vm.getResult();
     #endif
     default:
-      BinaryenVM vm = BinaryenVM(_code, _state_code, *msg, context, meterInterfaceGas);
+      BinaryenVM vm = BinaryenVM(_code, _state_code, *msg, context, meterInterfaceGas, hera_debug);
       vm.execute();
       vmresult = vm.getResult();
     }
@@ -444,6 +448,12 @@ int hera_set_option(
     hera->metering = strcmp(value, "true") == 0;
     return 1;
   }
+
+  if (strcmp(name, "debug") == 0) {
+    hera->debug = strcmp(value, "true") == 0;
+    return 1;
+  }
+
   if (strcmp(name, "vm") == 0) {
     if (strcmp(value, "binaryen") == 0)
       hera->vm = VM_BINARYEN;
