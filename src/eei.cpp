@@ -562,13 +562,15 @@ inline int64_t maxCallGas(int64_t gas) {
       uint32_t pathOffset = arguments[0].geti32();
       uint32_t valueOffset = arguments[1].geti32();
 
-      HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
+      HERA_DEBUG << "storageStore offsets path " << hex << pathOffset << " value " << valueOffset << dec << "\n";
 
       ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
 
       evmc_uint256be path = loadUint256(pathOffset);
       evmc_uint256be value = loadUint256(valueOffset);
       evmc_uint256be current;
+
+      HERA_DEBUG << "storageStore contents path " << hex << toHex(path) << " value " << toHex(value) << dec << "\n";
 
       context->fn_table->get_storage(&current, context, &msg.destination, &path);
 
