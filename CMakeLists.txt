@@ -20,6 +20,7 @@ endif()
 project(hera)
 
 include(ProjectBinaryen)
+include(ProjectIntX)
 
 add_subdirectory(evmc)
 add_subdirectory(evm2wasm)
