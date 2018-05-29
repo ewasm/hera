@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS Off)
 
-add_compile_options(-Wall -Wextra -Wconversion -Wno-sign-conversion -Wno-unknown-pragmas)
+add_compile_options(-Wall -Werror -Wextra -Wconversion -Wno-sign-conversion -Wno-unknown-pragmas)
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/evm2wasm/cmake/HunterGate.cmake)
     include(evm2wasm/cmake/HunterGate.cmake)
