@@ -187,11 +187,11 @@ inline int64_t maxCallGas(int64_t gas) {
         << ",\"pc\":" << pc
         << ",\"stack\":[";
 
-      for (int32_t i = sp; i >= 0; i -= stackItemSize) {
-        if (i != sp)
-          cout << ',';
+      for (int32_t i = 0; i <= sp; i += stackItemSize) {
         evmc_uint256be x = loadUint256(static_cast<uint32_t>(i));
         cout << '"' << toHex(x) << '"';
+        if (i != sp)
+          cout << ',';
       }
       cout << "]}" << endl;
 
