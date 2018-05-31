@@ -801,15 +801,17 @@ inline int64_t maxCallGas(int64_t gas) {
       }
 
       create_message.code_hash = {};
-      create_message.gas = result.gasLeft - (result.gasLeft / 64);
       create_message.depth = msg.depth + 1;
       create_message.kind = EVMC_CREATE;
       create_message.flags = 0;
 
       evmc_result create_result;
 
-      takeInterfaceGas(create_message.gas);
       takeInterfaceGas(GasSchedule::create);
+
+      create_message.gas = maxCallGas(result.gasLeft);
+      takeInterfaceGas(create_message.gas);
+
       context->fn_table->call(&create_result, context, &create_message);
 
       if (create_result.status_code == EVMC_SUCCESS) {
