@@ -24,6 +24,9 @@
 
 #include <stdexcept>
 #include <array>
+
+#include <intx.hpp>
+
 #include "eei.h"
 #include "exceptions.h"
 #include "evm-instructions.h"

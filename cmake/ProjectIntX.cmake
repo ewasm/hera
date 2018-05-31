@@ -33,14 +33,15 @@ ExternalProject_Add(IntX
 	BUILD_BYPRODUCTS ${intx_lib}
 )
 
-add_library(intx::libintx STATIC IMPORTED)
+add_library(intx::intx STATIC IMPORTED)
 
+file(MAKE_DIRECTORY ${intx_include_dir})
 set_target_properties(
-	intx::libintx
+	intx::intx
 	PROPERTIES
 	IMPORTED_LOCATION_RELEASE ${intx_lib}
 	INTERFACE_INCLUDE_DIRECTORIES ${intx_include_dir}
 	INTERFACE_LINK_LIBRARIES ${intx_lib}
 )
 
-add_dependencies(intx::libintx IntX)
+add_dependencies(intx::intx IntX)
