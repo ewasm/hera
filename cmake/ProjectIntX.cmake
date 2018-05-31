@@ -16,12 +16,12 @@ set(intx_lib ${binary_dir}/libs/intx/libintx.a)
 
 set(patch_command sed -i -e "$ d" ${source_dir}/CMakeLists.txt)
 set(build_command cmake --build <BINARY_DIR>)
-set(install_command cmake --build <BINARY_DIR> && cp ${intx_lib} <INSTALL_DIR>)
+set(install_command cmake --build <BINARY_DIR> --target install)
 
 ExternalProject_Add(IntX
 	PREFIX ${prefix}
 	GIT_REPOSITORY https://github.com/chfast/intx.git
-	GIT_TAG 852f43c8f18757938b99b2e5b372ccfb64a47bc2
+	GIT_TAG 1a10f4fc3433d5ce88ea4c6067002680e2ea0385
 	CMAKE_ARGS
 	-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
 	SOURCE_DIR ${source_dir}
