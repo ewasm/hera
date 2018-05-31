@@ -18,7 +18,14 @@ set(patch_command sed -i -e "$ d" ${source_dir}/CMakeLists.txt)
 set(build_command cmake --build <BINARY_DIR>)
 set(install_command cmake --build <BINARY_DIR> --target install)
 
-ExternalProject_Add(IntX
+if(CMAKE_GENERATOR STREQUAL Ninja)
+	if($ENV{BUILD_PARALLEL_JOBS})
+		set(build_command cmake --build <BINARY_DIR> -- -j $ENV{BUILD_PARALLEL_JOBS})
+		message(STATUS "Ninja $ENV{BUILD_PARALLEL_JOBS}")
+	endif()
+endif()
+
+ExternalProject_Add(intx
 	PREFIX ${prefix}
 	GIT_REPOSITORY https://github.com/chfast/intx.git
 	GIT_TAG 1a10f4fc3433d5ce88ea4c6067002680e2ea0385
@@ -44,4 +51,4 @@ set_target_properties(
 	INTERFACE_LINK_LIBRARIES ${intx_lib}
 )
 
-add_dependencies(intx::intx IntX)
+add_dependencies(intx::intx intx)
