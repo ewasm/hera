@@ -978,11 +978,11 @@ inline int64_t maxCallGas(int64_t gas) {
     ensureCondition(safeLoadUint128(balance) >= safeLoadUint128(value), OutOfGasException, "Out of gas.");
   }
 
-  uint64_t EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
+  unsigned __int128 EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
   {
     // TODO: use a specific error code here?
     ensureCondition(!exceedsUint128(value), OutOfGasException, "Value exceeds 128 bits.");
-    uint64_t ret = 0;
+    unsigned __int128 ret = 0;
     for (unsigned i = 16; i < 32; i++) {
       ret <<= 8;
       ret |= value.bytes[i];
