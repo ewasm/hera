@@ -814,6 +814,9 @@ inline int64_t maxCallGas(int64_t gas) {
 
       context->fn_table->call(&create_result, context, &create_message);
 
+      /* Return unspent gas */
+      result.gasLeft += create_result.gas_left;
+
       if (create_result.status_code == EVMC_SUCCESS) {
         storeUint160(create_result.create_address, resultOffset);
         lastReturnData.clear();
