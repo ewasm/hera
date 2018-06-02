@@ -39,6 +39,12 @@ class InvalidMemoryAccess : public HeraException {
   using HeraException::HeraException;
 };
 
+class EndExecution : public std::exception {
+public:
+  explicit EndExecution() {}
+  const char* what() const noexcept override { return ""; }
+};
+
 /// Static Mode Violation.
 ///
 /// This exception is thrown when state modifying EEI function is called
