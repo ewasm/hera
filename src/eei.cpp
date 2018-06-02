@@ -709,8 +709,10 @@ inline int64_t maxCallGas(int64_t gas) {
         dataOffset << " " <<
         dataLength << dec << "\n";
 
+      // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
+      vector<uint8_t> input_data;
       if (dataLength) {
-        vector<uint8_t> input_data(dataLength);
+        input_data.resize(dataLength);
         loadMemory(dataOffset, input_data, dataLength);
         call_message.input_data = input_data.data();
         call_message.input_size = dataLength;
@@ -786,8 +788,10 @@ inline int64_t maxCallGas(int64_t gas) {
 
       ensureSenderBalance(create_message.value);
 
+      // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
+      vector<uint8_t> contract_code;
       if (length) {
-        vector<uint8_t> contract_code(length);
+        contract_code.resize(length);
         loadMemory(dataOffset, contract_code, length);
         create_message.input_data = contract_code.data();
         create_message.input_size = length;
