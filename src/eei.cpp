@@ -566,9 +566,15 @@ inline int64_t maxCallGas(int64_t gas) {
 
       ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
 
-      evmc_uint256be path = loadUint256(pathOffset);
-      evmc_uint256be value = loadUint256(valueOffset);
-      evmc_uint256be current;
+      vector<uint8_t> _path(32);
+      loadMemory(pathOffset, _path, 32);
+      evm_uint256be path;
+      memcpy(path.bytes, _path.data(), 32);
+
+      vector<uint8_t> _value(32);
+      loadMemory(valueOffset, _value, 32);
+      evm_uint256be value;
+      memcpy(value.bytes, _value.data(), 32);
 
       context->fn_table->get_storage(&current, context, &msg.destination, &path);
 
@@ -592,13 +598,24 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
 
+<<<<<<< HEAD
       evmc_uint256be path = loadUint256(pathOffset);
       evmc_uint256be result;
 
       takeInterfaceGas(GasSchedule::storageLoad);
       context->fn_table->get_storage(&result, context, &msg.destination, &path);
+=======
+      vector<uint8_t> _path(32);
+      loadMemory(pathOffset, _path, 32);
+      evm_uint256be path;
+      memcpy(path.bytes, _path.data(), 32);
 
-      storeUint256(result, resultOffset);
+      evm_uint256be _result;
+      context->fn_table->get_storage(&_result, context, &msg.destination, &path);
+>>>>>>> EEI: fix storage endianess
+
+      vector<uint8_t> result(_result.bytes, _result.bytes + 32);
+      storeMemory(result, 0, resultOffset, 32);
 
       return Literal();
     }
