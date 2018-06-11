@@ -66,7 +66,7 @@ struct EthereumInterface : ShellExternalInterface {
 
   void trap(const char* why) override {
     // TODO: use a specific error code here?
-    ensureCondition(false, OutOfGasException, std::string("Trap condition: ") + why);
+    ensureCondition(false, OutOfGas, std::string("Trap condition: ") + why);
   }
 
 private:

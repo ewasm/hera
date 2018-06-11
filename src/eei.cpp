@@ -303,10 +303,10 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
 
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
+      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
       ensureCondition(
         numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
-        OutOfGasException,
+        OutOfGas,
         "Gas charge overflow"
       );
       takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
@@ -352,10 +352,10 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
+      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
       ensureCondition(
         numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
-        OutOfGasException,
+        OutOfGas,
         "Gas charge overflow"
       );
       takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
@@ -384,8 +384,8 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGasException, "Gas charge overflow");
-      ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGasException, "Gas charge overflow");
+      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
+      ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGas, "Gas charge overflow");
       takeInterfaceGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
 
       evmc_address address = loadUint160(addressOffset);
@@ -498,10 +498,10 @@ inline int64_t maxCallGas(int64_t gas) {
       vector<uint8_t> data(length);
       loadMemory(dataOffset, data, length);
 
-      ensureCondition(ffs(length) + ffs(GasSchedule::logData) <= 64, OutOfGasException, "Gas charge overflow");
+      ensureCondition(ffs(length) + ffs(GasSchedule::logData) <= 64, OutOfGas, "Gas charge overflow");
       ensureCondition(
         numeric_limits<uint64_t>::max() - (GasSchedule::log + GasSchedule::logTopic * numberOfTopics) >= static_cast<uint64_t>(length) * GasSchedule::logData,
-        OutOfGasException,
+        OutOfGas,
         "Gas charge overflow"
       );
       takeInterfaceGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
@@ -863,7 +863,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
   void EthereumInterface::takeGas(uint64_t gas)
   {
-    ensureCondition(gas <= result.gasLeft, OutOfGasException, "Out of gas.");
+    ensureCondition(gas <= result.gasLeft, OutOfGas, "Out of gas.");
     result.gasLeft -= gas;
   }
 
@@ -969,7 +969,7 @@ inline int64_t maxCallGas(int64_t gas) {
   void EthereumInterface::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
   {
     // TODO: use a specific error code here?
-    ensureCondition(!exceedsUint128(src), OutOfGasException, "Value exceeds 128 bits.");
+    ensureCondition(!exceedsUint128(src), OutOfGas, "Value exceeds 128 bits.");
     storeMemory(src.bytes + 16, dstOffset, 16);
   }
 
@@ -980,13 +980,13 @@ inline int64_t maxCallGas(int64_t gas) {
   {
     evmc_uint256be balance;
     context->fn_table->get_balance(&balance, context, &msg.destination);
-    ensureCondition(safeLoadUint128(balance) >= safeLoadUint128(value), OutOfGasException, "Out of gas.");
+    ensureCondition(safeLoadUint128(balance) >= safeLoadUint128(value), OutOfGas, "Out of gas.");
   }
 
   unsigned __int128 EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
   {
     // TODO: use a specific error code here?
-    ensureCondition(!exceedsUint128(value), OutOfGasException, "Value exceeds 128 bits.");
+    ensureCondition(!exceedsUint128(value), OutOfGas, "Value exceeds 128 bits.");
     unsigned __int128 ret = 0;
     for (unsigned i = 16; i < 32; i++) {
       ret <<= 8;

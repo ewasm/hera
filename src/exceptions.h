@@ -26,9 +26,9 @@
 
 namespace HeraVM {
 
-class OutOfGasException : public std::exception {
+class OutOfGas : public std::exception {
 public:
-  explicit OutOfGasException(std::string _msg):
+  explicit OutOfGas(std::string _msg):
     msg(std::move(_msg))
   {}
   const char* what() const noexcept override { return msg.c_str(); }
