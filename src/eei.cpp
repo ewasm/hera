@@ -26,7 +26,8 @@
 #include <array>
 #include "eei.h"
 #include "exceptions.h"
-#include "evm-instructions.h"
+
+#include <evmc/instructions.h>
 
 using namespace std;
 using namespace wasm;
@@ -177,8 +178,10 @@ inline int64_t maxCallGas(int64_t gas) {
       heraAssert(sp <= (1024 * stackItemSize), "EVM stack pointer out of bounds.");
       heraAssert(opcode >= 0x00 && opcode <= 0xff, "Invalid EVM instruction.");
 
-      auto it = evmInstructionNames.find(static_cast<uint8_t>(opcode));
-      string opName = (it != evmInstructionNames.end()) ? it->second : "UNKNOWN";
+      const char* const* const opNamesTable = evmc_get_instruction_names_table(EVMC_BYZANTIUM);
+      const char* opName = opNamesTable[static_cast<uint8_t>(opcode)];
+      if (opName == nullptr)
+        opName = "UNDEFINED";
 
       cout << "{\"depth\":" << dec << msg.depth
         << ",\"gas\":" << result.gasLeft
