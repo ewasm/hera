@@ -30,14 +30,22 @@ class HeraException : public std::exception {
 public:
   explicit HeraException(std::string _msg): msg(std::move(_msg)) {}
   const char* what() const noexcept override { return msg.c_str(); }
-private:
+protected:
   std::string msg;
 };
 
-class InternalErrorException : public HeraException {};
-class OutOfGas : public HeraException {};
-class ContractValidationFailure : public HeraException {};
-class InvalidMemoryAccess : public HeraException {};
+class InternalErrorException : public HeraException {
+  using HeraException::HeraException;
+};
+class OutOfGas : public HeraException {
+  using HeraException::HeraException;
+};
+class ContractValidationFailure : public HeraException {
+  using HeraException::HeraException;
+};
+class InvalidMemoryAccess : public HeraException {
+  using HeraException::HeraException;
+};
 
 /// Static Mode Violation.
 ///
@@ -49,7 +57,7 @@ public:
     msg("Static mode violation in " + _functionName + ".")
   {}
   const char* what() const noexcept override { return msg.c_str(); }
-private:
+protected:
   std::string msg;
 };
 
