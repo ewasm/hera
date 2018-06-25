@@ -934,7 +934,6 @@ inline int64_t maxCallGas(int64_t gas) {
   void EthereumInterface::storeMemoryZeroPad(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
   {
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
-    /* ensureCondition(src.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy."); */
     ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
     ensureCondition(memory.size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
 
