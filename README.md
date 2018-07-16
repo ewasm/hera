@@ -42,7 +42,7 @@ These are only enabled if Hera is compiled with debugging on.
 
 - `debug::evmTrace(pc: i32, opcode: i32, cost: i32, sp: i32)`
 
-This is useful to trace the transpiled code from [evm2wasm](https://github.com/ewasm/evm2asm). This is only enabled if Hera is compiled with debugging on.
+This is useful to trace the transpiled code from [evm2wasm](https://github.com/ewasm/evm2wasm). This is only enabled if Hera is compiled with debugging on.
 
 **Note:** it is valid to invoke `evmTrace` with a negative value for `sp`.  In this case, no stack values will be printed.
 
