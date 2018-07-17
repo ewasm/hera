@@ -32,9 +32,12 @@ int BinaryenVM::execute()
 {
   Module module;
   
+  //Copy over bytecode instead of type-punning to avoid breaking alias rules
+  vector<char> const bytecode(code.begin(), code.end());
+  
   /* Parse WASM bytecode */
   try {
-    WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(this->code), false);
+    WasmBinaryBuilder parser(module, bytecode, false);
     parser.read();
   } catch (ParseException &p) {
     /* TODO: Potentially introduce abstracted VM exceptions */
