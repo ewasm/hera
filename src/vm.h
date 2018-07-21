@@ -30,6 +30,19 @@
 
 #include <evmc/evmc.h>
 
+/* Binaryen includes */
+#include <wasm.h>
+#include <wasm-binary.h>
+
+/* WAVM includes */
+#include <IR/Module.h>
+#include <IR/Validate.h>
+#include <WASM/WASM.h>
+#include <Runtime/Runtime.h>
+#include <Runtime/Linker.h>
+#include <Runtime/Intrinsics.h>
+
+
 using namespace std;
 using namespace HeraVM;
 
