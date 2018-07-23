@@ -62,7 +62,7 @@ Alex Beregszaszi
 
 ## License
 
-MIT
+Apache 2.0
 
 
 [cpp-ethereum]: https://github.com/ethereum/cpp-ethereum
