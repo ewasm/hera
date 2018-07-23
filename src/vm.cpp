@@ -28,6 +28,15 @@ using namespace std;
 using namespace wasm;
 using namespace HeraVM;
 
+#if WAVM_SUPPORTED
+#include <IR/Module.h>
+#include <IR/Validate.h>
+#include <WASM/WASM.h>
+#include <Runtime/Runtime.h>
+#include <Runtime/Linker.h>
+#include <Runtime/Intrinsics.h>
+#endif
+
 int BinaryenVM::execute()
 {
   Module module;
@@ -106,3 +115,34 @@ void BinaryenVM::validate_contract(Module & module)
     );
   }
 }
+
+#if WAVM_SUPPORTED
+using namespace Serialization;
+using namespace IR;
+using namespace WASM;
+using namespace Runtime;
+
+struct importResolver : Resolver {
+  importResolver(Compartment *_compartment): compartment(_compartment) { }
+
+  Compartment *compartment;
+  HashMap<std::string, ModuleInstance*> moduleNameToInstanceMap;
+
+  bool resolve(const std::string& moduleName, const std::string& exportName, ObjectType type, Object*& outObject) override
+  {
+    auto namedInstance = moduleNameToInstanceMap.get(ModuleName);
+
+    if (namedInstance) {
+      if (outObject = getInstanceExport(*namedInstance, exportName)) {
+        if (isA(outObject, type)) return true;
+	else {
+	  std::cout << "Resolved import of incorrect type" << endl;
+	  return false;
+	}
+      }
+    }
+
+    return false;
+  }
+}
+#endif

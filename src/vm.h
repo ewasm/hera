@@ -35,13 +35,14 @@
 #include <wasm-binary.h>
 
 /* WAVM includes */
+#if WAVM_SUPPORTED
 #include <IR/Module.h>
 #include <IR/Validate.h>
 #include <WASM/WASM.h>
 #include <Runtime/Runtime.h>
 #include <Runtime/Linker.h>
 #include <Runtime/Intrinsics.h>
-
+#endif
 
 using namespace std;
 using namespace HeraVM;
