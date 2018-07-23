@@ -22,12 +22,6 @@
  * SOFTWARE.
  */
 
-#include "vm.h"
-
-using namespace std;
-using namespace wasm;
-using namespace HeraVM;
-
 #if WAVM_SUPPORTED
 #include <IR/Module.h>
 #include <IR/Validate.h>
@@ -37,16 +31,21 @@ using namespace HeraVM;
 #include <Runtime/Intrinsics.h>
 #endif
 
+#include "vm.h"
+
+using namespace std;
+using namespace HeraVM;
+
 int BinaryenVM::execute()
 {
-  Module module;
+  wasm::Module module;
   
   //Copy over bytecode instead of type-punning to avoid breaking alias rules
   vector<char> const bytecode(code.begin(), code.end());
   
   /* Parse WASM bytecode */
   try {
-    WasmBinaryBuilder parser(module, bytecode, false);
+    wasm::WasmBinaryBuilder parser(module, bytecode, false);
     parser.read();
   } catch (ParseException &p) {
     /* TODO: Potentially introduce abstracted VM exceptions */
@@ -72,11 +71,11 @@ int BinaryenVM::execute()
   /* Instantiate EEI object */
   BinaryenEEI interface(context, code, state_code, msg, output, meterGas);
   
-  ModuleInstance instance(module, &interface);
+  wasm::ModuleInstance instance(module, &interface);
   
   /* Call 'main' symbol */
-  Name main = Name("main");
-  LiteralList args;
+  wasm::Name main = Name("main");
+  wasm::LiteralList args;
   instance.callExport(main, args);
 
   return 0;
@@ -115,7 +114,6 @@ void BinaryenVM::validate_contract(Module & module)
     );
   }
 }
-
 #if WAVM_SUPPORTED
 using namespace Serialization;
 using namespace IR;
@@ -144,5 +142,12 @@ struct importResolver : Resolver {
 
     return false;
   }
+}
+
+int WavmVM::execute() {
+  DEFINE_INTRINSIC_MODULE(ethereum);
+  // WAVM EEI function definitions go here
+
+  return 0;
 }
 #endif
