@@ -21,6 +21,11 @@ project(hera)
 
 include(ProjectBinaryen)
 
+option(HERA_WAVM "Build with WAVM" OFF)
+if (HERA_WAVM)
+    include(ProjectWAVM)
+endif()
+
 add_subdirectory(evmc)
 add_subdirectory(evm2wasm)
 add_subdirectory(src)

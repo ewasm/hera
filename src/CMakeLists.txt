@@ -21,3 +21,8 @@ if(NOT WIN32)
     set_target_properties(hera PROPERTIES LINK_FLAGS "-Wl,-undefined,error")
   endif()
 endif()
+
+if(HERA_WAVM)
+    target_compile_definitions(hera PRIVATE HERA_WAVM=1)
+    target_link_libraries(hera PRIVATE wavm::wavm)
+endif()
