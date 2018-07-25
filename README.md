@@ -2,7 +2,7 @@
 
 Hera is an [ewasm](https://github.com/ewasm/design) virtual machine implemented in C++ conforming to [EVMC](https://github.com/ethereum/evmc/).
 
-It can be used with [cpp-ethereum] and perhaps in the future with other implementations through appropriate bindings.
+It can be used with [aleth] and perhaps in the future with other implementations through appropriate bindings.
 
 Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpreter for running WebAssembly bytecode and it should be improved to support [wabt](https://github.com/webassembly/wabt) and [wavm](https://github.com/AndrewScheidecker/WAVM) as backends.
 
@@ -20,7 +20,7 @@ Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpre
 
 ## Runtime options
 
-These are to be used via EVM-C `set_option`:
+These are to be used via EVMC `set_option`:
 
 - `metering=true` will enable metering of bytecode at deployment using the [Sentinel system contract](https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract) (set to `false` by default)
 - `evm2wasm=true` will enable metering of bytecode at deployment using the [EVM Transcompiler](https://github.com/ewasm/design/blob/master/system_contracts.md#evm-transcompiler) (set to `false` by default)
@@ -55,11 +55,11 @@ This is useful to trace the transpiled code from [evm2wasm](https://github.com/e
 
 ## Caveats
 
-Although Hera enables the execution of eWASM bytecode, there are more elements to eWASM an Ethereum node must be aware of:
+Although Hera enables the execution of ewasm bytecode, there are more elements to ewasm an Ethereum node must be aware of:
 
 - [backwards compatibility](https://github.com/ewasm/design/blob/master/backwards_compatibility.md) provisions
-- injecting metering code to eWASM contracts
-- transcompiling EVM1 contracts to eWASM if desired
+- injecting metering code to ewasm contracts
+- transcompiling EVM1 contracts to ewasm if desired
 
 All of the above must be implemented outside of Hera.
 
@@ -71,5 +71,4 @@ Alex Beregszaszi
 
 Apache 2.0
 
-
-[cpp-ethereum]: https://github.com/ethereum/cpp-ethereum
+[aleth]: https://github.com/ethereum/cpp-ethereum
