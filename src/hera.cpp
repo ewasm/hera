@@ -55,7 +55,7 @@ struct hera_instance : evmc_instance {
   hera_evm_mode evm_mode = EVM_REJECT;
   bool metering = false;
 
-  hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr}) {}
+  hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr, nullptr}) {}
 };
 
 namespace {
@@ -86,6 +86,7 @@ vector<uint8_t> callSystemContract(
     .input_data = input.data(),
     .input_size = input.size(),
     .code_hash = {},
+    .create2_salt = {},
     .gas = gas,
     .depth = 0,
     .kind = EVMC_CALL,
