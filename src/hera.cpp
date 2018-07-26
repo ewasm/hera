@@ -210,7 +210,7 @@ vector<uint8_t> evm2wasm_cpp(vector<uint8_t> const& input, bool evmTrace) {
   for (uint8_t byte: input)
     os << setfill('0') << setw(2) << static_cast<int>(byte);
 
-  string str = evm2wasm::evm2wasm(os.str(), evmTrace);
+  string str = evm2wasm::evmhex2wasm(os.str(), evmTrace);
 
 #if HERA_DEBUGGING
   cerr << "evm2wasm.cpp done (output " << str.length() << " bytes)" << endl;
