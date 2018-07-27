@@ -362,7 +362,7 @@ inline int64_t maxCallGas(int64_t gas) {
         "Gas charge overflow"
       );
       takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
-      storeMemory(code, codeOffset, resultOffset, length);
+      storeMemoryZeroPad(code, codeOffset, resultOffset, length);
 
       return Literal();
     }
@@ -931,6 +931,33 @@ inline int64_t maxCallGas(int64_t gas) {
 
     for (uint32_t i = 0; i < length; i++) {
       memory.set<uint8_t>(dstOffset + i, src[srcOffset + i]);
+    }
+  }
+
+  void EthereumInterface::storeMemoryZeroPad(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
+  {
+    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+    ensureCondition(memory.size() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+
+    uint32_t origLength = length;
+    uint32_t zeroFill = 0;
+    uint32_t srcSize = static_cast<uint32_t>(src.size());
+    if ((srcOffset + length) > src.size()) {
+      HERA_DEBUG << "Out of bounds (source) memory copy, zero-padding result" << endl;
+      length = srcSize > srcOffset ? srcSize - srcOffset : 0;
+      zeroFill = origLength - length;
+    }
+
+    if (!length)
+      HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
+
+    for (uint32_t i = 0; i < length; i++) {
+      memory.set<uint8_t>(dstOffset + i, src[srcOffset + i]);
+    }
+
+    for (uint32_t i = 0; i < zeroFill; i++) {
+      memory.set<uint8_t>(dstOffset + length + i, 0);
     }
   }
 
