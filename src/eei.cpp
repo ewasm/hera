@@ -392,12 +392,12 @@ inline int64_t maxCallGas(int64_t gas) {
       takeInterfaceGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
 
       evmc_address address = loadUint160(addressOffset);
-      // FIXME: optimise this so not vector needs to be created
+      // FIXME: optimise this so no vector needs to be created
       vector<uint8_t> codeBuffer(length);
       size_t numCopied = context->fn_table->copy_code(context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
       fill_n(&codeBuffer[numCopied], length - numCopied, 0);
 
-      storeMemory(codeBuffer, codeOffset, resultOffset, length);
+      storeMemory(codeBuffer, 0, resultOffset, length);
 
       return Literal();
     }
