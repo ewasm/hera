@@ -1,3 +1,22 @@
+# CMake
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+
+# CMake build dir
 /build
+
+# IntelliJ
 /.idea
+
+# Extra deps
 /deps
+
+# Vim swap files
+**/*.swp
