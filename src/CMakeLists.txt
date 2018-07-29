@@ -1,4 +1,3 @@
-
 get_filename_component(evm_include_dir .. ABSOLUTE)
 
 find_package(Threads REQUIRED)
