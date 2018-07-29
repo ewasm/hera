@@ -395,7 +395,7 @@ inline int64_t maxCallGas(int64_t gas) {
       // FIXME: optimise this so no vector needs to be created
       vector<uint8_t> codeBuffer(length);
       size_t numCopied = context->fn_table->copy_code(context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
-      fill_n(&codeBuffer[numCopied], length - numCopied, 0);
+      ensureCondition(numCopied == length, InvalidMemoryAccess, "Out of bounds (source) memory copy");
 
       storeMemory(codeBuffer, 0, resultOffset, length);
 
