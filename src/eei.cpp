@@ -733,9 +733,9 @@ inline int64_t maxCallGas(int64_t gas) {
 
       takeInterfaceGas(gas);
 
-      // add 2300 gas stipend for value transfers
+      // add gas stipend for value transfers
       if (!isZeroUint256(call_message.value))
-        gas += 2300;
+        gas += GasSchedule::valueStipend;
 
       call_message.gas = gas;
 
