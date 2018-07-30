@@ -54,6 +54,7 @@ enum hera_evm_mode {
 struct hera_instance : evmc_instance {
   hera_evm_mode evm_mode = EVM_REJECT;
   bool metering = false;
+  bool keepfiles = false;
 
   hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr, nullptr}) {}
 };
@@ -140,7 +141,7 @@ string mktemp_string(string pattern) {
   return string(tmp, strlen(tmp));
 }
 
-vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
+vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace, bool keepfiles) {
 #if HERA_DEBUGGING
   cerr << "Calling evm2wasm.js (input " << input.size() << " bytes)..." << endl;
 #endif
@@ -160,6 +161,21 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
   os.close();
 
   string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM + " --charge-per-op";
+
+  // Run in debug mode to save generated WAST.
+  // Do this first since the WASM command is more likely to fail
+  // and we want to see the generated WAST to debug it.
+  if (keepfiles) {
+    string fileWAST = mktemp_string("/tmp/hera.evm2wasm.wast.XXXXXX");
+    string cmd2 = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWAST + " --charge-per-op --wast";
+    if (evmTrace)
+      cmd2 += " --trace";
+#if HERA_DEBUGGING
+    cerr << "(Calling evm2wasm.js for WAST output with command: " << cmd2 << ")" << endl;
+#endif
+    system(cmd2.data());
+  }
+
   if (evmTrace)
     cmd += " --trace";
 
@@ -168,14 +184,16 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
 #endif
 
   int ret = system(cmd.data());
-  unlink(fileEVM.data());
+  if (!keepfiles)
+    unlink(fileEVM.data());
 
   if (ret != 0) {
 #if HERA_DEBUGGING
     cerr << "evm2wasm.js failed" << endl;
 #endif
 
-    unlink(fileWASM.data());
+    if (!keepfiles)
+      unlink(fileWASM.data());
     return vector<uint8_t>();
   }
 
@@ -183,7 +201,7 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
   string str((istreambuf_iterator<char>(is)),
                  istreambuf_iterator<char>());
 
-  unlink(fileWASM.data());
+  if (!keepfiles) unlink(fileWASM.data());
 
 #if HERA_DEBUGGING
   cerr << "evm2wasm.js done (output " << str.length() << " bytes)" << endl;
@@ -366,7 +384,7 @@ evmc_result hera_execute(
         break;
       case EVM2WASM_JS:
       case EVM2WASM_JS_TRACING:
-        _code = evm2wasm_js(_code, hera->evm_mode == EVM2WASM_JS_TRACING);
+        _code = evm2wasm_js(_code, hera->evm_mode == EVM2WASM_JS_TRACING, hera->keepfiles);
         ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
@@ -495,6 +513,11 @@ int hera_set_option(
 
   if (strcmp(name, "metering") == 0) {
     hera->metering = strcmp(value, "true") == 0;
+    return 1;
+  }
+
+  if (strcmp(name, "evm2wasm.js-keepfiles") == 0) {
+    hera->keepfiles = strcmp(value, "true") == 0;
     return 1;
   }
   return 0;
