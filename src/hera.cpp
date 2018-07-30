@@ -80,6 +80,9 @@ bool hasWasmPreamble(vector<uint8_t> const& _input) {
     _input[7] == 0;
 }
 
+// Calls a system contract at @address with input data @input.
+// It is a "staticcall" with sender 000...000 and no value.
+// @returns output data from the contract and update the @gas variable with the gas left.
 vector<uint8_t> callSystemContract(
   evmc_context* context,
   evmc_address const& address,
@@ -115,6 +118,8 @@ vector<uint8_t> callSystemContract(
   return ret;
 }
 
+// Calls the Sentinel contract with input data @input.
+// @returns the validated and metered output or empty output otherwise.
 vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
 {
 #if HERA_DEBUGGING
@@ -147,6 +152,8 @@ string mktemp_string(string pattern) {
   return string(tmp, strlen(tmp));
 }
 
+// Calls evm2wasm (as a Javascript CLI) with input data @input.
+// @returns the compiled output or empty output otherwise.
 vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
 #if HERA_DEBUGGING
   cerr << "Calling evm2wasm.js (input " << input.size() << " bytes)..." << endl;
@@ -199,6 +206,8 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
   return vector<uint8_t>(str.begin(), str.end());
 }
 
+// Calls evm2wasm (through the built-in C++ interface) with input data @input.
+// @returns the compiled output or empty output otherwise.
 vector<uint8_t> evm2wasm_cpp(vector<uint8_t> const& input, bool evmTrace) {
 #if HERA_DEBUGGING
   cerr << "Calling evm2wasm.cpp (input " << input.size() << " bytes)..." << endl;
@@ -213,6 +222,8 @@ vector<uint8_t> evm2wasm_cpp(vector<uint8_t> const& input, bool evmTrace) {
   return vector<uint8_t>(str.begin(), str.end());
 }
 
+// Calls the evm2wasm contract with input data @input.
+// @returns the compiled output or empty output otherwise.
 vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
 #if HERA_DEBUGGING
   cerr << "Calling evm2wasm (input " << input.size() << " bytes)..." << endl;
@@ -268,6 +279,7 @@ void validate_contract(Module & module)
   }
 }
 
+// Execute the contract through Binaryen.
 void execute(
   evmc_context* context,
   vector<uint8_t> const& code,
