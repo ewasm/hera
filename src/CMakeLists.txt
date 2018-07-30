@@ -15,6 +15,10 @@ add_library(hera
     hera.cpp
 )
 
+if(HERA_WABT)
+  target_sources(hera PRIVATE wabt.cpp wabt.h)
+endif()
+
 option(HERA_DEBUGGING "Display debugging messages during execution." ON)
 if(HERA_DEBUGGING)
   target_compile_definitions(hera PRIVATE HERA_DEBUGGING=1)
