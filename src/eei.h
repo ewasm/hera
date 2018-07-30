@@ -115,6 +115,7 @@ struct GasSchedule {
   static constexpr unsigned extcode = 700;
   static constexpr unsigned selfdestruct = 5000;
   static constexpr unsigned valuetransfer = 9000;
+  static constexpr unsigned valueStipend = 2300;
   static constexpr unsigned callNewAccount = 25000;
 };
 
