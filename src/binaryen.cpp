@@ -505,9 +505,7 @@ ExecutionResult BinaryenEngine::execute(
   executionStarted();
 
   try {
-    wasm::Name main = wasm::Name("main");
-    wasm::LiteralList args;
-    instance.callExport(main, args);
+    instance.callExport(wasm::Name("main"), wasm::LiteralList{});
   } catch (EndExecution const&) {
     // This exception is ignored here because we consider it to be a success.
     // It is only a clutch for POSIX style exit()
