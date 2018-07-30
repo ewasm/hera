@@ -316,7 +316,7 @@ void execute(
   instance.callExport(main, args);
 }
 
-void hera_destroy_result(evmc_result const* result)
+void hera_destroy_result(evmc_result const* result) noexcept
 {
   delete[] result->output_data;
 }
@@ -328,7 +328,7 @@ evmc_result hera_execute(
   const evmc_message *msg,
   const uint8_t *code,
   size_t code_size
-) {
+) noexcept {
   hera_instance* hera = static_cast<hera_instance*>(instance);
 
   evmc_result ret;
@@ -455,7 +455,7 @@ int hera_set_option(
   evmc_instance *instance,
   char const *name,
   char const *value
-) {
+) noexcept {
   hera_instance* hera = static_cast<hera_instance*>(instance);
   if (strcmp(name, "fallback") == 0) {
     if (strcmp(value, "true") == 0)
@@ -500,7 +500,7 @@ int hera_set_option(
   return 0;
 }
 
-void hera_destroy(evmc_instance* instance)
+void hera_destroy(evmc_instance* instance) noexcept
 {
   hera_instance* hera = static_cast<hera_instance*>(instance);
   delete hera;
