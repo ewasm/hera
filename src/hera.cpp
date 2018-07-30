@@ -279,16 +279,16 @@ void execute(
   try {
     WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(code), false);
     parser.read();
-  } catch (ParseException &p) {
+  } catch (ParseException const& e) {
     ensureCondition(
       false,
       ContractValidationFailure,
       "Error in parsing WASM binary: '" +
-      p.text +
+      e.text +
       "' at " +
-      to_string(p.line) +
+      to_string(e.line) +
       ":" +
-      to_string(p.col)
+      to_string(e.col)
     );
   }
 
