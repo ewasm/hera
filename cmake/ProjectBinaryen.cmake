@@ -29,6 +29,7 @@ set(binaryen_other_libraries
     ${binary_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}wasm${CMAKE_STATIC_LIBRARY_SUFFIX}
     ${binary_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}asmjs${CMAKE_STATIC_LIBRARY_SUFFIX}
     ${binary_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}passes${CMAKE_STATIC_LIBRARY_SUFFIX}
+    ${binary_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}wasm${CMAKE_STATIC_LIBRARY_SUFFIX}
     ${binary_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}cfg${CMAKE_STATIC_LIBRARY_SUFFIX}
     ${binary_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}ir${CMAKE_STATIC_LIBRARY_SUFFIX}
     ${binary_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}emscripten-optimizer${CMAKE_STATIC_LIBRARY_SUFFIX}
@@ -37,12 +38,12 @@ set(binaryen_other_libraries
 
 ExternalProject_Add(binaryen
     PREFIX ${prefix}
-    DOWNLOAD_NAME binaryen-1.37.35.tar.gz
+    DOWNLOAD_NAME binaryen-1.38.24.tar.gz
     DOWNLOAD_DIR ${prefix}/downloads
     SOURCE_DIR ${source_dir}
     BINARY_DIR ${binary_dir}
-    URL https://github.com/WebAssembly/binaryen/archive/1.37.35.tar.gz
-    URL_HASH SHA256=19439e41dc576446eaae0c4a8e07d4cd4c40aea7dfb0a6475b925686852f8006
+    URL https://github.com/WebAssembly/binaryen/archive/1.38.24.tar.gz
+    URL_HASH SHA256=981874b17a4b2a14f7838da3aab4824bbe63e7e18dc439b5869b372bdce9fd66
     CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     -DCMAKE_INSTALL_LIBDIR=lib
@@ -63,7 +64,6 @@ set_target_properties(
     IMPORTED_LOCATION_RELEASE ${binaryen_library}
     INTERFACE_INCLUDE_DIRECTORIES ${binaryen_include_dir}
     INTERFACE_LINK_LIBRARIES "${binaryen_other_libraries}"
-
 )
 
 add_dependencies(binaryen::binaryen binaryen)

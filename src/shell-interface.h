@@ -122,7 +122,7 @@ struct ShellExternalInterface : ModuleInstance::ExternalInterface {
     trap("No globals supported.");
   }
 
-  Literal callImport(Import *import, LiteralList& arguments) override {
+  Literal callImport(Function* import, LiteralList& arguments) override {
     (void)import;
     (void)arguments;
     trap("No imports supported.");
