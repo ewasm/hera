@@ -18,24 +18,13 @@
 #define __HERA_H
 
 #include <evmc/evmc.h>
-
-#if defined _MSC_VER || defined __MINGW32__
-# define HERA_EXPORT __declspec(dllexport)
-# define HERA_IMPORT __declspec(dllimport)
-#elif __GNU__ >= 4
-# define HERA_EXPORT __attribute__((visibility("default")))
-# define HERA_IMPORT __attribute__((visibility("default")))
-#else
-# define HERA_EXPORT
-# define HERA_IMPORT
-#endif
+#include <evmc/utils.h>
 
 #if __cplusplus
 extern "C" {
 #endif
 
-HERA_EXPORT
-struct evmc_instance* evmc_create_hera(void);
+EVMC_EXPORT struct evmc_instance* evmc_create_hera(void) EVMC_NOEXCEPT;
 
 #if __cplusplus
 }

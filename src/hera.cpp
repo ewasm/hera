@@ -510,7 +510,7 @@ void hera_destroy(evmc_instance* instance)
 
 extern "C" {
 
-evmc_instance* evmc_create_hera()
+evmc_instance* evmc_create_hera() noexcept
 {
   hera_instance* instance = new hera_instance;
   instance->destroy = hera_destroy;
