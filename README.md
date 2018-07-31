@@ -11,6 +11,13 @@ Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpre
 - `-DHERA_DEBUGGING=ON` will turn on debugging features and messages
 - `-DBUILD_SHARED_LIBS=ON` is a standard CMake option to build libraries as shared. This will build Hera shared library that can be then dynamically loaded by EVMC compatible Clients (e.g. `eth` from [cpp-ethereum]).
 
+### WAVM support
+
+*Unfinished support, work in progress.*
+
+- `-DHERA_WAVM=ON` will request the compilation of wavm support
+- `-DLLVM_DIR=...` one will need to specify the path to LLVM's CMake file. In most installations this has to be within the `lib/cmake/llvm` directory, such as `/usr/local/Cellar/llvm/6.0.1/lib/cmake/llvm` on Homebrew.
+
 ## Runtime options
 
 These are to be used via EVM-C `set_option`:
