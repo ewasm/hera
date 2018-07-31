@@ -745,6 +745,8 @@ inline int64_t maxCallGas(int64_t gas) {
       // FIXME: consider refactoring this
       if (import->base == Name("call") || import->base == Name("callCode")) {
         try {
+          ensureCondition(msg.depth < 1024, OutOfGas, "Call depth exceeded.");
+
           ensureSenderBalance(call_message.value);
         } catch (OutOfGas const&) {
           // An out of gas error here doesn't really mean we're out of gas, it just means
@@ -801,6 +803,8 @@ inline int64_t maxCallGas(int64_t gas) {
 
       // FIXME: consider refactoring this
       try {
+        ensureCondition(msg.depth < 1024, OutOfGas, "Call depth exceeded.");
+
         ensureSenderBalance(create_message.value);
       } catch (OutOfGas const&) {
         // An out of gas error here doesn't really mean we're out of gas, it just means
