@@ -77,7 +77,7 @@ private:
   evmc_uint256be loadUint128(uint32_t srcOffset);
   void storeUint128(evmc_uint256be const& src, uint32_t dstOffset);
 
-  void ensureSenderBalance(evmc_uint256be const& value);
+  bool enoughSenderBalanceFor(evmc_uint256be const& value) const;
 
   static unsigned __int128 safeLoadUint128(evmc_uint256be const& value);
 
