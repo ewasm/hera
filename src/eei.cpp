@@ -490,6 +490,7 @@ inline int64_t maxCallGas(int64_t gas) {
         topics[i] = loadUint256(topicOffset);
       }
 
+      ensureSourceMemoryBounds(dataOffset, length);
       vector<uint8_t> data(length);
       loadMemory(dataOffset, data, length);
 
@@ -606,6 +607,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << (import->base == Name("revert") ? "revert " : "return ") << hex << offset << " " << size << dec << "\n";
 
+      ensureSourceMemoryBounds(offset, size);
       result.returnValue = vector<uint8_t>(size);
       loadMemory(offset, result.returnValue, size);
 
@@ -705,6 +707,7 @@ inline int64_t maxCallGas(int64_t gas) {
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
       vector<uint8_t> input_data;
       if (dataLength) {
+        ensureSourceMemoryBounds(dataOffset, dataLength);
         input_data.resize(dataLength);
         loadMemory(dataOffset, input_data, dataLength);
         call_message.input_data = input_data.data();
@@ -816,6 +819,7 @@ inline int64_t maxCallGas(int64_t gas) {
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
       vector<uint8_t> contract_code;
       if (length) {
+        ensureSourceMemoryBounds(dataOffset, length);
         contract_code.resize(length);
         loadMemory(dataOffset, contract_code, length);
         create_message.input_data = contract_code.data();
@@ -903,9 +907,16 @@ inline int64_t maxCallGas(int64_t gas) {
    * Memory Operations
    */
 
+  void EthereumInterface::ensureSourceMemoryBounds(uint32_t offset, uint32_t length) {
+    ensureCondition((offset + length) >= offset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition(memory.size() >= (offset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+  }
+
   void EthereumInterface::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
   {
+    // FIXME: the source bound check is not needed as the caller already ensures it
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition(memory.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
 
     if (!length)
       HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec << "\n";
@@ -917,7 +928,9 @@ inline int64_t maxCallGas(int64_t gas) {
 
   void EthereumInterface::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
   {
+    // FIXME: the source bound check is not needed as the caller already ensures it
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition(memory.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
     ensureCondition(dst.size() >= length, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
 
     if (!length)
