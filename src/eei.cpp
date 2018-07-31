@@ -677,8 +677,6 @@ inline int64_t maxCallGas(int64_t gas) {
         if (import->base == Name("call") && !isZeroUint256(call_message.value)) {
           ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "call");
         }
-
-        ensureSenderBalance(call_message.value);
       } else {
         valueOffset = 0;
         dataOffset = arguments[2].geti32();
@@ -742,6 +740,9 @@ inline int64_t maxCallGas(int64_t gas) {
         gas += GasSchedule::valueStipend;
 
       call_message.gas = gas;
+
+      if (import->base == Name("call") || import->base == Name("callCode"))
+        ensureSenderBalance(call_message.value);
 
       context->fn_table->call(&call_result, context, &call_message);
 
