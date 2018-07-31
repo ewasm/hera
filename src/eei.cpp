@@ -745,17 +745,8 @@ inline int64_t maxCallGas(int64_t gas) {
 
       call_message.gas = gas;
 
-      // FIXME: consider refactoring this
       if (import->base == Name("call") || import->base == Name("callCode")) {
-        try {
-          ensureCondition(msg.depth < 1024, OutOfGas, "Call depth exceeded.");
-
-          ensureSenderBalance(call_message.value);
-        } catch (OutOfGas const&) {
-          // An out of gas error here doesn't really mean we're out of gas, it just means
-          // we don't have sufficient gas for the call value. We should return
-          // an error rather than throwing.
-          //
+        if ((msg.depth >= 1024) || !enoughSenderBalanceFor(call_message.value)) {
           // Refund the deducted gas to be forwarded as it hasn't been used.
           result.gasLeft += call_message.gas;
           return Literal(uint32_t(1));
@@ -804,17 +795,8 @@ inline int64_t maxCallGas(int64_t gas) {
       create_message.sender = msg.destination;
       create_message.value = loadUint128(valueOffset);
 
-      // FIXME: consider refactoring this
-      try {
-        ensureCondition(msg.depth < 1024, OutOfGas, "Call depth exceeded.");
-
-        ensureSenderBalance(create_message.value);
-      } catch (OutOfGas const&) {
-        // An out of gas error here doesn't really mean we're out of gas, it just means
-        // we don't have sufficient gas for the call value. We should return
-        // an error rather than throwing.
+      if ((msg.depth >= 1024) || !enoughSenderBalanceFor(create_message.value))
         return Literal(uint32_t(1));
-      }
 
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
       vector<uint8_t> contract_code;
@@ -1014,11 +996,11 @@ inline int64_t maxCallGas(int64_t gas) {
   /*
    * Utilities
    */
-  void EthereumInterface::ensureSenderBalance(evmc_uint256be const& value)
+  bool EthereumInterface::enoughSenderBalanceFor(evmc_uint256be const& value) const
   {
     evmc_uint256be balance;
     context->fn_table->get_balance(&balance, context, &msg.destination);
-    ensureCondition(safeLoadUint128(balance) >= safeLoadUint128(value), OutOfGas, "Out of gas.");
+    return safeLoadUint128(balance) >= safeLoadUint128(value);
   }
 
   unsigned __int128 EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
