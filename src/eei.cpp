@@ -647,7 +647,19 @@ inline int64_t maxCallGas(int64_t gas) {
       import->base == Name("callDelegate") ||
       import->base == Name("callStatic")
     ) {
-      if (import->base == Name("call") || import->base == Name("callCode")) {
+      EEICallKind kind;
+      if (import->base == Name("call"))
+        kind = EEI_CALL;
+      else if (import->base == Name("callCode"))
+        kind = EEI_CALLCODE;
+      else if (import->base == Name("callDelegate"))
+        kind = EEI_CALLDELEGATE;
+      else if (import->base == Name("callStatic"))
+        kind = EEI_CALLSTATIC;
+      else
+        heraAssert(false, "");
+
+      if ((kind == EEI_CALL) || (kind == EEI_CALLCODE)) {
         heraAssert(arguments.size() == 5, string("Argument count mismatch in: ") + import->base.str);
       } else {
         heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
@@ -667,16 +679,16 @@ inline int64_t maxCallGas(int64_t gas) {
       call_message.code_hash = {};
       call_message.depth = msg.depth + 1;
 
-      if (import->base == Name("call") || import->base == Name("callCode")) {
+      if (kind == EEI_CALL || kind == EEI_CALLCODE) {
         valueOffset = arguments[2].geti32();
         dataOffset = arguments[3].geti32();
         dataLength = arguments[4].geti32();
 
         call_message.sender = msg.destination;
         call_message.value = loadUint128(valueOffset);
-        call_message.kind = (import->base == Name("callCode")) ? EVMC_CALLCODE : EVMC_CALL;
+        call_message.kind = (kind == EEI_CALLCODE) ? EVMC_CALLCODE : EVMC_CALL;
 
-        if (import->base == Name("call") && !isZeroUint256(call_message.value)) {
+        if ((kind == EEI_CALL) && !isZeroUint256(call_message.value)) {
           ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "call");
         }
       } else {
@@ -684,11 +696,11 @@ inline int64_t maxCallGas(int64_t gas) {
         dataOffset = arguments[2].geti32();
         dataLength = arguments[3].geti32();
 
-        if (import->base == Name("callDelegate")) {
+        if (kind == EEI_CALLDELEGATE) {
           call_message.sender = msg.sender;
           call_message.value = msg.value;
           call_message.kind = EVMC_DELEGATECALL;
-        } else if (import->base == Name("callStatic")) {
+        } else if (kind == EEI_CALLSTATIC) {
           call_message.sender = msg.destination;
           call_message.value = {};
           call_message.kind = EVMC_CALL;
@@ -726,7 +738,7 @@ inline int64_t maxCallGas(int64_t gas) {
       // Only charge callNewAccount gas if the account is new and value is being transferred per EIP161.
       if (!isZeroUint256(call_message.value)) {
         extra_gas += GasSchedule::valuetransfer;
-        if (import->base == Name("call") && !context->fn_table->account_exists(context, &call_message.destination))
+        if ((kind == EEI_CALL) && !context->fn_table->account_exists(context, &call_message.destination))
           extra_gas += GasSchedule::callNewAccount;
       }
 
@@ -745,7 +757,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       call_message.gas = gas;
 
-      if (import->base == Name("call") || import->base == Name("callCode")) {
+      if ((kind == EEI_CALL) || (kind == EEI_CALLCODE)) {
         if ((msg.depth >= 1024) || !enoughSenderBalanceFor(call_message.value)) {
           // Refund the deducted gas to be forwarded as it hasn't been used.
           result.gasLeft += call_message.gas;
