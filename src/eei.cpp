@@ -717,13 +717,17 @@ inline int64_t maxCallGas(int64_t gas) {
       }
 
       evmc_result call_result;
-      int64_t extra_gas = 0;
 
-      if (import->base == Name("call") && !context->fn_table->account_exists(context, &call_message.destination))
-        extra_gas += GasSchedule::callNewAccount;
-      if (!isZeroUint256(call_message.value))
+      // Start with base call gas
+      int64_t extra_gas = GasSchedule::call;
+
+      // Charge valuetransfer gas if value is being transferred.
+      // Only charge callNewAccount gas if the account is new and value is being transferred per EIP161.
+      if (!isZeroUint256(call_message.value)) {
         extra_gas += GasSchedule::valuetransfer;
-      extra_gas += GasSchedule::call;
+        if (import->base == Name("call") && !context->fn_table->account_exists(context, &call_message.destination))
+          extra_gas += GasSchedule::callNewAccount;
+      }
 
       // this check is in EIP150 but not in the YellowPaper
       takeInterfaceGas(extra_gas);
