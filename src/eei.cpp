@@ -727,15 +727,16 @@ inline int64_t maxCallGas(int64_t gas) {
           extra_gas += GasSchedule::callNewAccount;
       }
 
-      // this check is in EIP150 but not in the YellowPaper
+      // This check is in EIP150 but not in the YellowPaper
       takeInterfaceGas(extra_gas);
 
-      // retain one 64th gas (EIP150)
+      // This is the gas we are forwarding to the callee.
+      // Retain one 64th of it as per EIP150
       gas = std::min(gas, maxCallGas(result.gasLeft));
 
       takeInterfaceGas(gas);
 
-      // add gas stipend for value transfers
+      // Add gas stipend for value transfers
       if (!isZeroUint256(call_message.value))
         gas += GasSchedule::valueStipend;
 
