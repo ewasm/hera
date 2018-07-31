@@ -677,8 +677,6 @@ inline int64_t maxCallGas(int64_t gas) {
         if (import->base == Name("call") && !isZeroUint256(call_message.value)) {
           ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "call");
         }
-
-        ensureSenderBalance(call_message.value);
       } else {
         valueOffset = 0;
         dataOffset = arguments[2].geti32();
@@ -717,27 +715,46 @@ inline int64_t maxCallGas(int64_t gas) {
       }
 
       evmc_result call_result;
-      int64_t extra_gas = 0;
 
-      if (import->base == Name("call") && !context->fn_table->account_exists(context, &call_message.destination))
-        extra_gas += GasSchedule::callNewAccount;
-      if (!isZeroUint256(call_message.value))
+      // Start with base call gas
+      int64_t extra_gas = GasSchedule::call;
+
+      // Charge valuetransfer gas if value is being transferred.
+      // Only charge callNewAccount gas if the account is new and value is being transferred per EIP161.
+      if (!isZeroUint256(call_message.value)) {
         extra_gas += GasSchedule::valuetransfer;
-      extra_gas += GasSchedule::call;
+        if (import->base == Name("call") && !context->fn_table->account_exists(context, &call_message.destination))
+          extra_gas += GasSchedule::callNewAccount;
+      }
 
-      // this check is in EIP150 but not in the YellowPaper
+      // This check is in EIP150 but not in the YellowPaper
       takeInterfaceGas(extra_gas);
 
-      // retain one 64th gas (EIP150)
+      // This is the gas we are forwarding to the callee.
+      // Retain one 64th of it as per EIP150
       gas = std::min(gas, maxCallGas(result.gasLeft));
 
       takeInterfaceGas(gas);
 
-      // add gas stipend for value transfers
+      // Add gas stipend for value transfers
       if (!isZeroUint256(call_message.value))
         gas += GasSchedule::valueStipend;
 
       call_message.gas = gas;
+
+      if (import->base == Name("call") || import->base == Name("callCode")) {
+        try {
+          ensureSenderBalance(call_message.value);
+        } catch (OutOfGas const&) {
+          // An out of gas error here doesn't really mean we're out of gas, it just means
+          // we don't have sufficient gas for the call value. We should return
+          // an error rather than throwing.
+          //
+          // Refund the deducted gas to be forwarded as it hasn't been used.
+          result.gasLeft += call_message.gas;
+          return Literal(uint32_t(1));
+        }
+      }
 
       context->fn_table->call(&call_result, context, &call_message);
 
