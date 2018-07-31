@@ -339,8 +339,6 @@ evmc_result hera_execute(
     heraAssert(msg->gas >= 0, "Negative startgas?");
 
     bool meterInterfaceGas = true;
-    ExecutionResult result;
-    result.gasLeft = (uint64_t)msg->gas;
 
     // the bytecode residing in the state - this will be used by interface methods (i.e. codecopy)
     vector<uint8_t> state_code(code, code + code_size);
@@ -387,6 +385,7 @@ evmc_result hera_execute(
       ensureCondition(_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
     }
 
+    ExecutionResult result;
     execute(context, _code, state_code, *msg, result, meterInterfaceGas);
 
     // copy call result

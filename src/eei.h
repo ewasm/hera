@@ -47,7 +47,10 @@ struct EthereumInterface : ShellExternalInterface {
     msg(_msg),
     result(_result),
     meterGas(_meterGas)
-  { }
+  {
+    // set starting gas
+    result.gasLeft = static_cast<uint64_t>(msg.gas);
+  }
 
   Literal callImport(Import *import, LiteralList& arguments) override;
 #if HERA_DEBUGGING
