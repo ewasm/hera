@@ -742,6 +742,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       call_message.gas = gas;
 
+      // FIXME: consider refactoring this
       if (import->base == Name("call") || import->base == Name("callCode")) {
         try {
           ensureSenderBalance(call_message.value);
@@ -798,7 +799,15 @@ inline int64_t maxCallGas(int64_t gas) {
       create_message.sender = msg.destination;
       create_message.value = loadUint128(valueOffset);
 
-      ensureSenderBalance(create_message.value);
+      // FIXME: consider refactoring this
+      try {
+        ensureSenderBalance(create_message.value);
+      } catch (OutOfGas const&) {
+        // An out of gas error here doesn't really mean we're out of gas, it just means
+        // we don't have sufficient gas for the call value. We should return
+        // an error rather than throwing.
+        return Literal(uint32_t(1));
+      }
 
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
       vector<uint8_t> contract_code;
