@@ -274,9 +274,13 @@ inline int64_t maxCallGas(int64_t gas) {
 
       takeInterfaceGas(GasSchedule::blockhash);
       context->fn_table->get_block_hash(&blockhash, context, number);
+
+      if (isZeroUint256(blockhash))
+        return Literal(uint32_t(1));
+
       storeUint256(blockhash, resultOffset);
 
-      return Literal();
+      return Literal(uint32_t(0));
     }
 
     if (import->base == Name("getCallDataSize")) {
