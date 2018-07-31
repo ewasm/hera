@@ -741,8 +741,19 @@ inline int64_t maxCallGas(int64_t gas) {
 
       call_message.gas = gas;
 
-      if (import->base == Name("call") || import->base == Name("callCode"))
-        ensureSenderBalance(call_message.value);
+      if (import->base == Name("call") || import->base == Name("callCode")) {
+        try {
+          ensureSenderBalance(call_message.value);
+        } catch (OutOfGas const&) {
+          // An out of gas error here doesn't really mean we're out of gas, it just means
+          // we don't have sufficient gas for the call value. We should return
+          // an error rather than throwing.
+          //
+          // Refund the deducted gas to be forwarded as it hasn't been used.
+          result.gasLeft += call_message.gas;
+          return Literal(uint32_t(1));
+        }
+      }
 
       context->fn_table->call(&call_result, context, &call_message);
 
