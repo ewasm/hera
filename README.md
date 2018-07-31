@@ -22,6 +22,7 @@ Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpre
 
 These are to be used via EVMC `set_option`:
 
+- `engine=<engine>` will select the underlying WebAssembly engine, where the only accepted value currently is `binaryen`
 - `metering=true` will enable metering of bytecode at deployment using the [Sentinel system contract](https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract) (set to `false` by default)
 - `evm2wasm=true` will enable metering of bytecode at deployment using the [EVM Transcompiler](https://github.com/ewasm/design/blob/master/system_contracts.md#evm-transcompiler) (set to `false` by default)
 - `fallback=true` will allow EVM bytecode to be passed through to the client for execution (if set to `false`, the default, it will be rejected as invalid) (note: is ignored if `evm2wasm` is `true`)
