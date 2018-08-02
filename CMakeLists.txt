@@ -20,6 +20,7 @@ endif()
 project(hera)
 
 include(ProjectBinaryen)
+include(ProjectWabt)
 
 option(HERA_WAVM "Build with WAVM" OFF)
 if (HERA_WAVM)
