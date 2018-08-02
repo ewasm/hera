@@ -16,6 +16,13 @@ defaults:
         $CXX --version
         $CXX --version > compiler.version
 
+  install-system-deps: &install-system-deps
+    run:
+      name: "Install system dependencies"
+      command: |
+        sudo apt -q update
+        sudo apt -qy install python
+
   configure: &configure
     run:
       name: "Configure"
@@ -159,6 +166,7 @@ jobs:
     docker:
       - image: ethereum/cpp-build-env
     steps:
+      - *install-system-deps
       - checkout
       - *update-submodules
       - *environment-info
@@ -180,6 +188,7 @@ jobs:
     docker:
       - image: cdetrio/nodejs-cpp-build-env
     steps:
+      - *install-system-deps
       - checkout
       - *update-submodules
       - *environment-info
@@ -201,6 +210,7 @@ jobs:
     docker:
       - image: ethereum/cpp-build-env:3
     steps:
+      - *install-system-deps
       - checkout
       - *update-submodules
       - *environment-info
@@ -224,6 +234,7 @@ jobs:
     docker:
       - image: ethereum/cpp-build-env
     steps:
+      - *install-system-deps
       - checkout
       - *update-submodules
       - *environment-info
@@ -247,6 +258,7 @@ jobs:
     docker:
       - image: ethereum/cpp-build-env
     steps:
+      - *install-system-deps
       - checkout
       - *update-submodules
       - *environment-info
