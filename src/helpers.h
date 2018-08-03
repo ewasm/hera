@@ -24,6 +24,9 @@ namespace hera {
 
 std::string toHex(evmc_uint256be const& value);
 
+// Returns a formatted string (with prefix "0x") representing the bytes of an array.
+std::string bytesAsHexStr(const uint8_t *bytes, const size_t length);
+
 bool hasWasmPreamble(std::vector<uint8_t> const& _input);
 
 }
