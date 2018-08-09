@@ -68,11 +68,11 @@ struct EthereumInterface : ShellExternalInterface {
   }
 
 private:
-  enum EEICallKind {
-    EEI_CALL,
-    EEI_CALLCODE,
-    EEI_CALLDELEGATE,
-    EEI_CALLSTATIC
+  enum class EEICallKind {
+    Call,
+    CallCode,
+    CallDelegate,
+    CallStatic
   };
 
   void takeGas(uint64_t gas);
