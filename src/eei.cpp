@@ -675,6 +675,16 @@ inline int64_t maxCallGas(int64_t gas) {
       uint32_t dataOffset;
       uint32_t dataLength;
 
+      if (kind == EEICallKind::Call || kind == EEICallKind::CallCode) {
+        valueOffset = arguments[2].geti32();
+        dataOffset = arguments[3].geti32();
+        dataLength = arguments[4].geti32();
+      } else {
+        valueOffset = 0;
+        dataOffset = arguments[2].geti32();
+        dataLength = arguments[3].geti32();
+      }
+
       heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
 
       evmc_message call_message;
@@ -683,33 +693,28 @@ inline int64_t maxCallGas(int64_t gas) {
       call_message.code_hash = {};
       call_message.depth = msg.depth + 1;
 
-      if (kind == EEICallKind::Call || kind == EEICallKind::CallCode) {
-        valueOffset = arguments[2].geti32();
-        dataOffset = arguments[3].geti32();
-        dataLength = arguments[4].geti32();
-
+      switch (kind) {
+      case EEICallKind::Call:
+      case EEICallKind::CallCode:
+        call_message.kind = (kind == EEICallKind::CallCode) ? EVMC_CALLCODE : EVMC_CALL;
         call_message.sender = msg.destination;
         call_message.value = loadUint128(valueOffset);
-        call_message.kind = (kind == EEICallKind::CallCode) ? EVMC_CALLCODE : EVMC_CALL;
 
         if ((kind == EEICallKind::Call) && !isZeroUint256(call_message.value)) {
           ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "call");
         }
-      } else {
-        valueOffset = 0;
-        dataOffset = arguments[2].geti32();
-        dataLength = arguments[3].geti32();
-
-        if (kind == EEICallKind::CallDelegate) {
-          call_message.sender = msg.sender;
-          call_message.value = msg.value;
-          call_message.kind = EVMC_DELEGATECALL;
-        } else if (kind == EEICallKind::CallStatic) {
-          call_message.sender = msg.destination;
-          call_message.value = {};
-          call_message.kind = EVMC_CALL;
-          call_message.flags |= EVMC_STATIC;
-        }
+        break;
+      case EEICallKind::CallDelegate:
+        call_message.kind = EVMC_DELEGATECALL;
+        call_message.sender = msg.sender;
+        call_message.value = msg.value;
+        break;
+      case EEICallKind::CallStatic:
+        call_message.kind = EVMC_CALL;
+        call_message.flags |= EVMC_STATIC;
+        call_message.sender = msg.destination;
+        call_message.value = {};
+        break;
       }
 
       HERA_DEBUG <<
