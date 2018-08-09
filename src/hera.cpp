@@ -41,6 +41,12 @@ using namespace std;
 using namespace wasm;
 using namespace HeraVM;
 
+enum class hera_wasm_engine {
+  binaryen,
+  wavm,
+  wabt
+};
+
 enum hera_evm_mode {
   EVM_REJECT,
   EVM_FALLBACK,
@@ -52,6 +58,7 @@ enum hera_evm_mode {
 };
 
 struct hera_instance : evmc_instance {
+  hera_wasm_engine wasm_engine = hera_wasm_engine::binaryen;
   hera_evm_mode evm_mode = EVM_REJECT;
   bool metering = false;
 
@@ -385,6 +392,8 @@ evmc_result hera_execute(
       ensureCondition(_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
     }
 
+    heraAssert(hera->wasm_engine == hera_wasm_engine::binaryen, "Unsupported wasm engine.");
+
     ExecutionResult result;
     execute(context, _code, state_code, *msg, result, meterInterfaceGas);
 
@@ -496,6 +505,21 @@ int hera_set_option(
     hera->metering = strcmp(value, "true") == 0;
     return 1;
   }
+
+  if (strcmp(name, "engine") == 0) {
+     if (strcmp(value, "binaryen") == 0)
+       hera->wasm_engine = hera_wasm_engine::binaryen;
+#if HAVE_WABT
+     if (strcmp(value, "wabt") == 0)
+       hera->wasm_engine = hera_wasm_engine::wabt;
+#endif
+#if HAVE_WAVM
+     if (strcmp(value, "wavm") == 0)
+       hera->wasm_engine = hera_wasm_engine::wavm;
+#endif
+     return 1;
+  }
+
   return 0;
 }
 
