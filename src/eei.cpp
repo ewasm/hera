@@ -659,6 +659,34 @@ namespace hera {
         dataLength = static_cast<uint32_t>(arguments[3].geti32());
       }
 
+      return Literal(eeiCall(kind, gas, addressOffset, valueOffset, dataOffset, dataLength));
+    }
+
+    if (import->base == Name("create")) {
+      heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
+
+      uint32_t valueOffset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t dataOffset = static_cast<uint32_t>(arguments[1].geti32());
+      uint32_t length = static_cast<uint32_t>(arguments[2].geti32());
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[3].geti32());
+
+      return Literal(eeiCreate(valueOffset, dataOffset, length, resultOffset));
+    }
+
+    if (import->base == Name("selfDestruct")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
+      uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
+      eeiSelfDestruct(addressOffset);
+
+      return Literal();
+    }
+
+    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
+  }
+
+  uint32_t EthereumInterface::eeiCall(EEICallKind kind, int64_t gas, uint32_t addressOffset, uint32_t valueOffset, uint32_t dataOffset, uint32_t dataLength)
+  {
       ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
       heraAssert((m_msg.flags & ~uint32_t(EVMC_STATIC)) == 0, "Unknown flags not supported.");
 
@@ -692,13 +720,23 @@ namespace hera {
         break;
       }
 
+#if HERA_DEBUGGING
+      string methodName;
+      switch (kind) {
+      case EEICallKind::Call: methodName = "call"; break;
+      case EEICallKind::CallCode: methodName = "callCode"; break;
+      case EEICallKind::CallDelegate: methodName = "callDelegate"; break;
+      case EEICallKind::CallStatic: methodName = "callStatic"; break;
+      }
+
       HERA_DEBUG <<
-        import->base.str << " " << hex <<
+        methodName << " " << hex <<
         gas << " " <<
         addressOffset << " " <<
         valueOffset << " " <<
         dataOffset << " " <<
         dataLength << dec << "\n";
+#endif
 
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
       vector<uint8_t> input_data;
@@ -745,7 +783,7 @@ namespace hera {
         if ((m_msg.depth >= 1024) || !enoughSenderBalanceFor(call_message.value)) {
           // Refund the deducted gas to be forwarded as it hasn't been used.
           m_result.gasLeft += gas;
-          return Literal(uint32_t(1));
+          return 1;
         }
       }
 
@@ -766,22 +804,16 @@ namespace hera {
 
       switch (call_result.status_code) {
       case EVMC_SUCCESS:
-        return Literal(uint32_t(0));
+        return 0;
       case EVMC_REVERT:
-        return Literal(uint32_t(2));
+        return 2;
       default:
-        return Literal(uint32_t(1));
+        return 1;
       }
-    }
+  }
 
-    if (import->base == Name("create")) {
-      heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
-
-      uint32_t valueOffset = static_cast<uint32_t>(arguments[0].geti32());
-      uint32_t dataOffset = static_cast<uint32_t>(arguments[1].geti32());
-      uint32_t length = static_cast<uint32_t>(arguments[2].geti32());
-      uint32_t resultOffset = static_cast<uint32_t>(arguments[3].geti32());
-
+  uint32_t EthereumInterface::eeiCreate(uint32_t valueOffset, uint32_t dataOffset, uint32_t length, uint32_t resultOffset)
+  {
       HERA_DEBUG << "create " << hex << valueOffset << " " << dataOffset << " " << length << dec << " " << resultOffset << dec << "\n";
 
       ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "create");
@@ -793,7 +825,7 @@ namespace hera {
       create_message.value = loadUint128(valueOffset);
 
       if ((m_msg.depth >= 1024) || !enoughSenderBalanceFor(create_message.value))
-        return Literal(uint32_t(1));
+        return 1;
 
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
       vector<uint8_t> contract_code;
@@ -841,19 +873,16 @@ namespace hera {
 
       switch (create_result.status_code) {
       case EVMC_SUCCESS:
-        return Literal(uint32_t(0));
+        return 0;
       case EVMC_REVERT:
-        return Literal(uint32_t(2));
+        return 2;
       default:
-        return Literal(uint32_t(1));
+        return 1;
       }
-    }
+  }
 
-    if (import->base == Name("selfDestruct")) {
-      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
-
-      uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
-
+  void EthereumInterface::eeiSelfDestruct(uint32_t addressOffset)
+  {
       HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
 
       ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "selfDestruct");
@@ -866,9 +895,6 @@ namespace hera {
       m_context->fn_table->selfdestruct(m_context, &m_msg.destination, &address);
 
       throw EndExecution{};
-    }
-
-    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + " arguments)");
   }
 
   void EthereumInterface::takeGas(int64_t gas)
