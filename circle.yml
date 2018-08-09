@@ -74,7 +74,7 @@ defaults:
     run:
       name: "Link hera to prebuilt cpp-eth"
       working_directory: ~/project
-      # TODO: run cmake in hera dir with config flags -DHERA_DEBUGGING=ON -DHERA_EVM2WASM_JS=ON
+      # TODO: run cmake in hera dir with config flags -DHERA_DEBUGGING=ON
       command: |
         cd ..
         echo "pwd: $(pwd)"

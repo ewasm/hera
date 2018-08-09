@@ -30,12 +30,6 @@ ls -al
 echo "fetch ethereum tests."
 git clone https://github.com/ethereum/tests
 
-echo "install evm2wasm deps"
-cd evm2wasm
-npm install
-EVM2WASM_BIN=$(pwd)/bin
-export PATH=${EVM2WASM_BIN}:$PATH
-
 echo "run evm2wasm tests"
-${TESTETH} -t GeneralStateTests/stExample -- --testpath ${WORKING_DIR}/tests --singlenet "Byzantium" --singletest "add11" --vm hera --evmc evm2wasm.js=true
-${TESTETH} -t GeneralStateTests/stStackTests -- --testpath ${WORKING_DIR}/tests --singlenet "Byzantium" --vm hera --evmc evm2wasm.js=true
+${TESTETH} -t GeneralStateTests/stExample -- --testpath ${WORKING_DIR}/tests --singlenet "Byzantium" --singletest "add11" --vm hera --evmc evm2wasm.cpp=true
+${TESTETH} -t GeneralStateTests/stStackTests -- --testpath ${WORKING_DIR}/tests --singlenet "Byzantium" --vm hera --evmc evm2wasm.cpp=true
