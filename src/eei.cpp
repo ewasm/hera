@@ -137,7 +137,7 @@ inline int64_t maxCallGas(int64_t gas) {
       HERA_DEBUG << "): " << dec;
 
       evmc_uint256be result;
-      context->fn_table->get_storage(&result, context, &msg.destination, &path);
+      m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
 
       if (useHex)
       {
@@ -175,8 +175,8 @@ inline int64_t maxCallGas(int64_t gas) {
       if (opName == nullptr)
         opName = "UNDEFINED";
 
-      cout << "{\"depth\":" << dec << msg.depth
-        << ",\"gas\":" << result.gasLeft
+      cout << "{\"depth\":" << dec << m_msg.depth
+        << ",\"gas\":" << m_result.gasLeft
         << ",\"gasCost\":" << cost
         << ",\"op\":" << opName
         << ",\"pc\":" << pc
@@ -223,11 +223,11 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "getGasLeft\n";
 
-      static_assert(is_same<decltype(result.gasLeft), uint64_t>::value, "uint64_t type expected");
+      static_assert(is_same<decltype(m_result.gasLeft), uint64_t>::value, "uint64_t type expected");
 
       takeInterfaceGas(GasSchedule::base);
 
-      return Literal(result.gasLeft);
+      return Literal(m_result.gasLeft);
     }
 
     if (import->base == Name("getAddress")) {
@@ -237,7 +237,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
 
-      storeUint160(msg.destination, resultOffset);
+      storeUint160(m_msg.destination, resultOffset);
 
       takeInterfaceGas(GasSchedule::base);
 
@@ -256,7 +256,7 @@ inline int64_t maxCallGas(int64_t gas) {
       evmc_uint256be result;
 
       takeInterfaceGas(GasSchedule::balance);
-      context->fn_table->get_balance(&result, context, &address);
+      m_context->fn_table->get_balance(&result, m_context, &address);
       storeUint128(result, resultOffset);
 
       return Literal();
@@ -273,7 +273,7 @@ inline int64_t maxCallGas(int64_t gas) {
       evmc_uint256be blockhash;
 
       takeInterfaceGas(GasSchedule::blockhash);
-      context->fn_table->get_block_hash(&blockhash, context, number);
+      m_context->fn_table->get_block_hash(&blockhash, m_context, number);
 
       if (isZeroUint256(blockhash))
         return Literal(uint32_t(1));
@@ -290,7 +290,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       takeInterfaceGas(GasSchedule::base);
 
-      return Literal(static_cast<uint32_t>(msg.input_size));
+      return Literal(static_cast<uint32_t>(m_msg.input_size));
     }
 
     if (import->base == Name("callDataCopy")) {
@@ -310,7 +310,7 @@ inline int64_t maxCallGas(int64_t gas) {
       );
       takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
 
-      vector<uint8_t> input(msg.input_data, msg.input_data + msg.input_size);
+      vector<uint8_t> input(m_msg.input_data, m_msg.input_data + m_msg.input_size);
       storeMemory(input, dataOffset, resultOffset, length);
 
       return Literal();
@@ -324,7 +324,7 @@ inline int64_t maxCallGas(int64_t gas) {
       HERA_DEBUG << "getCaller " << hex << resultOffset << dec << "\n";
 
       takeInterfaceGas(GasSchedule::base);
-      storeUint160(msg.sender, resultOffset);
+      storeUint160(m_msg.sender, resultOffset);
 
       return Literal();
     }
@@ -337,7 +337,7 @@ inline int64_t maxCallGas(int64_t gas) {
       HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
 
       takeInterfaceGas(GasSchedule::base);
-      storeUint128(msg.value, resultOffset);
+      storeUint128(m_msg.value, resultOffset);
 
       return Literal();
     }
@@ -358,7 +358,7 @@ inline int64_t maxCallGas(int64_t gas) {
         "Gas charge overflow"
       );
       takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
-      storeMemory(code, codeOffset, resultOffset, length);
+      storeMemory(m_code, codeOffset, resultOffset, length);
 
       return Literal();
     }
@@ -370,7 +370,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       takeInterfaceGas(GasSchedule::base);
 
-      return Literal(static_cast<uint32_t>(code.size()));
+      return Literal(static_cast<uint32_t>(m_code.size()));
     }
 
     if (import->base == Name("externalCodeCopy")) {
@@ -390,7 +390,7 @@ inline int64_t maxCallGas(int64_t gas) {
       evmc_address address = loadUint160(addressOffset);
       // FIXME: optimise this so no vector needs to be created
       vector<uint8_t> codeBuffer(length);
-      size_t numCopied = context->fn_table->copy_code(context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
+      size_t numCopied = m_context->fn_table->copy_code(m_context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
       ensureCondition(numCopied == length, InvalidMemoryAccess, "Out of bounds (source) memory copy");
 
       storeMemory(codeBuffer, 0, resultOffset, length);
@@ -407,7 +407,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       evmc_address address = loadUint160(addressOffset);
       takeInterfaceGas(GasSchedule::extcode);
-      size_t code_size = context->fn_table->get_code_size(context, &address);
+      size_t code_size = m_context->fn_table->get_code_size(m_context, &address);
 
       return Literal(static_cast<uint32_t>(code_size));
     }
@@ -422,7 +422,7 @@ inline int64_t maxCallGas(int64_t gas) {
       evmc_tx_context tx_context;
 
       takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
       storeUint160(tx_context.block_coinbase, resultOffset);
 
       return Literal();
@@ -438,7 +438,7 @@ inline int64_t maxCallGas(int64_t gas) {
       evmc_tx_context tx_context;
 
       takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
       storeUint256(tx_context.block_difficulty, offset);
 
       return Literal();
@@ -452,7 +452,7 @@ inline int64_t maxCallGas(int64_t gas) {
       evmc_tx_context tx_context;
 
       takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
 
       static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
 
@@ -469,7 +469,7 @@ inline int64_t maxCallGas(int64_t gas) {
       evmc_tx_context tx_context;
 
       takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
       storeUint128(tx_context.tx_gas_price, valueOffset);
 
       return Literal();
@@ -484,7 +484,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
 
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "log");
+      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "log");
 
       ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
 
@@ -505,7 +505,7 @@ inline int64_t maxCallGas(int64_t gas) {
         "Gas charge overflow"
       );
       takeInterfaceGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
-      context->fn_table->emit_log(context, &msg.destination, data.data(), length, topics.data(), numberOfTopics);
+      m_context->fn_table->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
 
       return Literal();
     }
@@ -518,7 +518,7 @@ inline int64_t maxCallGas(int64_t gas) {
       evmc_tx_context tx_context;
 
       takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
 
       static_assert(is_same<decltype(tx_context.block_number), int64_t>::value, "int64_t type expected");
 
@@ -533,7 +533,7 @@ inline int64_t maxCallGas(int64_t gas) {
       evmc_tx_context tx_context;
 
       takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
 
       static_assert(is_same<decltype(tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
 
@@ -550,7 +550,7 @@ inline int64_t maxCallGas(int64_t gas) {
       evmc_tx_context tx_context;
 
       takeInterfaceGas(GasSchedule::base);
-      context->fn_table->get_tx_context(&tx_context, context);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
       storeUint160(tx_context.tx_origin, resultOffset);
 
       return Literal();
@@ -564,13 +564,13 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
 
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
+      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
 
       evmc_uint256be path = loadUint256(pathOffset);
       evmc_uint256be value = loadUint256(valueOffset);
       evmc_uint256be current;
 
-      context->fn_table->get_storage(&current, context, &msg.destination, &path);
+      m_context->fn_table->get_storage(&current, m_context, &m_msg.destination, &path);
 
       // We do not need to take care about the delete case (gas refund), the client does it.
       takeInterfaceGas(
@@ -579,7 +579,7 @@ inline int64_t maxCallGas(int64_t gas) {
         GasSchedule::storageStoreChange
       );
 
-      context->fn_table->set_storage(context, &msg.destination, &path, &value);
+      m_context->fn_table->set_storage(m_context, &m_msg.destination, &path, &value);
 
       return Literal();
     }
@@ -596,7 +596,7 @@ inline int64_t maxCallGas(int64_t gas) {
       evmc_uint256be result;
 
       takeInterfaceGas(GasSchedule::storageLoad);
-      context->fn_table->get_storage(&result, context, &msg.destination, &path);
+      m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
 
       storeUint256(result, resultOffset);
 
@@ -612,10 +612,10 @@ inline int64_t maxCallGas(int64_t gas) {
       HERA_DEBUG << (import->base == Name("revert") ? "revert " : "finish ") << hex << offset << " " << size << dec << "\n";
 
       ensureSourceMemoryBounds(offset, size);
-      result.returnValue = vector<uint8_t>(size);
-      loadMemory(offset, result.returnValue, size);
+      m_result.returnValue = vector<uint8_t>(size);
+      loadMemory(offset, m_result.returnValue, size);
 
-      result.isRevert = import->base == Name("revert");
+      m_result.isRevert = import->base == Name("revert");
 
       return Literal();
     }
@@ -627,7 +627,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       takeInterfaceGas(GasSchedule::base);
 
-      return Literal(static_cast<uint32_t>(lastReturnData.size()));
+      return Literal(static_cast<uint32_t>(m_lastReturnData.size()));
     }
 
     if (import->base == Name("returnDataCopy")) {
@@ -640,7 +640,7 @@ inline int64_t maxCallGas(int64_t gas) {
       HERA_DEBUG << "returnDataCopy " << hex << dataOffset << " " << offset << " " << size << dec << "\n";
 
       takeInterfaceGas(GasSchedule::verylow);
-      storeMemory(lastReturnData, offset, dataOffset, size);
+      storeMemory(m_lastReturnData, offset, dataOffset, size);
 
       return Literal();
     }
@@ -685,34 +685,34 @@ inline int64_t maxCallGas(int64_t gas) {
         dataLength = arguments[3].geti32();
       }
 
-      heraAssert((msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+      heraAssert((m_msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
 
       evmc_message call_message;
       call_message.destination = loadUint160(addressOffset);
-      call_message.flags = msg.flags;
+      call_message.flags = m_msg.flags;
       call_message.code_hash = {};
-      call_message.depth = msg.depth + 1;
+      call_message.depth = m_msg.depth + 1;
 
       switch (kind) {
       case EEICallKind::Call:
       case EEICallKind::CallCode:
         call_message.kind = (kind == EEICallKind::CallCode) ? EVMC_CALLCODE : EVMC_CALL;
-        call_message.sender = msg.destination;
+        call_message.sender = m_msg.destination;
         call_message.value = loadUint128(valueOffset);
 
         if ((kind == EEICallKind::Call) && !isZeroUint256(call_message.value)) {
-          ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "call");
+          ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "call");
         }
         break;
       case EEICallKind::CallDelegate:
         call_message.kind = EVMC_DELEGATECALL;
-        call_message.sender = msg.sender;
-        call_message.value = msg.value;
+        call_message.sender = m_msg.sender;
+        call_message.value = m_msg.value;
         break;
       case EEICallKind::CallStatic:
         call_message.kind = EVMC_CALL;
         call_message.flags |= EVMC_STATIC;
-        call_message.sender = msg.destination;
+        call_message.sender = m_msg.destination;
         call_message.value = {};
         break;
       }
@@ -747,7 +747,7 @@ inline int64_t maxCallGas(int64_t gas) {
       // Only charge callNewAccount gas if the account is new and value is being transferred per EIP161.
       if (!isZeroUint256(call_message.value)) {
         extra_gas += GasSchedule::valuetransfer;
-        if ((kind == EEICallKind::Call) && !context->fn_table->account_exists(context, &call_message.destination))
+        if ((kind == EEICallKind::Call) && !m_context->fn_table->account_exists(m_context, &call_message.destination))
           extra_gas += GasSchedule::callNewAccount;
       }
 
@@ -756,7 +756,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       // This is the gas we are forwarding to the callee.
       // Retain one 64th of it as per EIP150
-      gas = std::min(gas, maxCallGas(result.gasLeft));
+      gas = std::min(gas, maxCallGas(m_result.gasLeft));
 
       takeInterfaceGas(gas);
 
@@ -767,26 +767,26 @@ inline int64_t maxCallGas(int64_t gas) {
       call_message.gas = gas;
 
       if ((kind == EEICallKind::Call) || (kind == EEICallKind::CallCode)) {
-        if ((msg.depth >= 1024) || !enoughSenderBalanceFor(call_message.value)) {
+        if ((m_msg.depth >= 1024) || !enoughSenderBalanceFor(call_message.value)) {
           // Refund the deducted gas to be forwarded as it hasn't been used.
-          result.gasLeft += call_message.gas;
+          m_result.gasLeft += call_message.gas;
           return Literal(uint32_t(1));
         }
       }
 
-      context->fn_table->call(&call_result, context, &call_message);
+      m_context->fn_table->call(&call_result, m_context, &call_message);
 
       if (call_result.output_data) {
-        lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
+        m_lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
       } else {
-        lastReturnData.clear();
+        m_lastReturnData.clear();
       }
 
       if (call_result.release)
         call_result.release(&call_result);
 
       /* Return unspent gas */
-      result.gasLeft += call_result.gas_left;
+      m_result.gasLeft += call_result.gas_left;
 
       switch (call_result.status_code) {
       case EVMC_SUCCESS:
@@ -808,15 +808,15 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "create " << hex << valueOffset << " " << dataOffset << " " << length << dec << " " << resultOffset << dec << "\n";
 
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "create");
+      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "create");
 
       evmc_message create_message;
 
       create_message.destination = {};
-      create_message.sender = msg.destination;
+      create_message.sender = m_msg.destination;
       create_message.value = loadUint128(valueOffset);
 
-      if ((msg.depth >= 1024) || !enoughSenderBalanceFor(create_message.value))
+      if ((m_msg.depth >= 1024) || !enoughSenderBalanceFor(create_message.value))
         return Literal(uint32_t(1));
 
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
@@ -833,7 +833,7 @@ inline int64_t maxCallGas(int64_t gas) {
       }
 
       create_message.code_hash = {};
-      create_message.depth = msg.depth + 1;
+      create_message.depth = m_msg.depth + 1;
       create_message.kind = EVMC_CREATE;
       create_message.flags = 0;
 
@@ -841,21 +841,21 @@ inline int64_t maxCallGas(int64_t gas) {
 
       takeInterfaceGas(GasSchedule::create);
 
-      create_message.gas = maxCallGas(result.gasLeft);
+      create_message.gas = maxCallGas(m_result.gasLeft);
       takeInterfaceGas(create_message.gas);
 
-      context->fn_table->call(&create_result, context, &create_message);
+      m_context->fn_table->call(&create_result, m_context, &create_message);
 
       /* Return unspent gas */
-      result.gasLeft += create_result.gas_left;
+      m_result.gasLeft += create_result.gas_left;
 
       if (create_result.status_code == EVMC_SUCCESS) {
         storeUint160(create_result.create_address, resultOffset);
-        lastReturnData.clear();
+        m_lastReturnData.clear();
       } else if (create_result.output_data) {
-        lastReturnData.assign(create_result.output_data, create_result.output_data + create_result.output_size);
+        m_lastReturnData.assign(create_result.output_data, create_result.output_data + create_result.output_size);
       } else {
-        lastReturnData.clear();
+        m_lastReturnData.clear();
       }
 
       if (create_result.release)
@@ -878,14 +878,14 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
 
-      ensureCondition(!(msg.flags & EVMC_STATIC), StaticModeViolation, "selfDestruct");
+      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "selfDestruct");
 
       evmc_address address = loadUint160(addressOffset);
 
-      if (!context->fn_table->account_exists(context, &address))
+      if (!m_context->fn_table->account_exists(m_context, &address))
         takeInterfaceGas(GasSchedule::callNewAccount);
       takeInterfaceGas(GasSchedule::selfdestruct);
-      context->fn_table->selfdestruct(context, &msg.destination, &address);
+      m_context->fn_table->selfdestruct(m_context, &m_msg.destination, &address);
 
       return Literal();
     }
@@ -895,13 +895,13 @@ inline int64_t maxCallGas(int64_t gas) {
 
   void EthereumInterface::takeGas(uint64_t gas)
   {
-    ensureCondition(gas <= result.gasLeft, OutOfGas, "Out of gas.");
-    result.gasLeft -= gas;
+    ensureCondition(gas <= m_result.gasLeft, OutOfGas, "Out of gas.");
+    m_result.gasLeft -= gas;
   }
 
   void EthereumInterface::takeInterfaceGas(uint64_t gas)
   {
-    if (!meterGas)
+    if (!m_meterGas)
       return;
     takeGas(gas);
   }
@@ -1020,7 +1020,7 @@ inline int64_t maxCallGas(int64_t gas) {
   bool EthereumInterface::enoughSenderBalanceFor(evmc_uint256be const& value) const
   {
     evmc_uint256be balance;
-    context->fn_table->get_balance(&balance, context, &msg.destination);
+    m_context->fn_table->get_balance(&balance, m_context, &m_msg.destination);
     return safeLoadUint128(balance) >= safeLoadUint128(value);
   }
 
