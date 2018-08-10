@@ -596,11 +596,7 @@ namespace hera {
     if (import->base == Name("getReturnDataSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getReturnDataSize\n";
-
-      takeInterfaceGas(GasSchedule::base);
-
-      return Literal(static_cast<uint32_t>(m_lastReturnData.size()));
+      return Literal(eeiGetReturnDataSize());
     }
 
     if (import->base == Name("returnDataCopy")) {
@@ -610,11 +606,7 @@ namespace hera {
       uint32_t offset = static_cast<uint32_t>(arguments[1].geti32());
       uint32_t size = static_cast<uint32_t>(arguments[2].geti32());
 
-      HERA_DEBUG << "returnDataCopy " << hex << dataOffset << " " << offset << " " << size << dec << "\n";
-      
-      safeChargeDataCopy(size, GasSchedule::verylow);
-
-      storeMemory(m_lastReturnData, offset, dataOffset, size);
+      eeiReturnDataCopy(dataOffset, offset, size);
 
       return Literal();
     }
@@ -683,6 +675,22 @@ namespace hera {
     }
 
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
+  }
+
+  uint32_t EthereumInterface::eeiGetReturnDataSize()
+  {
+      HERA_DEBUG << "getReturnDataSize\n";
+
+      takeInterfaceGas(GasSchedule::base);
+      return static_cast<uint32_t>(m_lastReturnData.size());
+  }
+
+  void EthereumInterface::eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size)
+  {
+      HERA_DEBUG << "returnDataCopy " << hex << dataOffset << " " << offset << " " << size << dec << "\n";
+
+      safeChargeDataCopy(size, GasSchedule::verylow);
+      storeMemory(m_lastReturnData, offset, dataOffset, size);
   }
 
   uint32_t EthereumInterface::eeiCall(EEICallKind kind, int64_t gas, uint32_t addressOffset, uint32_t valueOffset, uint32_t dataOffset, uint32_t dataLength)

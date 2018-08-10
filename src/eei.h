@@ -76,6 +76,8 @@ private:
 
   // EEI methods
 
+  uint32_t eeiGetReturnDataSize();
+  void eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size);
   uint32_t eeiCall(EEICallKind kind, int64_t gas, uint32_t addressOffset, uint32_t valueOffset, uint32_t dataOffset, uint32_t dataLength);
   uint32_t eeiCreate(uint32_t valueOffset, uint32_t dataOffset, uint32_t length, uint32_t resultOffset);
   void eeiSelfDestruct(uint32_t addressOffset);
