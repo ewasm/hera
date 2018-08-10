@@ -38,6 +38,9 @@ class OutOfGas : public HeraException {
 class ContractValidationFailure : public HeraException {
   using HeraException::HeraException;
 };
+class ArgumentOutOfRange : public HeraException {
+  using HeraException::HeraException;
+};
 class InvalidMemoryAccess : public HeraException {
   using HeraException::HeraException;
 };
