@@ -145,7 +145,7 @@ defaults:
       name: "Test shared Hera"
       command: |
         testeth --version
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium
+        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera*.so --singlenet Byzantium
 
 
 version: 2
