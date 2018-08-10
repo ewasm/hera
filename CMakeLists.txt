@@ -4,6 +4,9 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/toolchains/cxx11-pic.cmake CACHE FILEPATH "CMake toolchain file")
 
+set(CMAKE_DEBUG_POSTFIX "")
+set(HUNTER_CONFIGURATION_TYPES Release CACHE STRING "Build type of the 3rd party packages")
+
 add_compile_options(-Wall -Werror -Wextra -Wconversion -Wno-sign-conversion -Wno-unknown-pragmas)
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/evm2wasm/cmake/HunterGate.cmake)
