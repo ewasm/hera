@@ -42,17 +42,17 @@ struct EthereumInterface : ShellExternalInterface {
     bool _meterGas
   ):
     ShellExternalInterface(),
-    context(_context),
-    code(_code),
-    msg(_msg),
-    result(_result),
-    meterGas(_meterGas)
+    m_context(_context),
+    m_code(_code),
+    m_msg(_msg),
+    m_result(_result),
+    m_meterGas(_meterGas)
   {
     // set starting gas
-    result.gasLeft = static_cast<uint64_t>(msg.gas);
+    m_result.gasLeft = static_cast<uint64_t>(m_msg.gas);
     // set sane defaults
-    result.returnValue = std::vector<uint8_t>{};
-    result.isRevert = false;
+    m_result.returnValue = std::vector<uint8_t>{};
+    m_result.isRevert = false;
   }
 
   Literal callImport(Import *import, LiteralList& arguments) override;
@@ -108,12 +108,12 @@ private:
   /* Checks if 256 bit value is all zeroes */
   static bool isZeroUint256(evmc_uint256be const& value);
 
-  evmc_context* context = nullptr;
-  std::vector<uint8_t> const& code;
-  evmc_message const& msg;
-  std::vector<uint8_t> lastReturnData;
-  ExecutionResult & result;
-  bool meterGas = true;
+  evmc_context* m_context = nullptr;
+  std::vector<uint8_t> const& m_code;
+  evmc_message const& m_msg;
+  std::vector<uint8_t> m_lastReturnData;
+  ExecutionResult & m_result;
+  bool m_meterGas = true;
 };
 
 struct GasSchedule {
