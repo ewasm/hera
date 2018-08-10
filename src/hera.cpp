@@ -280,12 +280,11 @@ void validate_contract(Module & module)
 }
 
 // Execute the contract through Binaryen.
-void execute(
+ExecutionResult execute(
   evmc_context* context,
   vector<uint8_t> const& code,
   vector<uint8_t> const& state_code,
   evmc_message const& msg,
-  ExecutionResult & result,
   bool meterInterfaceGas
 ) {
 #if HERA_DEBUGGING
@@ -327,6 +326,7 @@ void execute(
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
   // Interpret
+  ExecutionResult result;
   EthereumInterface interface(context, state_code, msg, result, meterInterfaceGas);
   ModuleInstance instance(module, &interface);
 
@@ -338,6 +338,8 @@ void execute(
     // This exception is ignored here because we consider it to be a success.
     // It is only a clutch for POSIX style exit()
   }
+
+  return result;
 }
 
 void hera_destroy_result(evmc_result const* result) noexcept
@@ -411,8 +413,7 @@ evmc_result hera_execute(
 
     heraAssert(hera->wasm_engine == hera_wasm_engine::binaryen, "Unsupported wasm engine.");
 
-    ExecutionResult result;
-    execute(context, _code, state_code, *msg, result, meterInterfaceGas);
+    ExecutionResult result = execute(context, _code, state_code, *msg, meterInterfaceGas);
 
     // copy call result
     if (result.returnValue.size() > 0) {
