@@ -437,6 +437,11 @@ evmc_result hera_execute(
 
     ret.status_code = result.isRevert ? EVMC_REVERT : EVMC_SUCCESS;
     ret.gas_left = result.gasLeft;
+  } catch (EndExecution const&) {
+    ret.status_code = EVMC_INTERNAL_ERROR;
+#if HERA_DEBUGGING
+    cerr << "EndExecution exception has leaked through." << endl;
+#endif
   } catch (OutOfGas const& e) {
     ret.status_code = EVMC_OUT_OF_GAS;
 #if HERA_DEBUGGING
