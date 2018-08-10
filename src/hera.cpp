@@ -280,12 +280,11 @@ void validate_contract(Module & module)
 }
 
 // Execute the contract through Binaryen.
-void execute(
+ExecutionResult execute(
   evmc_context* context,
   vector<uint8_t> const& code,
   vector<uint8_t> const& state_code,
   evmc_message const& msg,
-  ExecutionResult & result,
   bool meterInterfaceGas
 ) {
 #if HERA_DEBUGGING
@@ -327,6 +326,7 @@ void execute(
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
   // Interpret
+  ExecutionResult result;
   EthereumInterface interface(context, state_code, msg, result, meterInterfaceGas);
   ModuleInstance instance(module, &interface);
 
@@ -338,6 +338,8 @@ void execute(
     // This exception is ignored here because we consider it to be a success.
     // It is only a clutch for POSIX style exit()
   }
+
+  return result;
 }
 
 void hera_destroy_result(evmc_result const* result) noexcept
@@ -368,28 +370,28 @@ evmc_result hera_execute(
     vector<uint8_t> state_code(code, code + code_size);
 
     // the actual executable code - this can be modified (metered or evm2wasm compiled)
-    vector<uint8_t> _code(code, code + code_size);
+    vector<uint8_t> run_code(code, code + code_size);
 
     // ensure we can only handle WebAssembly version 1
-    if (!hasWasmPreamble(_code)) {
+    if (!hasWasmPreamble(run_code)) {
       switch (hera->evm_mode) {
       case EVM2WASM_CONTRACT:
-        _code = evm2wasm(context, _code);
-        ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
+        run_code = evm2wasm(context, run_code);
+        ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
       case EVM2WASM_CPP:
       case EVM2WASM_CPP_TRACING:
-        _code = evm2wasm_cpp(_code, hera->evm_mode == EVM2WASM_CPP_TRACING);
-        ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.cpp failed");
+        run_code = evm2wasm_cpp(run_code, hera->evm_mode == EVM2WASM_CPP_TRACING);
+        ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.cpp failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
       case EVM2WASM_JS:
       case EVM2WASM_JS_TRACING:
-        _code = evm2wasm_js(_code, hera->evm_mode == EVM2WASM_JS_TRACING);
-        ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
+        run_code = evm2wasm_js(run_code, hera->evm_mode == EVM2WASM_JS_TRACING);
+        ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
@@ -405,14 +407,13 @@ evmc_result hera_execute(
     } else if (msg->kind == EVMC_CREATE) {
       // Meter the deployment (constructor) code if it is WebAssembly
       if (hera->metering)
-        _code = sentinel(context, _code);
-      ensureCondition(_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
+        run_code = sentinel(context, run_code);
+      ensureCondition(run_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
     }
 
     heraAssert(hera->wasm_engine == hera_wasm_engine::binaryen, "Unsupported wasm engine.");
 
-    ExecutionResult result;
-    execute(context, _code, state_code, *msg, result, meterInterfaceGas);
+    ExecutionResult result = execute(context, run_code, state_code, *msg, meterInterfaceGas);
 
     // copy call result
     if (result.returnValue.size() > 0) {
@@ -436,6 +437,11 @@ evmc_result hera_execute(
 
     ret.status_code = result.isRevert ? EVMC_REVERT : EVMC_SUCCESS;
     ret.gas_left = result.gasLeft;
+  } catch (EndExecution const&) {
+    ret.status_code = EVMC_INTERNAL_ERROR;
+#if HERA_DEBUGGING
+    cerr << "EndExecution exception has leaked through." << endl;
+#endif
   } catch (OutOfGas const& e) {
     ret.status_code = EVMC_OUT_OF_GAS;
 #if HERA_DEBUGGING
