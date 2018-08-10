@@ -22,6 +22,11 @@ if(NOT WIN32)
   endif()
 endif()
 
+if(HERA_WABT)
+    target_compile_definitions(hera PRIVATE HERA_WABT=1)
+    target_link_libraries(hera PRIVATE wabt::wabt)
+endif()
+
 if(HERA_WAVM)
     target_compile_definitions(hera PRIVATE HERA_WAVM=1)
     target_link_libraries(hera PRIVATE wavm::wavm)

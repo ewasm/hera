@@ -21,6 +21,11 @@ project(hera)
 
 include(ProjectBinaryen)
 
+option(HERA_WABT "Build with wabt" OFF)
+if (HERA_WABT)
+    include(ProjectWabt)
+endif()
+
 option(HERA_WAVM "Build with WAVM" OFF)
 if (HERA_WAVM)
     include(ProjectWAVM)
