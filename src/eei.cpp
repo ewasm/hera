@@ -193,7 +193,7 @@ inline int64_t maxCallGas(int64_t gas) {
       return Literal();
     }
 
-    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
+    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + " arguments)");
   }
 #endif
 
@@ -890,7 +890,7 @@ inline int64_t maxCallGas(int64_t gas) {
       return Literal();
     }
 
-    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
+    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + " arguments)");
   }
 
   void EthereumInterface::takeGas(uint64_t gas)
