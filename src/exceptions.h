@@ -29,6 +29,9 @@ protected:
 class InternalErrorException : public HeraException {
   using HeraException::HeraException;
 };
+class VMTrap : public HeraException {
+  using HeraException::HeraException;
+};
 class OutOfGas : public HeraException {
   using HeraException::HeraException;
 };
