@@ -481,6 +481,10 @@ inline int64_t maxCallGas(int64_t gas) {
       uint32_t dataOffset = arguments[0].geti32();
       uint32_t length = arguments[1].geti32();
       uint32_t numberOfTopics = arguments[2].geti32();
+      uint32_t topic1 = arguments[3].geti32();
+      uint32_t topic2 = arguments[4].geti32();
+      uint32_t topic3 = arguments[5].geti32();
+      uint32_t topic4 = arguments[6].geti32();
 
       HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
 
@@ -488,11 +492,12 @@ inline int64_t maxCallGas(int64_t gas) {
 
       ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
 
+      // FIXME: should this assert that unused topic offsets must be 0?
       array<evmc_uint256be, 4> topics;
-      for (size_t i = 0; i < numberOfTopics; ++i) {
-        uint32_t topicOffset = arguments[3 + i].geti32();
-        topics[i] = loadUint256(topicOffset);
-      }
+      topics[0] = (numberOfTopics >= 1) ? loadUint256(topic1) : evmc_uint256be{};
+      topics[1] = (numberOfTopics >= 2) ? loadUint256(topic2) : evmc_uint256be{};
+      topics[2] = (numberOfTopics >= 3) ? loadUint256(topic3) : evmc_uint256be{};
+      topics[3] = (numberOfTopics == 4) ? loadUint256(topic4) : evmc_uint256be{};
 
       ensureSourceMemoryBounds(dataOffset, length);
       vector<uint8_t> data(length);
