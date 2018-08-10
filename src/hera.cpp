@@ -370,28 +370,28 @@ evmc_result hera_execute(
     vector<uint8_t> state_code(code, code + code_size);
 
     // the actual executable code - this can be modified (metered or evm2wasm compiled)
-    vector<uint8_t> _code(code, code + code_size);
+    vector<uint8_t> run_code(code, code + code_size);
 
     // ensure we can only handle WebAssembly version 1
-    if (!hasWasmPreamble(_code)) {
+    if (!hasWasmPreamble(run_code)) {
       switch (hera->evm_mode) {
       case EVM2WASM_CONTRACT:
-        _code = evm2wasm(context, _code);
-        ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
+        run_code = evm2wasm(context, run_code);
+        ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
       case EVM2WASM_CPP:
       case EVM2WASM_CPP_TRACING:
-        _code = evm2wasm_cpp(_code, hera->evm_mode == EVM2WASM_CPP_TRACING);
-        ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.cpp failed");
+        run_code = evm2wasm_cpp(run_code, hera->evm_mode == EVM2WASM_CPP_TRACING);
+        ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.cpp failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
       case EVM2WASM_JS:
       case EVM2WASM_JS_TRACING:
-        _code = evm2wasm_js(_code, hera->evm_mode == EVM2WASM_JS_TRACING);
-        ensureCondition(_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
+        run_code = evm2wasm_js(run_code, hera->evm_mode == EVM2WASM_JS_TRACING);
+        ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
@@ -407,13 +407,13 @@ evmc_result hera_execute(
     } else if (msg->kind == EVMC_CREATE) {
       // Meter the deployment (constructor) code if it is WebAssembly
       if (hera->metering)
-        _code = sentinel(context, _code);
-      ensureCondition(_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
+        run_code = sentinel(context, run_code);
+      ensureCondition(run_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
     }
 
     heraAssert(hera->wasm_engine == hera_wasm_engine::binaryen, "Unsupported wasm engine.");
 
-    ExecutionResult result = execute(context, _code, state_code, *msg, meterInterfaceGas);
+    ExecutionResult result = execute(context, run_code, state_code, *msg, meterInterfaceGas);
 
     // copy call result
     if (result.returnValue.size() > 0) {
