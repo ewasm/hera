@@ -330,9 +330,14 @@ void execute(
   EthereumInterface interface(context, state_code, msg, result, meterInterfaceGas);
   ModuleInstance instance(module, &interface);
 
-  Name main = Name("main");
-  LiteralList args;
-  instance.callExport(main, args);
+  try {
+    Name main = Name("main");
+    LiteralList args;
+    instance.callExport(main, args);
+  } catch (EndExecution const&) {
+    // This exception is ignored here because we consider it to be a success.
+    // It is only a clutch for POSIX style exit()
+  }
 }
 
 void hera_destroy_result(evmc_result const* result) noexcept

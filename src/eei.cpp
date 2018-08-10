@@ -622,7 +622,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       m_result.isRevert = import->base == Name("revert");
 
-      return Literal();
+      throw EndExecution{};
     }
 
     if (import->base == Name("getReturnDataSize")) {
@@ -892,7 +892,7 @@ inline int64_t maxCallGas(int64_t gas) {
       takeInterfaceGas(GasSchedule::selfdestruct);
       m_context->fn_table->selfdestruct(m_context, &m_msg.destination, &address);
 
-      return Literal();
+      throw EndExecution{};
     }
 
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + " arguments)");
