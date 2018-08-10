@@ -442,6 +442,12 @@ evmc_result hera_execute(
 #if HERA_DEBUGGING
     cerr << "EndExecution exception has leaked through." << endl;
 #endif
+  } catch (VMTrap const& e) {
+    // TODO: use specific error code? EVMC_INVALID_INSTRUCTION or EVMC_TRAP_INSTRUCTION?
+    ret.status_code = EVMC_FAILURE;
+#if HERA_DEBUGGING
+    cerr << e.what() << endl;
+#endif
   } catch (OutOfGas const& e) {
     ret.status_code = EVMC_OUT_OF_GAS;
 #if HERA_DEBUGGING
