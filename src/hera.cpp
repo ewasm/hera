@@ -47,19 +47,19 @@ enum class hera_wasm_engine {
   wabt
 };
 
-enum hera_evm_mode {
-  EVM_REJECT,
-  EVM_FALLBACK,
-  EVM2WASM_CONTRACT,
-  EVM2WASM_CPP,
-  EVM2WASM_CPP_TRACING,
-  EVM2WASM_JS,
-  EVM2WASM_JS_TRACING
+enum class hera_evm_mode {
+  reject,
+  fallback,
+  evm2wasm_contract,
+  evm2wasm_cpp,
+  evm2wasm_cpp_tracing,
+  evm2wasm_js,
+  evm2wasm_js_tracing
 };
 
 struct hera_instance : evmc_instance {
   hera_wasm_engine wasm_engine = hera_wasm_engine::binaryen;
-  hera_evm_mode evm_mode = EVM_REJECT;
+  hera_evm_mode evm_mode = hera_evm_mode::reject;
   bool metering = false;
 
   hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr, nullptr}) {}
@@ -375,30 +375,30 @@ evmc_result hera_execute(
     // ensure we can only handle WebAssembly version 1
     if (!hasWasmPreamble(run_code)) {
       switch (hera->evm_mode) {
-      case EVM2WASM_CONTRACT:
+      case hera_evm_mode::evm2wasm_contract:
         run_code = evm2wasm(context, run_code);
         ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
-      case EVM2WASM_CPP:
-      case EVM2WASM_CPP_TRACING:
-        run_code = evm2wasm_cpp(run_code, hera->evm_mode == EVM2WASM_CPP_TRACING);
+      case hera_evm_mode::evm2wasm_cpp:
+      case hera_evm_mode::evm2wasm_cpp_tracing:
+        run_code = evm2wasm_cpp(run_code, hera->evm_mode == hera_evm_mode::evm2wasm_cpp_tracing);
         ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.cpp failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
-      case EVM2WASM_JS:
-      case EVM2WASM_JS_TRACING:
-        run_code = evm2wasm_js(run_code, hera->evm_mode == EVM2WASM_JS_TRACING);
+      case hera_evm_mode::evm2wasm_js:
+      case hera_evm_mode::evm2wasm_js_tracing:
+        run_code = evm2wasm_js(run_code, hera->evm_mode == hera_evm_mode::evm2wasm_js_tracing);
         ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
-      case EVM_FALLBACK:
+      case hera_evm_mode::fallback:
         ret.status_code = EVMC_REJECTED;
         return ret;
-      case EVM_REJECT:
+      case hera_evm_mode::reject:
         ret.status_code = EVMC_FAILURE;
         return ret;
       default:
@@ -490,37 +490,37 @@ int hera_set_option(
   hera_instance* hera = static_cast<hera_instance*>(instance);
   if (strcmp(name, "fallback") == 0) {
     if (strcmp(value, "true") == 0)
-      hera->evm_mode = EVM_FALLBACK;
+      hera->evm_mode = hera_evm_mode::fallback;
     return 1;
   }
 
   if (strcmp(name, "evm2wasm") == 0) {
     if (strcmp(value, "true") == 0)
-      hera->evm_mode = EVM2WASM_CONTRACT;
+      hera->evm_mode = hera_evm_mode::evm2wasm_contract;
     return 1;
   }
 
   if (strcmp(name, "evm2wasm.cpp") == 0) {
     if (strcmp(value, "true") == 0)
-      hera->evm_mode = EVM2WASM_CPP;
+      hera->evm_mode = hera_evm_mode::evm2wasm_cpp;
     return 1;
   }
 
   if (strcmp(name, "evm2wasm.cpp-trace") == 0) {
     if (strcmp(value, "true") == 0)
-      hera->evm_mode = EVM2WASM_CPP_TRACING;
+      hera->evm_mode = hera_evm_mode::evm2wasm_cpp_tracing;
     return 1;
   }
 
   if (strcmp(name, "evm2wasm.js") == 0) {
     if (strcmp(value, "true") == 0)
-      hera->evm_mode = EVM2WASM_JS;
+      hera->evm_mode = hera_evm_mode::evm2wasm_js;
     return 1;
   }
 
   if (strcmp(name, "evm2wasm.js-trace") == 0) {
     if (strcmp(value, "true") == 0)
-      hera->evm_mode = EVM2WASM_JS_TRACING;
+      hera->evm_mode = hera_evm_mode::evm2wasm_js_tracing;
     return 1;
   }
 
