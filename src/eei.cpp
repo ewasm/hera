@@ -603,13 +603,13 @@ inline int64_t maxCallGas(int64_t gas) {
       return Literal();
     }
 
-    if (import->base == Name("return") || import->base == Name("revert")) {
+    if (import->base == Name("finish") || import->base == Name("revert")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t offset = arguments[0].geti32();
       uint32_t size = arguments[1].geti32();
 
-      HERA_DEBUG << (import->base == Name("revert") ? "revert " : "return ") << hex << offset << " " << size << dec << "\n";
+      HERA_DEBUG << (import->base == Name("revert") ? "revert " : "finish ") << hex << offset << " " << size << dec << "\n";
 
       ensureSourceMemoryBounds(offset, size);
       result.returnValue = vector<uint8_t>(size);
