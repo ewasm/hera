@@ -359,7 +359,7 @@ evmc_result hera_execute(
 
   try {
     heraAssert(rev == EVMC_BYZANTIUM, "Only Byzantium supported.");
-    heraAssert(msg->gas >= 0, "Negative startgas?");
+    heraAssert(msg->gas >= 0, "EVMC supplied negative startgas");
 
     bool meterInterfaceGas = true;
 
@@ -411,6 +411,7 @@ evmc_result hera_execute(
     heraAssert(hera->wasm_engine == hera_wasm_engine::binaryen, "Unsupported wasm engine.");
 
     ExecutionResult result = execute(context, run_code, state_code, *msg, meterInterfaceGas);
+    heraAssert(result.gasLeft >= 0, "Negative gas left after execution.");
 
     // copy call result
     if (result.returnValue.size() > 0) {

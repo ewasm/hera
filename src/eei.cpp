@@ -200,9 +200,11 @@ namespace hera {
     if (import->base == Name("useGas")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint64_t gas = static_cast<uint64_t>(arguments[0].geti64());
+      int64_t gas = arguments[0].geti64();
 
       HERA_DEBUG << "useGas " << gas << "\n";
+
+      ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
 
       takeGas(gas);
 
@@ -214,7 +216,7 @@ namespace hera {
 
       HERA_DEBUG << "getGasLeft\n";
 
-      static_assert(is_same<decltype(m_result.gasLeft), uint64_t>::value, "uint64_t type expected");
+      static_assert(is_same<decltype(m_result.gasLeft), int64_t>::value, "int64_t type expected");
 
       takeInterfaceGas(GasSchedule::base);
 
@@ -485,7 +487,7 @@ namespace hera {
       static_assert(GasSchedule::logTopic <= 65536, "Gas cost of logTopic could lead to overflow");
       static_assert(GasSchedule::logData <= 65536, "Gas cost of logData could lead to overflow");
       // Using uint64_t to force a type issue if the underlying API changes.
-      takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * static_cast<uint64_t>(length)));
+      takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * int64_t(length)));
 
       m_context->fn_table->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
 
@@ -668,6 +670,7 @@ namespace hera {
         dataLength = static_cast<uint32_t>(arguments[3].geti32());
       }
 
+      ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
       heraAssert((m_msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
 
       evmc_message call_message;
@@ -752,7 +755,7 @@ namespace hera {
       if ((kind == EEICallKind::Call) || (kind == EEICallKind::CallCode)) {
         if ((m_msg.depth >= 1024) || !enoughSenderBalanceFor(call_message.value)) {
           // Refund the deducted gas to be forwarded as it hasn't been used.
-          m_result.gasLeft += call_message.gas;
+          m_result.gasLeft += gas;
           return Literal(uint32_t(1));
         }
       }
@@ -825,8 +828,9 @@ namespace hera {
 
       takeInterfaceGas(GasSchedule::create);
 
-      create_message.gas = maxCallGas(m_result.gasLeft);
-      takeInterfaceGas(create_message.gas);
+      int64_t gas = maxCallGas(m_result.gasLeft);
+      create_message.gas = gas;
+      takeInterfaceGas(gas);
 
       m_context->fn_table->call(&create_result, m_context, &create_message);
 
@@ -878,16 +882,18 @@ namespace hera {
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + " arguments)");
   }
 
-  void EthereumInterface::takeGas(uint64_t gas)
+  void EthereumInterface::takeGas(int64_t gas)
   {
+    // NOTE: gas >= 0 is validated by the callers of this method
     ensureCondition(gas <= m_result.gasLeft, OutOfGas, "Out of gas.");
     m_result.gasLeft -= gas;
   }
 
-  void EthereumInterface::takeInterfaceGas(uint64_t gas)
+  void EthereumInterface::takeInterfaceGas(int64_t gas)
   {
     if (!m_meterGas)
       return;
+    heraAssert(gas >= 0, "Trying to take negative gas.");
     takeGas(gas);
   }
 
@@ -1001,7 +1007,7 @@ namespace hera {
   /*
    * Utilities
    */
-  void EthereumInterface::safeChargeDataCopy(uint32_t length, uint32_t baseCost) {
+  void EthereumInterface::safeChargeDataCopy(uint32_t length, unsigned baseCost) {
     takeInterfaceGas(baseCost);
 
     // Since length here is 32 bits divided by 32 (aka shifted right by 5 bits), we
@@ -1012,7 +1018,7 @@ namespace hera {
     // Allow 16 bits here.
     static_assert(GasSchedule::copy <= 65536, "Gas cost of copy could lead to overflow");
     // Using uint64_t to force a type issue if the underlying API changes.
-    takeInterfaceGas(GasSchedule::copy * ((static_cast<uint64_t>(length) + 31) / 32));
+    takeInterfaceGas(GasSchedule::copy * ((int64_t(length) + 31) / 32));
   }
 
   bool EthereumInterface::enoughSenderBalanceFor(evmc_uint256be const& value) const
