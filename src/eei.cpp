@@ -920,6 +920,20 @@ namespace hera {
     }
   }
 
+  void EthereumInterface::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
+  {
+    // FIXME: the source bound check is not needed as the caller already ensures it
+    ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+    ensureCondition(memorySize() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
+
+    if (!length)
+      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec << "\n";
+
+    for (uint32_t i = 0; i < length; ++i) {
+      dst[i] = memoryGet(srcOffset + i);
+    }
+  }
+
   void EthereumInterface::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
   {
     // FIXME: the source bound check is not needed as the caller already ensures it
@@ -945,6 +959,19 @@ namespace hera {
 
     for (uint32_t i = 0; i < length; ++i) {
       memorySet(dstOffset + length - (i + 1), src[i]);
+    }
+  }
+
+  void EthereumInterface::storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length)
+  {
+    ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+    ensureCondition(memorySize() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
+
+    if (!length)
+      HERA_DEBUG << "Zero-length memory store to offset 0x" << hex << dstOffset << dec << "\n";
+
+    for (uint32_t i = 0; i < length; ++i) {
+      memorySet(dstOffset + i, src[i]);
     }
   }
 
