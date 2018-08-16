@@ -82,9 +82,9 @@ private:
   inline uint8_t memoryGet(size_t offset) { return memory.get<uint8_t>(offset); }
 
   void ensureSourceMemoryBounds(uint32_t offset, uint32_t length);
-  void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length);
+  void loadMemoryReverse(uint32_t srcOffset, uint8_t *dst, size_t length);
   void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length);
-  void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length);
+  void storeMemoryReverse(const uint8_t *src, uint32_t dstOffset, uint32_t length);
   void storeMemory(std::vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length);
 
   evmc_uint256be loadUint256(uint32_t srcOffset);

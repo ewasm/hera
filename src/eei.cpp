@@ -920,7 +920,7 @@ inline int64_t maxCallGas(int64_t gas) {
     ensureCondition(memorySize() >= (offset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
   }
 
-  void EthereumInterface::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
+  void EthereumInterface::loadMemoryReverse(uint32_t srcOffset, uint8_t *dst, size_t length)
   {
     // FIXME: the source bound check is not needed as the caller already ensures it
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
@@ -949,7 +949,7 @@ inline int64_t maxCallGas(int64_t gas) {
     }
   }
 
-  void EthereumInterface::storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length)
+  void EthereumInterface::storeMemoryReverse(const uint8_t *src, uint32_t dstOffset, uint32_t length)
   {
     ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
     ensureCondition(memorySize() >= (dstOffset + length), InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
@@ -984,38 +984,38 @@ inline int64_t maxCallGas(int64_t gas) {
   evmc_uint256be EthereumInterface::loadUint256(uint32_t srcOffset)
   {
     evmc_uint256be dst = {};
-    loadMemory(srcOffset, dst.bytes, 32);
+    loadMemoryReverse(srcOffset, dst.bytes, 32);
     return dst;
   }
 
   void EthereumInterface::storeUint256(evmc_uint256be const& src, uint32_t dstOffset)
   {
-    storeMemory(src.bytes, dstOffset, 32);
+    storeMemoryReverse(src.bytes, dstOffset, 32);
   }
 
   evmc_address EthereumInterface::loadUint160(uint32_t srcOffset)
   {
     evmc_address dst = {};
-    loadMemory(srcOffset, dst.bytes, 20);
+    loadMemoryReverse(srcOffset, dst.bytes, 20);
     return dst;
   }
 
   void EthereumInterface::storeUint160(evmc_address const& src, uint32_t dstOffset)
   {
-    storeMemory(src.bytes, dstOffset, 20);
+    storeMemoryReverse(src.bytes, dstOffset, 20);
   }
 
   evmc_uint256be EthereumInterface::loadUint128(uint32_t srcOffset)
   {
     evmc_uint256be dst = {};
-    loadMemory(srcOffset, dst.bytes + 16, 16);
+    loadMemoryReverse(srcOffset, dst.bytes + 16, 16);
     return dst;
   }
 
   void EthereumInterface::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
   {
     heraAssert(!exceedsUint128(src), "Account balance (or transaction value) exceeds 128 bits.");
-    storeMemory(src.bytes + 16, dstOffset, 16);
+    storeMemoryReverse(src.bytes + 16, dstOffset, 16);
   }
 
   /*
