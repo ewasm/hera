@@ -1014,8 +1014,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
   void EthereumInterface::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
   {
-    // TODO: use a specific error code here?
-    ensureCondition(!exceedsUint128(src), OutOfGas, "Value exceeds 128 bits.");
+    ensureCondition(!exceedsUint128(src), ArgumentOutOfRange, "Value exceeds 128 bits.");
     storeMemory(src.bytes + 16, dstOffset, 16);
   }
 
@@ -1031,8 +1030,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
   unsigned __int128 EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
   {
-    // TODO: use a specific error code here?
-    ensureCondition(!exceedsUint128(value), OutOfGas, "Value exceeds 128 bits.");
+    ensureCondition(!exceedsUint128(value), ArgumentOutOfRange, "Value exceeds 128 bits.");
     unsigned __int128 ret = 0;
     for (unsigned i = 16; i < 32; i++) {
       ret <<= 8;

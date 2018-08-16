@@ -458,6 +458,12 @@ evmc_result hera_execute(
 #if HERA_DEBUGGING
     cerr << e.what() << endl;
 #endif
+  } catch (ArgumentOutOfRange const& e) {
+    // TODO: use specific error code here?
+    ret.status_code = EVMC_FAILURE;
+#if HERA_DEBUGGING
+    cerr << e.what() << endl;
+#endif
   } catch (InvalidMemoryAccess const& e) {
     ret.status_code = EVMC_INVALID_MEMORY_ACCESS;
 #if HERA_DEBUGGING
