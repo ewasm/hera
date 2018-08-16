@@ -4,6 +4,7 @@ include(cmake/cable/bootstrap.cmake)
 include(CableBuildInfo)
 include(CableCompilerSettings)
 include(CableToolchains)
+include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
 cable_configure_toolchain(DEFAULT cxx11-pic)
@@ -46,3 +47,24 @@ add_subdirectory(src)
 
 
 install(DIRECTORY include/hera DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+write_basic_package_version_file(heraConfigVersion.cmake COMPATIBILITY SameMajorVersion)
+
+configure_package_config_file(
+    cmake/Config.cmake.in
+    heraConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
+)
+
+install(
+    EXPORT heraTargets
+    NAMESPACE hera::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
+)
+
+install(
+    FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/heraConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/heraConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
+)
