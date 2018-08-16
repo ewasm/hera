@@ -302,7 +302,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
 
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
+      ensureCondition(ffs(GasSchedule::copy) + (ffsl(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
       ensureCondition(
         numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
         OutOfGas,
@@ -351,7 +351,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
+      ensureCondition(ffs(GasSchedule::copy) + (ffsl(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
       ensureCondition(
         numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
         OutOfGas,
@@ -383,7 +383,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
-      ensureCondition(ffs(GasSchedule::copy) + (ffs(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
+      ensureCondition(ffs(GasSchedule::copy) + (ffsl(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
       ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGas, "Gas charge overflow");
       takeInterfaceGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
 
@@ -503,7 +503,7 @@ inline int64_t maxCallGas(int64_t gas) {
       vector<uint8_t> data(length);
       loadMemory(dataOffset, data, length);
 
-      ensureCondition(ffs(length) + ffs(GasSchedule::logData) <= 64, OutOfGas, "Gas charge overflow");
+      ensureCondition(ffsl(length) + ffs(GasSchedule::logData) <= 64, OutOfGas, "Gas charge overflow");
       ensureCondition(
         numeric_limits<uint64_t>::max() - (GasSchedule::log + GasSchedule::logTopic * numberOfTopics) >= static_cast<uint64_t>(length) * GasSchedule::logData,
         OutOfGas,
