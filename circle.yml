@@ -14,7 +14,8 @@ defaults:
         echo Generator: $GENERATOR
         echo CMake options: $CMAKE_OPTIONS
         $CXX --version
-        $CXX --version > compiler.version
+        $CXX --version >> toolchain
+        echo $GENERATOR >> toolchain
 
   install-system-deps: &install-system-deps
     run:
@@ -46,7 +47,7 @@ defaults:
   save-deps-cache: &save-deps-cache
     cache-save:
       name: "Save dependencies cache"
-      key: &deps-cache-key deps-4-{{arch}}-{{checksum "compiler.version"}}-{{checksum "cmake/ProjectBinaryen.cmake"}}
+      key: &deps-cache-key deps-4-{{arch}}-{{checksum "toolchain"}}-{{checksum "cmake/ProjectBinaryen.cmake"}}
       paths:
         - ~/build/deps
 
@@ -57,7 +58,7 @@ defaults:
 
   save-eth-cache: &save-eth-cache
     save_cache:
-      key: &eth-cache-key cpp-prebuilt-cache-{{arch}}-{{checksum "compiler.version"}}-v1.4.0rc1
+      key: &eth-cache-key cpp-prebuilt-cache-{{arch}}-{{checksum "toolchain"}}-v1.4.0rc1
       paths:
         - ~/build
         - ~/.hunter
@@ -150,6 +151,12 @@ defaults:
         testeth --version
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium
 
+  upload-coverage-data: &upload-coverage-data
+    run:
+      name: "Upload coverage data"
+      command: |
+        codecov --required --gcov-root ~/build --gcov-exec gcov-6
+
 
 version: 2
 jobs:
@@ -223,14 +230,14 @@ jobs:
       - *fetch-tests
       - *test
 
-  linux-clang-shared-debug:
+  linux-gcc-shared-coverage:
     environment:
       - BUILD_TYPE: Debug
-      - CXX: clang++
-      - CC:  clang
+      - CXX: g++
+      - CC:  gcc
       - GENERATOR: Ninja
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON
+      - CMAKE_OPTIONS: -DCOVERAGE=ON -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON
     docker:
       - image: ethereum/cpp-build-env
     steps:
@@ -246,6 +253,7 @@ jobs:
       - *store-hera
       - *fetch-tests
       - *test
+      - *upload-coverage-data
 
   linux-gcc-debug:
     environment:
@@ -272,7 +280,7 @@ workflows:
   hera:
     jobs:
       - linux-clang-shared-release
-      - linux-clang-shared-debug
+      - linux-gcc-shared-coverage
       - linux-gcc-debug
       - ewasm-tests
       - evm2wasm-tests

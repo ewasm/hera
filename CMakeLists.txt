@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+include(cmake/cable/bootstrap.cmake)
+include(CableToolchains)
+include(CableCompilerSettings)
 
-set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/toolchains/cxx11-pic.cmake CACHE FILEPATH "CMake toolchain file")
+cable_configure_toolchain(DEFAULT cxx11-pic)
 
 set(CMAKE_DEBUG_POSTFIX "")
 set(HUNTER_CONFIGURATION_TYPES Release CACHE STRING "Build type of the 3rd party packages")
-
-add_compile_options(-Wall -Werror -Wextra -Wconversion -Wno-sign-conversion -Wno-unknown-pragmas)
 
 if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/evm2wasm/cmake/HunterGate.cmake)
     include(evm2wasm/cmake/HunterGate.cmake)
@@ -18,6 +18,10 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/evm2wasm/cmake/HunterGate.cmake)
 endif()
 
 project(hera)
+
+cable_configure_compiler()
+# TODO: fix the warnings instead
+add_compile_options(-Wno-pedantic -Wno-sign-conversion)
 
 include(ProjectBinaryen)
 
