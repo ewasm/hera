@@ -4,6 +4,7 @@ include(cmake/cable/bootstrap.cmake)
 include(CableBuildInfo)
 include(CableCompilerSettings)
 include(CableToolchains)
+include(GNUInstallDirs)
 
 cable_configure_toolchain(DEFAULT cxx11-pic)
 
@@ -42,3 +43,6 @@ endif()
 add_subdirectory(evmc)
 add_subdirectory(evm2wasm)
 add_subdirectory(src)
+
+
+install(DIRECTORY include/hera DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
