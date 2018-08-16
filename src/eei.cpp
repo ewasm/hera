@@ -1009,13 +1009,13 @@ namespace hera {
   evmc_address EthereumInterface::loadAddress(uint32_t srcOffset)
   {
     evmc_address dst = {};
-    loadMemoryReverse(srcOffset, dst.bytes, 20);
+    loadMemory(srcOffset, dst.bytes, 20);
     return dst;
   }
 
   void EthereumInterface::storeAddress(evmc_address const& src, uint32_t dstOffset)
   {
-    storeMemoryReverse(src.bytes, dstOffset, 20);
+    storeMemory(src.bytes, dstOffset, 20);
   }
 
   evmc_uint256be EthereumInterface::loadUint128(uint32_t srcOffset)
