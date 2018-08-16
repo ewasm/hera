@@ -1041,15 +1041,6 @@ inline int64_t maxCallGas(int64_t gas) {
     return ret;
   }
 
-  bool EthereumInterface::exceedsUint64(evmc_uint256be const& value)
-  {
-    for (unsigned i = 0; i < 24; i++) {
-      if (value.bytes[i])
-        return true;
-    }
-    return false;
-  }
-
   bool EthereumInterface::exceedsUint128(evmc_uint256be const& value)
   {
     for (unsigned i = 0; i < 16; i++) {
