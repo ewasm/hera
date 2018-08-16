@@ -644,7 +644,7 @@ inline int64_t maxCallGas(int64_t gas) {
 
       HERA_DEBUG << "returnDataCopy " << hex << dataOffset << " " << offset << " " << size << dec << "\n";
 
-      takeInterfaceGas(GasSchedule::verylow);
+      takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((size + 31) / 32));
       storeMemory(m_lastReturnData, offset, dataOffset, size);
 
       return Literal();
