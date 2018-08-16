@@ -19,8 +19,8 @@
 #include <wasm.h>
 #include <wasm-binary.h>
 #include <evmc/evmc.h>
+
 #include "shell-interface.h"
-#include "hera.h"
 #include "exceptions.h"
 
 using namespace wasm;
