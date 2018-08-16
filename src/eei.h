@@ -89,8 +89,8 @@ private:
 
   evmc_uint256be loadUint256(uint32_t srcOffset);
   void storeUint256(evmc_uint256be const& src, uint32_t dstOffset);
-  evmc_address loadUint160(uint32_t srcOffset);
-  void storeUint160(evmc_address const& src, uint32_t dstOffset);
+  evmc_address loadAddress(uint32_t srcOffset);
+  void storeAddress(evmc_address const& src, uint32_t dstOffset);
   evmc_uint256be loadUint128(uint32_t srcOffset);
   void storeUint128(evmc_uint256be const& src, uint32_t dstOffset);
 

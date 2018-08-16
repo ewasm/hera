@@ -230,7 +230,7 @@ namespace hera {
 
       HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
 
-      storeUint160(m_msg.destination, resultOffset);
+      storeAddress(m_msg.destination, resultOffset);
 
       takeInterfaceGas(GasSchedule::base);
 
@@ -245,7 +245,7 @@ namespace hera {
 
       HERA_DEBUG << "getExternalBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
 
-      evmc_address address = loadUint160(addressOffset);
+      evmc_address address = loadAddress(addressOffset);
       evmc_uint256be result;
 
       takeInterfaceGas(GasSchedule::balance);
@@ -311,7 +311,7 @@ namespace hera {
       HERA_DEBUG << "getCaller " << hex << resultOffset << dec << "\n";
 
       takeInterfaceGas(GasSchedule::base);
-      storeUint160(m_msg.sender, resultOffset);
+      storeAddress(m_msg.sender, resultOffset);
 
       return Literal();
     }
@@ -367,7 +367,7 @@ namespace hera {
 
       safeChargeDataCopy(length, GasSchedule::extcode);
 
-      evmc_address address = loadUint160(addressOffset);
+      evmc_address address = loadAddress(addressOffset);
       // FIXME: optimise this so no vector needs to be created
       vector<uint8_t> codeBuffer(length);
       size_t numCopied = m_context->fn_table->copy_code(m_context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
@@ -385,7 +385,7 @@ namespace hera {
 
       HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
 
-      evmc_address address = loadUint160(addressOffset);
+      evmc_address address = loadAddress(addressOffset);
       takeInterfaceGas(GasSchedule::extcode);
       size_t code_size = m_context->fn_table->get_code_size(m_context, &address);
 
@@ -403,7 +403,7 @@ namespace hera {
 
       takeInterfaceGas(GasSchedule::base);
       m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeUint160(tx_context.block_coinbase, resultOffset);
+      storeAddress(tx_context.block_coinbase, resultOffset);
 
       return Literal();
     }
@@ -535,7 +535,7 @@ namespace hera {
 
       takeInterfaceGas(GasSchedule::base);
       m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeUint160(tx_context.tx_origin, resultOffset);
+      storeAddress(tx_context.tx_origin, resultOffset);
 
       return Literal();
     }
@@ -674,7 +674,7 @@ namespace hera {
       heraAssert((m_msg.flags & ~uint32_t(EVMC_STATIC)) == 0, "Unknown flags not supported.");
 
       evmc_message call_message;
-      call_message.destination = loadUint160(addressOffset);
+      call_message.destination = loadAddress(addressOffset);
       call_message.flags = m_msg.flags;
       call_message.code_hash = {};
       call_message.depth = m_msg.depth + 1;
@@ -839,7 +839,7 @@ namespace hera {
       m_result.gasLeft += create_result.gas_left;
 
       if (create_result.status_code == EVMC_SUCCESS) {
-        storeUint160(create_result.create_address, resultOffset);
+        storeAddress(create_result.create_address, resultOffset);
         m_lastReturnData.clear();
       } else if (create_result.output_data) {
         m_lastReturnData.assign(create_result.output_data, create_result.output_data + create_result.output_size);
@@ -869,7 +869,7 @@ namespace hera {
 
       ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "selfDestruct");
 
-      evmc_address address = loadUint160(addressOffset);
+      evmc_address address = loadAddress(addressOffset);
 
       if (!m_context->fn_table->account_exists(m_context, &address))
         takeInterfaceGas(GasSchedule::callNewAccount);
@@ -979,14 +979,14 @@ namespace hera {
     storeMemoryReverse(src.bytes, dstOffset, 32);
   }
 
-  evmc_address EthereumInterface::loadUint160(uint32_t srcOffset)
+  evmc_address EthereumInterface::loadAddress(uint32_t srcOffset)
   {
     evmc_address dst = {};
     loadMemoryReverse(srcOffset, dst.bytes, 20);
     return dst;
   }
 
-  void EthereumInterface::storeUint160(evmc_address const& src, uint32_t dstOffset)
+  void EthereumInterface::storeAddress(evmc_address const& src, uint32_t dstOffset)
   {
     storeMemoryReverse(src.bytes, dstOffset, 20);
   }
