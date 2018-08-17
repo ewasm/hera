@@ -72,7 +72,7 @@ All of the above must be implemented outside of Hera.
 
 ## Author(s)
 
-Alex Beregszaszi
+Alex Beregszaszi, Jake Lang
 
 ## License
 
