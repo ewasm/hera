@@ -104,7 +104,7 @@ namespace hera {
 
       uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      evmc_uint256be path = loadUint256(pathOffset);
+      evmc_uint256be path = loadBytes32(pathOffset);
 
       bool useHex = import->base == Name("printStorageHex");
 
@@ -463,10 +463,10 @@ namespace hera {
 
       // FIXME: should this assert that unused topic offsets must be 0?
       array<evmc_uint256be, 4> topics;
-      topics[0] = (numberOfTopics >= 1) ? loadUint256(topic1) : evmc_uint256be{};
-      topics[1] = (numberOfTopics >= 2) ? loadUint256(topic2) : evmc_uint256be{};
-      topics[2] = (numberOfTopics >= 3) ? loadUint256(topic3) : evmc_uint256be{};
-      topics[3] = (numberOfTopics == 4) ? loadUint256(topic4) : evmc_uint256be{};
+      topics[0] = (numberOfTopics >= 1) ? loadBytes32(topic1) : evmc_uint256be{};
+      topics[1] = (numberOfTopics >= 2) ? loadBytes32(topic2) : evmc_uint256be{};
+      topics[2] = (numberOfTopics >= 3) ? loadBytes32(topic3) : evmc_uint256be{};
+      topics[3] = (numberOfTopics == 4) ? loadBytes32(topic4) : evmc_uint256be{};
 
       ensureSourceMemoryBounds(dataOffset, length);
       vector<uint8_t> data(length);
@@ -539,8 +539,8 @@ namespace hera {
 
       ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
 
-      evmc_uint256be path = loadUint256(pathOffset);
-      evmc_uint256be value = loadUint256(valueOffset);
+      evmc_uint256be path = loadBytes32(pathOffset);
+      evmc_uint256be value = loadBytes32(valueOffset);
       evmc_uint256be current;
 
       m_context->fn_table->get_storage(&current, m_context, &m_msg.destination, &path);
@@ -565,13 +565,13 @@ namespace hera {
 
       HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
 
-      evmc_uint256be path = loadUint256(pathOffset);
+      evmc_uint256be path = loadBytes32(pathOffset);
       evmc_uint256be result;
 
       takeInterfaceGas(GasSchedule::storageLoad);
       m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
 
-      storeUint256(result, resultOffset);
+      storeBytes32(result, resultOffset);
 
       return Literal();
     }
@@ -1023,6 +1023,18 @@ namespace hera {
   /*
    * Memory Op Wrapper Functions
    */
+
+  evmc_uint256be EthereumInterface::loadBytes32(uint32_t srcOffset)
+  {
+    evmc_uint256be dst = {};
+    loadMemory(srcOffset, dst.bytes, 32);
+    return dst;
+  }
+
+  void EthereumInterface::storeBytes32(evmc_uint256be const& src, uint32_t dstOffset)
+  {
+    storeMemory(src.bytes, dstOffset, 32);
+  }
 
   evmc_uint256be EthereumInterface::loadUint256(uint32_t srcOffset)
   {
