@@ -37,6 +37,8 @@
 #include "eei.h"
 #include "exceptions.h"
 
+#include <hera/buildinfo.h>
+
 using namespace std;
 using namespace wasm;
 using namespace HeraVM;
@@ -62,7 +64,7 @@ struct hera_instance : evmc_instance {
   hera_evm_mode evm_mode = hera_evm_mode::reject;
   bool metering = false;
 
-  hera_instance() : evmc_instance({EVMC_ABI_VERSION, "hera", "0.0.0", nullptr, nullptr, nullptr, nullptr}) {}
+  hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr}) {}
 };
 
 namespace {

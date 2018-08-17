@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 
 include(cmake/cable/bootstrap.cmake)
-include(CableToolchains)
+include(CableBuildInfo)
 include(CableCompilerSettings)
+include(CableToolchains)
 
 cable_configure_toolchain(DEFAULT cxx11-pic)
 
@@ -18,12 +19,15 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/evm2wasm/cmake/HunterGate.cmake)
 endif()
 
 project(hera)
+set(PROJECT_VERSION 0.1.0)
 
 cable_configure_compiler()
 # TODO: fix the warnings instead
 add_compile_options(-Wno-pedantic -Wno-sign-conversion)
 
 include(ProjectBinaryen)
+
+cable_add_buildinfo_library(PROJECT_NAME hera)
 
 option(HERA_WABT "Build with wabt" OFF)
 if (HERA_WABT)
