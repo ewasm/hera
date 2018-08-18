@@ -103,7 +103,10 @@ private:
   /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
   static bool exceedsUint128(evmc_uint256be const& value);
 
-  /* Checks if 256 bit value is all zeroes */
+  /* Checks if a 128 bit value is all zeroes */
+  static bool isZeroUint128(evmc_uint256be const& value);
+
+  /* Checks if a 256 bit value is all zeroes */
   static bool isZeroUint256(evmc_uint256be const& value);
 
   evmc_context* m_context = nullptr;
