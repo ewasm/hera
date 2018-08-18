@@ -293,13 +293,7 @@ namespace hera {
 
       HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
 
-      ensureCondition(ffs(GasSchedule::copy) + (ffsl(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
-      ensureCondition(
-        numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
-        OutOfGas,
-        "Gas charge overflow"
-      );
-      takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+      safeChargeDataCopy(length, GasSchedule::verylow);
 
       vector<uint8_t> input(m_msg.input_data, m_msg.input_data + m_msg.input_size);
       storeMemory(input, dataOffset, resultOffset, length);
@@ -342,13 +336,8 @@ namespace hera {
 
       HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
-      ensureCondition(ffs(GasSchedule::copy) + (ffsl(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
-      ensureCondition(
-        numeric_limits<uint64_t>::max() - GasSchedule::verylow >= GasSchedule::copy * ((uint64_t(length) + 31) / 32),
-        OutOfGas,
-        "Gas charge overflow"
-      );
-      takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+      safeChargeDataCopy(length, GasSchedule::verylow);
+
       storeMemory(m_code, codeOffset, resultOffset, length);
 
       return Literal();
@@ -374,9 +363,7 @@ namespace hera {
 
       HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
-      ensureCondition(ffs(GasSchedule::copy) + (ffsl(length) - 5) <= 64, OutOfGas, "Gas charge overflow");
-      ensureCondition(numeric_limits<uint64_t>::max() - GasSchedule::extcode >= GasSchedule::copy * ((uint64_t(length) + 31) / 32), OutOfGas, "Gas charge overflow");
-      takeInterfaceGas(GasSchedule::extcode + GasSchedule::copy * ((uint64_t(length) + 31) / 32));
+      safeChargeDataCopy(length, GasSchedule::extcode);
 
       evmc_address address = loadUint160(addressOffset);
       // FIXME: optimise this so no vector needs to be created
@@ -494,13 +481,12 @@ namespace hera {
       vector<uint8_t> data(length);
       loadMemory(dataOffset, data, length);
 
-      ensureCondition(ffsl(length) + ffs(GasSchedule::logData) <= 64, OutOfGas, "Gas charge overflow");
-      ensureCondition(
-        numeric_limits<uint64_t>::max() - (GasSchedule::log + GasSchedule::logTopic * numberOfTopics) >= static_cast<uint64_t>(length) * GasSchedule::logData,
-        OutOfGas,
-        "Gas charge overflow"
-      );
-      takeInterfaceGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
+      static_assert(GasSchedule::log <= 65536, "Gas cost of log could lead to overflow");
+      static_assert(GasSchedule::logTopic <= 65536, "Gas cost of logTopic could lead to overflow");
+      static_assert(GasSchedule::logData <= 65536, "Gas cost of logData could lead to overflow");
+      // Using uint64_t to force a type issue if the underlying API changes.
+      takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * static_cast<uint64_t>(length)));
+
       m_context->fn_table->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
 
       return Literal();
@@ -634,8 +620,9 @@ namespace hera {
       uint32_t size = arguments[2].geti32();
 
       HERA_DEBUG << "returnDataCopy " << hex << dataOffset << " " << offset << " " << size << dec << "\n";
+      
+      safeChargeDataCopy(size, GasSchedule::verylow);
 
-      takeInterfaceGas(GasSchedule::verylow + GasSchedule::copy * ((size + 31) / 32));
       storeMemory(m_lastReturnData, offset, dataOffset, size);
 
       return Literal();
@@ -1012,6 +999,20 @@ namespace hera {
   /*
    * Utilities
    */
+  void EthereumInterface::safeChargeDataCopy(uint32_t length, uint32_t baseCost) {
+    takeInterfaceGas(baseCost);
+
+    // Since length here is 32 bits divided by 32 (aka shifted right by 5 bits), we
+    // can assume the upper bound for values is 27 bits.
+    //
+    // Since `gas` is 63 bits wide, that means we have an extra 36 bits of headroom.
+    //
+    // Allow 16 bits here.
+    static_assert(GasSchedule::copy <= 65536, "Gas cost of copy could lead to overflow");
+    // Using uint64_t to force a type issue if the underlying API changes.
+    takeInterfaceGas(GasSchedule::copy * ((static_cast<uint64_t>(length) + 31) / 32));
+  }
+
   bool EthereumInterface::enoughSenderBalanceFor(evmc_uint256be const& value) const
   {
     evmc_uint256be balance;

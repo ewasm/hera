@@ -96,6 +96,9 @@ private:
 
   inline int64_t maxCallGas(int64_t gas) { return gas - (gas / 64); }
 
+  /* Checks for overflow and safely charges gas for variable length data copies */
+  void safeChargeDataCopy(uint32_t length, uint32_t baseCost);
+
   bool enoughSenderBalanceFor(evmc_uint256be const& value) const;
 
   static unsigned __int128 safeLoadUint128(evmc_uint256be const& value);
