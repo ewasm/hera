@@ -38,7 +38,7 @@ struct NullStream {
 
 #endif
 
-namespace HeraVM {
+namespace hera {
 
 namespace {
 

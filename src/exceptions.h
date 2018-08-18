@@ -16,7 +16,7 @@
 
 #pragma once
 
-namespace HeraVM {
+namespace hera {
 
 class HeraException : public std::exception {
 public:
@@ -63,11 +63,11 @@ protected:
 };
 
 #define heraAssert(condition, msg) { \
-  if (!(condition)) throw HeraVM::InternalErrorException{msg}; \
+  if (!(condition)) throw hera::InternalErrorException{msg}; \
 }
 
 #define ensureCondition(condition, ex, msg) { \
-  if (!(condition)) throw HeraVM::ex{msg}; \
+  if (!(condition)) throw hera::ex{msg}; \
 }
 
 }

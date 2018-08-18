@@ -25,7 +25,7 @@
 
 using namespace wasm;
 
-namespace HeraVM {
+namespace hera {
 
 struct ExecutionResult {
   uint64_t gasLeft = 0;
