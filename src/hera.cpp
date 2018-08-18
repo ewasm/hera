@@ -41,7 +41,7 @@
 
 using namespace std;
 using namespace wasm;
-using namespace HeraVM;
+using namespace hera;
 
 enum class hera_wasm_engine {
   binaryen,

@@ -28,6 +28,16 @@ using namespace wasm;
 
 #define HERA_DEBUG cerr
 
+namespace {
+string toHex(evmc_uint256be const& value) {
+  ostringstream os;
+  os << hex;
+  for (auto b: value.bytes)
+    os << setw(2) << setfill('0') << unsigned(b);
+  return "0x" + os.str();
+}
+}
+
 #else
 
 struct NullStream {
@@ -38,26 +48,7 @@ struct NullStream {
 
 #endif
 
-namespace HeraVM {
-
-namespace {
-
-#if HERA_DEBUGGING
-string toHex(evmc_uint256be const& value) {
-  ostringstream os;
-  os << hex;
-  for (auto b: value.bytes)
-    os << setw(2) << setfill('0') << unsigned(b);
-  return "0x" + os.str();
-}
-#endif
-
-inline int64_t maxCallGas(int64_t gas) {
-  return gas - (gas / 64);
-}
-
-}
-
+namespace hera {
   void EthereumInterface::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
