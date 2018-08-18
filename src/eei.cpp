@@ -481,13 +481,12 @@ namespace hera {
       vector<uint8_t> data(length);
       loadMemory(dataOffset, data, length);
 
-      ensureCondition(ffsl(length) + ffs(GasSchedule::logData) <= 64, OutOfGas, "Gas charge overflow");
-      ensureCondition(
-        numeric_limits<uint64_t>::max() - (GasSchedule::log + GasSchedule::logTopic * numberOfTopics) >= static_cast<uint64_t>(length) * GasSchedule::logData,
-        OutOfGas,
-        "Gas charge overflow"
-      );
-      takeInterfaceGas(GasSchedule::log + (length * GasSchedule::logData) + (GasSchedule::logTopic * numberOfTopics));
+      static_assert(GasSchedule::log <= 65536, "Gas cost of log could lead to overflow");
+      static_assert(GasSchedule::logTopic <= 65536, "Gas cost of logTopic could lead to overflow");
+      static_assert(GasSchedule::logData <= 65536, "Gas cost of logData could lead to overflow");
+      // Using uint64_t to force a type issue if the underlying API changes.
+      takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * static_cast<uint64_t>(length)));
+
       m_context->fn_table->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
 
       return Literal();
