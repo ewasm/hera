@@ -94,6 +94,8 @@ private:
   evmc_uint256be loadUint128(uint32_t srcOffset);
   void storeUint128(evmc_uint256be const& src, uint32_t dstOffset);
 
+  inline int64_t maxCallGas(int64_t gas) { return gas - (gas / 64); }
+
   bool enoughSenderBalanceFor(evmc_uint256be const& value) const;
 
   static unsigned __int128 safeLoadUint128(evmc_uint256be const& value);

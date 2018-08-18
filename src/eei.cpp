@@ -52,10 +52,6 @@ string toHex(evmc_uint256be const& value) {
 }
 #endif
 
-inline int64_t maxCallGas(int64_t gas) {
-  return gas - (gas / 64);
-}
-
 }
 
   void EthereumInterface::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
