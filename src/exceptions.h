@@ -32,6 +32,9 @@ class InternalErrorException : public HeraException {
 class VMTrap : public HeraException {
   using HeraException::HeraException;
 };
+class ArgumentOutOfRange : public HeraException {
+  using HeraException::HeraException;
+};
 class OutOfGas : public HeraException {
   using HeraException::HeraException;
 };
