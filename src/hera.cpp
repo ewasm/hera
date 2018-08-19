@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <hera/hera.h>
+
 #include <vector>
 #include <stdexcept>
 #include <cstdlib>
@@ -33,7 +35,6 @@
 
 #include <evm2wasm.h>
 
-#include "hera.h"
 #include "eei.h"
 #include "exceptions.h"
 

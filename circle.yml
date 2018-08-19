@@ -58,7 +58,7 @@ defaults:
 
   save-eth-cache: &save-eth-cache
     save_cache:
-      key: &eth-cache-key cpp-prebuilt-cache-{{arch}}-{{checksum "toolchain"}}-v1.4.0rc1
+      key: &eth-cache-key cpp-prebuilt-cache-{{arch}}-{{checksum "toolchain"}}-v1.4.0rc2
       paths:
         - ~/build
         - ~/.hunter
@@ -72,7 +72,7 @@ defaults:
       name: "Checkout cpp-ethereum repo"
       working_directory: ~/
       command: |
-        git clone https://github.com/ethereum/cpp-ethereum --branch v1.4.0rc1 --single-branch --recurse-submodules --depth 1
+        git clone https://github.com/ethereum/cpp-ethereum --branch v1.4.0rc2 --single-branch --recurse-submodules --depth 1
 
   link-hera: &link-hera
     run:
@@ -135,7 +135,7 @@ defaults:
     run:
       name: "Install cpp-ethereum"
       command: |
-        URL=https://github.com/ethereum/cpp-ethereum/releases/download/v1.4.0rc1/aleth-1.4.0rc1-linux-x86_64.tar.gz
+        URL=https://github.com/ethereum/cpp-ethereum/releases/download/v1.4.0rc2/aleth-1.4.0rc2-linux-x86_64.tar.gz
         curl -L $URL | sudo tar xz -C /usr/local
 
   fetch-tests: &fetch-tests

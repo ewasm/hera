@@ -4,6 +4,8 @@ include(cmake/cable/bootstrap.cmake)
 include(CableBuildInfo)
 include(CableCompilerSettings)
 include(CableToolchains)
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
 
 cable_configure_toolchain(DEFAULT cxx11-pic)
 
@@ -42,3 +44,30 @@ endif()
 add_subdirectory(evmc)
 add_subdirectory(evm2wasm)
 add_subdirectory(src)
+
+
+install(DIRECTORY include/hera DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+write_basic_package_version_file(heraConfigVersion.cmake COMPATIBILITY SameMajorVersion)
+
+configure_package_config_file(
+    cmake/Config.cmake.in
+    heraConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
+)
+
+if(BUILD_SHARED_LIBS)
+    # TODO: To enable for static libs, hera-buildinfo library must be modified in Cable.
+    install(
+        EXPORT heraTargets
+        NAMESPACE hera::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
+    )
+endif()
+
+install(
+    FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/heraConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/heraConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
+)
