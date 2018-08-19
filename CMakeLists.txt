@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 include(cmake/cable/bootstrap.cmake)
 include(CableBuildInfo)
+include(CableBuildType)
 include(CableCompilerSettings)
 include(CableToolchains)
 include(CMakePackageConfigHelpers)
@@ -22,6 +23,8 @@ endif()
 
 project(hera)
 set(PROJECT_VERSION 0.1.0)
+
+cable_set_build_type(DEFAULT RelWithDebInfo CONFIGURATION_TYPES Debug;Release;RelWithDebInfo)
 
 cable_configure_compiler()
 # TODO: fix the warnings instead
