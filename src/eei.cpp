@@ -769,6 +769,7 @@ namespace hera {
         call_result.release(&call_result);
 
       /* Return unspent gas */
+      heraAssert(call_result.gas_left >= 0, "EVMC returned negative gas left");
       m_result.gasLeft += call_result.gas_left;
 
       switch (call_result.status_code) {
@@ -830,6 +831,7 @@ namespace hera {
       m_context->fn_table->call(&create_result, m_context, &create_message);
 
       /* Return unspent gas */
+      heraAssert(create_result.gas_left >= 0, "EVMC returned negative gas left");
       m_result.gasLeft += create_result.gas_left;
 
       if (create_result.status_code == EVMC_SUCCESS) {
