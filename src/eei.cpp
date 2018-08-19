@@ -235,13 +235,13 @@ namespace hera {
       return Literal();
     }
 
-    if (import->base == Name("getBalance")) {
+    if (import->base == Name("getExternalBalance")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
 
-      HERA_DEBUG << "getBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
+      HERA_DEBUG << "getExternalBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
 
       evmc_address address = loadUint160(addressOffset);
       evmc_uint256be result;
