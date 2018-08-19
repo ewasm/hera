@@ -62,7 +62,7 @@ namespace hera {
     if (import->base == Name("print32")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t value = arguments[0].geti32();
+      uint32_t value = static_cast<uint32_t>(arguments[0].geti32());
 
       cerr << "DEBUG print32: " << value << " " << hex << "0x" << value << dec << endl;
 
@@ -72,7 +72,7 @@ namespace hera {
     if (import->base == Name("print64")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint64_t value = arguments[0].geti64();
+      uint64_t value = static_cast<uint64_t>(arguments[0].geti64());
 
       cerr << "DEBUG print64: " << value << " " << hex << "0x" << value << dec << endl;
 
@@ -82,8 +82,8 @@ namespace hera {
     if (import->base == Name("printMem") || import->base == Name("printMemHex")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t offset = arguments[0].geti32();
-      uint32_t length = arguments[1].geti32();
+      uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t length = static_cast<uint32_t>(arguments[1].geti32());
 
       heraAssert((offset + length) > offset, "Overflow.");
       heraAssert(memorySize() >= (offset + length), "Out of memory bounds.");
@@ -113,7 +113,7 @@ namespace hera {
     if (import->base == Name("printStorage") || import->base == Name("printStorageHex")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t pathOffset = arguments[0].geti32();
+      uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       evmc_uint256be path = loadUint256(pathOffset);
 
@@ -200,7 +200,7 @@ namespace hera {
     if (import->base == Name("useGas")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint64_t gas = arguments[0].geti64();
+      uint64_t gas = static_cast<uint64_t>(arguments[0].geti64());
 
       HERA_DEBUG << "useGas " << gas << "\n";
 
@@ -224,7 +224,7 @@ namespace hera {
     if (import->base == Name("getAddress")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t resultOffset = arguments[0].geti32();
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
 
@@ -238,8 +238,8 @@ namespace hera {
     if (import->base == Name("getBalance")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t addressOffset = arguments[0].geti32();
-      uint32_t resultOffset = arguments[1].geti32();
+      uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
 
       HERA_DEBUG << "getBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
 
@@ -256,15 +256,15 @@ namespace hera {
     if (import->base == Name("getBlockHash")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
-      int64_t number = arguments[0].geti64();
-      uint32_t resultOffset = arguments[1].geti32();
+      uint64_t number = static_cast<uint64_t>(arguments[0].geti64());
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
 
       HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
 
       evmc_uint256be blockhash;
 
       takeInterfaceGas(GasSchedule::blockhash);
-      m_context->fn_table->get_block_hash(&blockhash, m_context, number);
+      m_context->fn_table->get_block_hash(&blockhash, m_context, static_cast<int64_t>(number));
 
       if (isZeroUint256(blockhash))
         return Literal(uint32_t(1));
@@ -287,9 +287,9 @@ namespace hera {
     if (import->base == Name("callDataCopy")) {
       heraAssert(arguments.size() == 3, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t resultOffset = arguments[0].geti32();
-      uint32_t dataOffset = arguments[1].geti32();
-      uint32_t length = arguments[2].geti32();
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t dataOffset = static_cast<uint32_t>(arguments[1].geti32());
+      uint32_t length = static_cast<uint32_t>(arguments[2].geti32());
 
       HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
 
@@ -304,7 +304,7 @@ namespace hera {
     if (import->base == Name("getCaller")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t resultOffset = arguments[0].geti32();
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       HERA_DEBUG << "getCaller " << hex << resultOffset << dec << "\n";
 
@@ -317,7 +317,7 @@ namespace hera {
     if (import->base == Name("getCallValue")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t resultOffset = arguments[0].geti32();
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
 
@@ -330,9 +330,9 @@ namespace hera {
     if (import->base == Name("codeCopy")) {
       heraAssert(arguments.size() == 3, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t resultOffset = arguments[0].geti32();
-      uint32_t codeOffset = arguments[1].geti32();
-      uint32_t length = arguments[2].geti32();
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t codeOffset = static_cast<uint32_t>(arguments[1].geti32());
+      uint32_t length = static_cast<uint32_t>(arguments[2].geti32());
 
       HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
@@ -356,10 +356,10 @@ namespace hera {
     if (import->base == Name("externalCodeCopy")) {
       heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t addressOffset = arguments[0].geti32();
-      uint32_t resultOffset = arguments[1].geti32();
-      uint32_t codeOffset = arguments[2].geti32();
-      uint32_t length = arguments[3].geti32();
+      uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
+      uint32_t codeOffset = static_cast<uint32_t>(arguments[2].geti32());
+      uint32_t length = static_cast<uint32_t>(arguments[3].geti32());
 
       HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
 
@@ -379,7 +379,7 @@ namespace hera {
     if (import->base == Name("getExternalCodeSize")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t addressOffset = arguments[0].geti32();
+      uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
 
@@ -393,7 +393,7 @@ namespace hera {
     if (import->base == Name("getBlockCoinbase")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t resultOffset = arguments[0].geti32();
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
 
@@ -409,7 +409,7 @@ namespace hera {
     if (import->base == Name("getBlockDifficulty")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t offset = arguments[0].geti32();
+      uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
 
       HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
 
@@ -440,7 +440,7 @@ namespace hera {
     if (import->base == Name("getTxGasPrice")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t valueOffset = arguments[0].geti32();
+      uint32_t valueOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
 
@@ -456,13 +456,13 @@ namespace hera {
     if (import->base == Name("log")) {
       heraAssert(arguments.size() == 7, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t dataOffset = arguments[0].geti32();
-      uint32_t length = arguments[1].geti32();
-      uint32_t numberOfTopics = arguments[2].geti32();
-      uint32_t topic1 = arguments[3].geti32();
-      uint32_t topic2 = arguments[4].geti32();
-      uint32_t topic3 = arguments[5].geti32();
-      uint32_t topic4 = arguments[6].geti32();
+      uint32_t dataOffset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t length = static_cast<uint32_t>(arguments[1].geti32());
+      uint32_t numberOfTopics = static_cast<uint32_t>(arguments[2].geti32());
+      uint32_t topic1 = static_cast<uint32_t>(arguments[3].geti32());
+      uint32_t topic2 = static_cast<uint32_t>(arguments[4].geti32());
+      uint32_t topic3 = static_cast<uint32_t>(arguments[5].geti32());
+      uint32_t topic4 = static_cast<uint32_t>(arguments[6].geti32());
 
       HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
 
@@ -525,7 +525,7 @@ namespace hera {
     if (import->base == Name("getTxOrigin")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t resultOffset = arguments[0].geti32();
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
 
@@ -541,8 +541,8 @@ namespace hera {
     if (import->base == Name("storageStore")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t pathOffset = arguments[0].geti32();
-      uint32_t valueOffset = arguments[1].geti32();
+      uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t valueOffset = static_cast<uint32_t>(arguments[1].geti32());
 
       HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
 
@@ -569,8 +569,8 @@ namespace hera {
     if (import->base == Name("storageLoad")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t pathOffset = arguments[0].geti32();
-      uint32_t resultOffset = arguments[1].geti32();
+      uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
 
       HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
 
@@ -588,8 +588,8 @@ namespace hera {
     if (import->base == Name("finish") || import->base == Name("revert")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t offset = arguments[0].geti32();
-      uint32_t size = arguments[1].geti32();
+      uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t size = static_cast<uint32_t>(arguments[1].geti32());
 
       HERA_DEBUG << (import->base == Name("revert") ? "revert " : "finish ") << hex << offset << " " << size << dec << "\n";
 
@@ -615,9 +615,9 @@ namespace hera {
     if (import->base == Name("returnDataCopy")) {
       heraAssert(arguments.size() == 3, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t dataOffset = arguments[0].geti32();
-      uint32_t offset = arguments[1].geti32();
-      uint32_t size = arguments[2].geti32();
+      uint32_t dataOffset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t offset = static_cast<uint32_t>(arguments[1].geti32());
+      uint32_t size = static_cast<uint32_t>(arguments[2].geti32());
 
       HERA_DEBUG << "returnDataCopy " << hex << dataOffset << " " << offset << " " << size << dec << "\n";
       
@@ -653,19 +653,19 @@ namespace hera {
       }
 
       int64_t gas = arguments[0].geti64();
-      uint32_t addressOffset = arguments[1].geti32();
+      uint32_t addressOffset = static_cast<uint32_t>(arguments[1].geti32());
       uint32_t valueOffset;
       uint32_t dataOffset;
       uint32_t dataLength;
 
       if (kind == EEICallKind::Call || kind == EEICallKind::CallCode) {
-        valueOffset = arguments[2].geti32();
-        dataOffset = arguments[3].geti32();
-        dataLength = arguments[4].geti32();
+        valueOffset = static_cast<uint32_t>(arguments[2].geti32());
+        dataOffset = static_cast<uint32_t>(arguments[3].geti32());
+        dataLength = static_cast<uint32_t>(arguments[4].geti32());
       } else {
         valueOffset = 0;
-        dataOffset = arguments[2].geti32();
-        dataLength = arguments[3].geti32();
+        dataOffset = static_cast<uint32_t>(arguments[2].geti32());
+        dataLength = static_cast<uint32_t>(arguments[3].geti32());
       }
 
       heraAssert((m_msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
@@ -784,10 +784,10 @@ namespace hera {
     if (import->base == Name("create")) {
       heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t valueOffset = arguments[0].geti32();
-      uint32_t dataOffset = arguments[1].geti32();
-      uint32_t length = arguments[2].geti32();
-      uint32_t resultOffset = arguments[3].geti32();
+      uint32_t valueOffset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t dataOffset = static_cast<uint32_t>(arguments[1].geti32());
+      uint32_t length = static_cast<uint32_t>(arguments[2].geti32());
+      uint32_t resultOffset = static_cast<uint32_t>(arguments[3].geti32());
 
       HERA_DEBUG << "create " << hex << valueOffset << " " << dataOffset << " " << length << dec << " " << resultOffset << dec << "\n";
 
@@ -857,7 +857,7 @@ namespace hera {
     if (import->base == Name("selfDestruct")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-      uint32_t addressOffset = arguments[0].geti32();
+      uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
 
