@@ -103,20 +103,6 @@ defaults:
         cd hera
         echo "hera branch: $(git rev-parse --abbrev-ref HEAD)  commit: $(git rev-parse HEAD)"
 
-  test-ewasm: &test-ewasm
-    run:
-      name: "Run ewasm state tests"
-      working_directory: ~/project
-      command: |
-        echo "print working directory:"
-        pwd
-        echo "list files in working directory:"
-        ls -al .
-        echo "check testeth command"
-        testeth --help
-        echo "run tests script."
-        ./scripts/tests.sh
-
   test-evm2wasm: &test-evm2wasm
     run:
       name: "Run evm2wasm state tests"
@@ -160,30 +146,6 @@ defaults:
 
 version: 2
 jobs:
-
-  # to run this using local circleci tool, rename Ewasm-Tests to `build` then do `circleci build -c circle.yml`
-  ewasm-tests:
-    environment:
-      - BUILD_TYPE: Release
-      - CXX: clang++
-      - CC:  clang
-      - GENERATOR: Ninja
-      - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF
-    docker:
-      - image: ethereum/cpp-build-env
-    steps:
-      - *install-system-deps
-      - checkout
-      - *update-submodules
-      - *environment-info
-      - *checkout-cpp-eth
-      - *restore-eth-cache
-      - *link-hera
-      - *build-cpp-eth
-      - *save-eth-cache
-      - *test-ewasm
-
   evm2wasm-tests:
     environment:
       - BUILD_TYPE: Release
@@ -282,5 +244,4 @@ workflows:
       - linux-clang-shared-release
       - linux-gcc-shared-coverage
       - linux-gcc-debug
-      - ewasm-tests
       - evm2wasm-tests
