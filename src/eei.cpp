@@ -261,6 +261,8 @@ namespace hera {
 
       HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
 
+      ensureCondition(number >= 0 && number <= 256, ArgumentOutOfRange, "getBlockHash only accepts a block number between 0 and 256");
+
       evmc_uint256be blockhash;
 
       takeInterfaceGas(GasSchedule::blockhash);
@@ -620,7 +622,7 @@ namespace hera {
       uint32_t size = static_cast<uint32_t>(arguments[2].geti32());
 
       HERA_DEBUG << "returnDataCopy " << hex << dataOffset << " " << offset << " " << size << dec << "\n";
-      
+
       safeChargeDataCopy(size, GasSchedule::verylow);
 
       storeMemory(m_lastReturnData, offset, dataOffset, size);
