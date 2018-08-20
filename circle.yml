@@ -129,12 +129,14 @@ defaults:
       name: "Fetch eWASM tests"
       command: |
         git clone https://github.com/ewasm/tests -b wasm-tests --single-branch --depth 1
+        ls -laR tests/GeneralStateTests/stEWASMTests
 
   test: &test
     run:
       name: "Test shared Hera"
       command: |
         testeth --version
+        ls -laR tests/GeneralStateTests/stEWASMTests
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium
 
   upload-coverage-data: &upload-coverage-data

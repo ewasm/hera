@@ -331,6 +331,11 @@ ExecutionResult execute(
     Name main = Name("main");
     LiteralList args;
     instance.callExport(main, args);
+#if HERA_DEBUGGING
+    // Force flushing of the buffered debug output here.
+    cout << "Flushing debug...\n";
+    cout << flush;
+#endif
   } catch (EndExecution const&) {
     // This exception is ignored here because we consider it to be a success.
     // It is only a clutch for POSIX style exit()
@@ -356,6 +361,8 @@ evmc_result hera_execute(
 
   evmc_result ret;
   memset(&ret, 0, sizeof(evmc_result));
+
+  cout << "hera execute entry point...\n";
 
   try {
     heraAssert(rev == EVMC_BYZANTIUM, "Only Byzantium supported.");
