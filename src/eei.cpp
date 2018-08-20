@@ -64,7 +64,7 @@ namespace hera {
 
       uint32_t value = static_cast<uint32_t>(arguments[0].geti32());
 
-      cerr << "DEBUG print32: " << value << " " << hex << "0x" << value << dec << endl;
+      cerr << "DEBUG print32: " << value << " " << hex << "0x" << value << dec << "\n";
 
       return Literal();
     }
@@ -74,7 +74,7 @@ namespace hera {
 
       uint64_t value = static_cast<uint64_t>(arguments[0].geti64());
 
-      cerr << "DEBUG print64: " << value << " " << hex << "0x" << value << dec << endl;
+      cerr << "DEBUG print64: " << value << " " << hex << "0x" << value << dec << "\n";
 
       return Literal();
     }
@@ -105,7 +105,7 @@ namespace hera {
           cerr << memoryGet(i) << " ";
         }
       }
-      cerr << endl;
+      cerr << "\n";
 
       return Literal();
     }
@@ -142,7 +142,7 @@ namespace hera {
         for (uint8_t b: result.bytes)
           cerr << b << " ";
       }
-      cerr << endl;
+      cerr << "\n";
 
       return Literal();
     }
@@ -179,7 +179,7 @@ namespace hera {
         if (i != sp)
           cout << ',';
       }
-      cout << "]}" << endl;
+      cout << "]}" << "\n";
 
       return Literal();
     }
