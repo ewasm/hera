@@ -331,6 +331,10 @@ ExecutionResult execute(
     Name main = Name("main");
     LiteralList args;
     instance.callExport(main, args);
+#if HERA_DEBUGGING
+    // Force flushing of the buffered debug output here.
+    cerr << flush;
+#endif
   } catch (EndExecution const&) {
     // This exception is ignored here because we consider it to be a success.
     // It is only a clutch for POSIX style exit()
