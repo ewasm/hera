@@ -333,7 +333,8 @@ ExecutionResult execute(
     instance.callExport(main, args);
 #if HERA_DEBUGGING
     // Force flushing of the buffered debug output here.
-    cerr << flush;
+    cout << "Flushing debug...\n";
+    cout << flush;
 #endif
   } catch (EndExecution const&) {
     // This exception is ignored here because we consider it to be a success.

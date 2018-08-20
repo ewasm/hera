@@ -26,7 +26,7 @@ using namespace wasm;
 
 #if HERA_DEBUGGING
 
-#define HERA_DEBUG cerr
+#define HERA_DEBUG cout
 
 namespace {
 string toHex(evmc_uint256be const& value) {
