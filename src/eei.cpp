@@ -701,7 +701,7 @@ namespace hera {
       }
 
       HERA_DEBUG <<
-        import->base << " " << hex <<
+        import->base.str << " " << hex <<
         gas << " " <<
         addressOffset << " " <<
         valueOffset << " " <<
