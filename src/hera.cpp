@@ -357,6 +357,8 @@ evmc_result hera_execute(
   evmc_result ret;
   memset(&ret, 0, sizeof(evmc_result));
 
+  cout << "hera execute entry point...\n";
+
   try {
     heraAssert(rev == EVMC_BYZANTIUM, "Only Byzantium supported.");
     heraAssert(msg->gas >= 0, "Negative startgas?");
