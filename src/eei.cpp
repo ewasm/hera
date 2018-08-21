@@ -671,7 +671,7 @@ namespace hera {
       }
 
       ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
-      heraAssert((m_msg.flags & ~EVMC_STATIC) == 0, "Unknown flags not supported.");
+      heraAssert((m_msg.flags & ~uint32_t(EVMC_STATIC)) == 0, "Unknown flags not supported.");
 
       evmc_message call_message;
       call_message.destination = loadUint160(addressOffset);

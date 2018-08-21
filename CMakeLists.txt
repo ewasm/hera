@@ -28,7 +28,7 @@ cable_set_build_type(DEFAULT RelWithDebInfo CONFIGURATION_TYPES Debug;Release;Re
 
 cable_configure_compiler()
 # TODO: fix the warnings instead
-add_compile_options(-Wno-pedantic -Wno-sign-conversion)
+add_compile_options(-Wno-pedantic)
 
 include(ProjectBinaryen)
 
