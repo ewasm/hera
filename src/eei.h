@@ -28,7 +28,7 @@ using namespace wasm;
 namespace hera {
 
 struct ExecutionResult {
-  uint64_t gasLeft = 0;
+  int64_t gasLeft = 0;
   std::vector<uint8_t> returnValue;
   bool isRevert = false;
 };
@@ -49,7 +49,7 @@ struct EthereumInterface : ShellExternalInterface {
     m_meterGas(_meterGas)
   {
     // set starting gas
-    m_result.gasLeft = static_cast<uint64_t>(m_msg.gas);
+    m_result.gasLeft = m_msg.gas;
     // set sane defaults
     m_result.returnValue = std::vector<uint8_t>{};
     m_result.isRevert = false;
@@ -74,8 +74,8 @@ private:
     CallStatic
   };
 
-  void takeGas(uint64_t gas);
-  void takeInterfaceGas(uint64_t gas);
+  void takeGas(int64_t gas);
+  void takeInterfaceGas(int64_t gas);
 
   inline size_t memorySize() const { return memory.size(); }
   inline void memorySet(size_t offset, uint8_t value) { memory.set<uint8_t>(offset, value); }
@@ -97,7 +97,7 @@ private:
   inline int64_t maxCallGas(int64_t gas) { return gas - (gas / 64); }
 
   /* Checks for overflow and safely charges gas for variable length data copies */
-  void safeChargeDataCopy(uint32_t length, uint32_t baseCost);
+  void safeChargeDataCopy(uint32_t length, unsigned baseCost);
 
   bool enoughSenderBalanceFor(evmc_uint256be const& value) const;
 
