@@ -70,6 +70,9 @@ struct hera_instance : evmc_instance {
 
 namespace {
 
+const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } };
+const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } };
+
 bool hasWasmPreamble(vector<uint8_t> const& _input) {
   return
     _input.size() >= 8 &&
@@ -133,7 +136,7 @@ vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
   int64_t gas = startgas;
   vector<uint8_t> ret = callSystemContract(
     context,
-    { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } }, // precompile address 0x00...0a
+    sentinelAddress,
     gas,
     input
   );
@@ -236,7 +239,7 @@ vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
   int64_t gas = startgas;
   vector<uint8_t> ret = callSystemContract(
     context,
-    { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } }, // precompile address 0x00...0b
+    evm2wasmAddress,
     gas,
     input
   );
