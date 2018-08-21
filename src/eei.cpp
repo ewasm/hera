@@ -582,15 +582,9 @@ namespace hera {
       uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t size = static_cast<uint32_t>(arguments[1].geti32());
 
-      HERA_DEBUG << (import->base == Name("revert") ? "revert " : "finish ") << hex << offset << " " << size << dec << "\n";
+      eeiRevertOrFinish(import->base == Name("revert"), offset, size);
 
-      ensureSourceMemoryBounds(offset, size);
-      m_result.returnValue = vector<uint8_t>(size);
-      loadMemory(offset, m_result.returnValue, size);
-
-      m_result.isRevert = import->base == Name("revert");
-
-      throw EndExecution{};
+      return Literal();
     }
 
     if (import->base == Name("getReturnDataSize")) {
@@ -675,6 +669,19 @@ namespace hera {
     }
 
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
+  }
+
+  void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
+  {
+      HERA_DEBUG << (revert ? "revert " : "finish ") << hex << offset << " " << size << dec << "\n";
+
+      ensureSourceMemoryBounds(offset, size);
+      m_result.returnValue = vector<uint8_t>(size);
+      loadMemory(offset, m_result.returnValue, size);
+
+      m_result.isRevert = revert;
+
+      throw EndExecution{};
   }
 
   uint32_t EthereumInterface::eeiGetReturnDataSize()
