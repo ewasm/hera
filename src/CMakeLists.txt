@@ -4,6 +4,7 @@ set(hera_include_dir ${PROJECT_SOURCE_DIR}/include)
 get_filename_component(evmc_include_dir .. ABSOLUTE)
 
 add_library(hera
+    debugging.h
     ${hera_include_dir}/hera/hera.h
     eei.cpp
     eei.h

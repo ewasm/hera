@@ -35,6 +35,7 @@
 
 #include <evm2wasm.h>
 
+#include "debugging.h"
 #include "eei.h"
 #include "exceptions.h"
 
@@ -129,7 +130,7 @@ vector<uint8_t> callSystemContract(
 vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
 {
 #if HERA_DEBUGGING
-  cerr << "Metering (input " << input.size() << " bytes)..." << endl;
+  HERA_DEBUG << "Metering (input " << input.size() << " bytes)..." << endl;
 #endif
 
   int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
@@ -142,7 +143,7 @@ vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
   );
 
 #if HERA_DEBUGGING
-  cerr << "Metering done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)" << endl;
+  HERA_DEBUG << "Metering done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)" << endl;
 #endif
 
   return ret;
@@ -162,7 +163,7 @@ string mktemp_string(string pattern) {
 // @returns the compiled output or empty output otherwise.
 vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
 #if HERA_DEBUGGING
-  cerr << "Calling evm2wasm.js (input " << input.size() << " bytes)..." << endl;
+  HERA_DEBUG << "Calling evm2wasm.js (input " << input.size() << " bytes)..." << endl;
 #endif
 
   string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXX");
@@ -184,7 +185,7 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
     cmd += " --trace";
 
 #if HERA_DEBUGGING
-  cerr << "(Calling evm2wasm.js with command: " << cmd << ")" << endl;
+  HERA_DEBUG << "(Calling evm2wasm.js with command: " << cmd << ")" << endl;
 #endif
 
   int ret = system(cmd.data());
@@ -192,7 +193,7 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
 
   if (ret != 0) {
 #if HERA_DEBUGGING
-    cerr << "evm2wasm.js failed" << endl;
+    HERA_DEBUG << "evm2wasm.js failed" << endl;
 #endif
 
     unlink(fileWASM.data());
@@ -206,7 +207,7 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
   unlink(fileWASM.data());
 
 #if HERA_DEBUGGING
-  cerr << "evm2wasm.js done (output " << str.length() << " bytes)" << endl;
+  HERA_DEBUG << "evm2wasm.js done (output " << str.length() << " bytes)" << endl;
 #endif
 
   return vector<uint8_t>(str.begin(), str.end());
@@ -216,13 +217,13 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
 // @returns the compiled output or empty output otherwise.
 vector<uint8_t> evm2wasm_cpp(vector<uint8_t> const& input, bool evmTrace) {
 #if HERA_DEBUGGING
-  cerr << "Calling evm2wasm.cpp (input " << input.size() << " bytes)..." << endl;
+  HERA_DEBUG << "Calling evm2wasm.cpp (input " << input.size() << " bytes)..." << endl;
 #endif
 
   string str = evm2wasm::evm2wasm(input, evmTrace);
 
 #if HERA_DEBUGGING
-  cerr << "evm2wasm.cpp done (output " << str.length() << " bytes)" << endl;
+  HERA_DEBUG << "evm2wasm.cpp done (output " << str.length() << " bytes)" << endl;
 #endif
 
   return vector<uint8_t>(str.begin(), str.end());
@@ -232,7 +233,7 @@ vector<uint8_t> evm2wasm_cpp(vector<uint8_t> const& input, bool evmTrace) {
 // @returns the compiled output or empty output otherwise.
 vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
 #if HERA_DEBUGGING
-  cerr << "Calling evm2wasm (input " << input.size() << " bytes)..." << endl;
+  HERA_DEBUG << "Calling evm2wasm (input " << input.size() << " bytes)..." << endl;
 #endif
 
   int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
@@ -245,7 +246,7 @@ vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
   );
 
 #if HERA_DEBUGGING
-  cerr << "evm2wasm done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)" << endl;
+  HERA_DEBUG << "evm2wasm done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)" << endl;
 #endif
 
   return ret;
@@ -294,7 +295,7 @@ ExecutionResult execute(
   bool meterInterfaceGas
 ) {
 #if HERA_DEBUGGING
-  cerr << "Executing..." << endl;
+  HERA_DEBUG << "Executing..." << endl;
 #endif
 
   Module module;
@@ -441,54 +442,54 @@ evmc_result hera_execute(
   } catch (EndExecution const&) {
     ret.status_code = EVMC_INTERNAL_ERROR;
 #if HERA_DEBUGGING
-    cerr << "EndExecution exception has leaked through." << endl;
+    HERA_DEBUG << "EndExecution exception has leaked through." << endl;
 #endif
   } catch (VMTrap const& e) {
     // TODO: use specific error code? EVMC_INVALID_INSTRUCTION or EVMC_TRAP_INSTRUCTION?
     ret.status_code = EVMC_FAILURE;
 #if HERA_DEBUGGING
-    cerr << e.what() << endl;
+    HERA_DEBUG << e.what() << endl;
 #endif
   } catch (ArgumentOutOfRange const& e) {
     // TODO: use specific error code? EVMC_ARGUMENT_OUT_OF_RANGE?
     ret.status_code = EVMC_FAILURE;
 #if HERA_DEBUGGING
-    cerr << e.what() << endl;
+    HERA_DEBUG << e.what() << endl;
 #endif
   } catch (OutOfGas const& e) {
     ret.status_code = EVMC_OUT_OF_GAS;
 #if HERA_DEBUGGING
-    cerr << e.what() << endl;
+    HERA_DEBUG << e.what() << endl;
 #endif
   } catch (ContractValidationFailure const& e) {
     ret.status_code = EVMC_CONTRACT_VALIDATION_FAILURE;
 #if HERA_DEBUGGING
-    cerr << e.what() << endl;
+    HERA_DEBUG << e.what() << endl;
 #endif
   } catch (InvalidMemoryAccess const& e) {
     ret.status_code = EVMC_INVALID_MEMORY_ACCESS;
 #if HERA_DEBUGGING
-    cerr << e.what() << endl;
+    HERA_DEBUG << e.what() << endl;
 #endif
   } catch (StaticModeViolation const& e) {
     ret.status_code = EVMC_STATIC_MODE_VIOLATION;
 #if HERA_DEBUGGING
-    cerr << e.what() << endl;
+    HERA_DEBUG << e.what() << endl;
 #endif
   } catch (InternalErrorException const& e) {
     ret.status_code = EVMC_INTERNAL_ERROR;
 #if HERA_DEBUGGING
-    cerr << "InternalError: " << e.what() << endl;
+    HERA_DEBUG << "InternalError: " << e.what() << endl;
 #endif
   } catch (exception const& e) {
     ret.status_code = EVMC_INTERNAL_ERROR;
 #if HERA_DEBUGGING
-    cerr << "Unknown exception: " << e.what() << endl;
+    HERA_DEBUG << "Unknown exception: " << e.what() << endl;
 #endif
   } catch (...) {
     ret.status_code = EVMC_INTERNAL_ERROR;
 #if HERA_DEBUGGING
-    cerr << "Totally unknown exception" << endl;
+    HERA_DEBUG << "Totally unknown exception" << endl;
 #endif
   }
 
