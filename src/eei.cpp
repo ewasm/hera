@@ -16,6 +16,7 @@
 
 #include <stdexcept>
 #include <array>
+#include "debugging.h"
 #include "eei.h"
 #include "exceptions.h"
 
@@ -25,9 +26,6 @@ using namespace std;
 using namespace wasm;
 
 #if HERA_DEBUGGING
-
-#define HERA_DEBUG cerr
-
 namespace {
 string toHex(evmc_uint256be const& value) {
   ostringstream os;
@@ -37,15 +35,6 @@ string toHex(evmc_uint256be const& value) {
   return "0x" + os.str();
 }
 }
-
-#else
-
-struct NullStream {
-  template<typename T> NullStream& operator<<(const T&) { return *this; }
-};
-
-#define HERA_DEBUG NullStream()
-
 #endif
 
 namespace hera {
