@@ -51,6 +51,11 @@ add_subdirectory(src)
 
 install(DIRECTORY include/hera DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
+install(TARGETS hera-buildinfo EXPORT heraTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
 write_basic_package_version_file(heraConfigVersion.cmake COMPATIBILITY SameMajorVersion)
 
 configure_package_config_file(
@@ -59,14 +64,11 @@ configure_package_config_file(
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
 )
 
-if(BUILD_SHARED_LIBS)
-    # TODO: To enable for static libs, hera-buildinfo library must be modified in Cable.
-    install(
-        EXPORT heraTargets
-        NAMESPACE hera::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
-    )
-endif()
+install(
+    EXPORT heraTargets
+    NAMESPACE hera::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
+)
 
 install(
     FILES
