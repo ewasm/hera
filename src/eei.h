@@ -33,8 +33,9 @@ struct ExecutionResult {
   bool isRevert = false;
 };
 
-struct EthereumInterface : ShellExternalInterface {
-  EthereumInterface(
+class EthereumInterface : public ShellExternalInterface {
+public:
+  explicit EthereumInterface(
     evmc_context* _context,
     std::vector<uint8_t> const& _code,
     evmc_message const& _msg,
@@ -55,6 +56,7 @@ struct EthereumInterface : ShellExternalInterface {
     m_result.isRevert = false;
   }
 
+protected:
   Literal callImport(Import *import, LiteralList& arguments) override;
 #if HERA_DEBUGGING
   Literal callDebugImport(Import *import, LiteralList& arguments);
