@@ -260,7 +260,7 @@ namespace hera {
       if (isZeroUint256(blockhash))
         return Literal(uint32_t(1));
 
-      storeUint256(blockhash, resultOffset);
+      storeBytes32(blockhash, resultOffset);
 
       return Literal(uint32_t(0));
     }
