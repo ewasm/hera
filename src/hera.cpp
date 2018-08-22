@@ -328,7 +328,7 @@ ExecutionResult execute(
 
   // Interpret
   ExecutionResult result;
-  EthereumInterface interface(context, state_code, msg, result, meterInterfaceGas);
+  BinaryenEthereumInterface interface(context, state_code, msg, result, meterInterfaceGas);
   ModuleInstance instance(module, &interface);
 
   try {

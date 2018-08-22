@@ -33,7 +33,7 @@ struct ExecutionResult {
   bool isRevert = false;
 };
 
-class EthereumInterface : public ShellExternalInterface {
+class EthereumInterface {
 public:
   explicit EthereumInterface(
     evmc_context* _context,
@@ -42,7 +42,6 @@ public:
     ExecutionResult & _result,
     bool _meterGas
   ):
-    ShellExternalInterface(),
     m_context(_context),
     m_code(_code),
     m_msg(_msg),
@@ -57,18 +56,10 @@ public:
   }
 
 protected:
-  Literal callImport(Import *import, LiteralList& arguments) override;
-#if HERA_DEBUGGING
-  Literal callDebugImport(Import *import, LiteralList& arguments);
-#endif
+  virtual size_t memorySize() const = 0 ;
+  virtual void memorySet(size_t offset, uint8_t value) = 0;
+  virtual uint8_t memoryGet(size_t offset) = 0;
 
-  void importGlobals(std::map<Name, Literal>& globals, Module& wasm) override;
-
-  void trap(const char* why) override {
-    ensureCondition(false, VMTrap, why);
-  }
-
-private:
   enum class EEICallKind {
     Call,
     CallCode,
@@ -114,14 +105,11 @@ private:
   uint32_t eeiCreate(uint32_t valueOffset, uint32_t dataOffset, uint32_t length, uint32_t resultOffset);
   void eeiSelfDestruct(uint32_t addressOffset);
 
+private:
   // Helpers methods
 
   void takeGas(int64_t gas);
   void takeInterfaceGas(int64_t gas);
-
-  inline size_t memorySize() const { return memory.size(); }
-  inline void memorySet(size_t offset, uint8_t value) { memory.set<uint8_t>(offset, value); }
-  inline uint8_t memoryGet(size_t offset) { return memory.get<uint8_t>(offset); }
 
   void ensureSourceMemoryBounds(uint32_t offset, uint32_t length);
   void loadMemoryReverse(uint32_t srcOffset, uint8_t *dst, size_t length);
@@ -185,6 +173,37 @@ struct GasSchedule {
   static constexpr unsigned valuetransfer = 9000;
   static constexpr unsigned valueStipend = 2300;
   static constexpr unsigned callNewAccount = 25000;
+};
+
+class BinaryenEthereumInterface : public ShellExternalInterface, EthereumInterface {
+public:
+  explicit BinaryenEthereumInterface(
+    evmc_context* _context,
+    std::vector<uint8_t> const& _code,
+    evmc_message const& _msg,
+    ExecutionResult & _result,
+    bool _meterGas
+  ):
+    ShellExternalInterface(),
+    EthereumInterface(_context, _code, _msg, _result, _meterGas)
+  { }
+
+protected:
+  Literal callImport(Import *import, LiteralList& arguments) override;
+#if HERA_DEBUGGING
+  Literal callDebugImport(Import *import, LiteralList& arguments);
+#endif
+
+  void importGlobals(std::map<Name, Literal>& globals, Module& wasm) override;
+
+  void trap(const char* why) override {
+    ensureCondition(false, VMTrap, why);
+  }
+
+private:
+  size_t memorySize() const override { return memory.size(); }
+  void memorySet(size_t offset, uint8_t value) override { memory.set<uint8_t>(offset, value); }
+  uint8_t memoryGet(size_t offset) override { return memory.get<uint8_t>(offset); }
 };
 
 }

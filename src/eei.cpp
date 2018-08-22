@@ -38,14 +38,14 @@ string toHex(evmc_uint256be const& value) {
 #endif
 
 namespace hera {
-  void EthereumInterface::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
+  void BinaryenEthereumInterface::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
     HERA_DEBUG << "importGlobals\n";
   }
 
 #if HERA_DEBUGGING
-  Literal EthereumInterface::callDebugImport(Import *import, LiteralList& arguments) {
+  Literal BinaryenEthereumInterface::callDebugImport(Import *import, LiteralList& arguments) {
     heraAssert(import->module == Name("debug"), "Import namespace error.");
 
     if (import->base == Name("print32")) {
@@ -106,7 +106,7 @@ namespace hera {
   }
 #endif
 
-  Literal EthereumInterface::callImport(Import *import, LiteralList& arguments) {
+  Literal BinaryenEthereumInterface::callImport(Import *import, LiteralList& arguments) {
 #if HERA_DEBUGGING
     if (import->module == Name("debug"))
       // Reroute to debug namespace
