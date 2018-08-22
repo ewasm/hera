@@ -76,6 +76,12 @@ private:
 
   // EEI methods
 
+#if HERA_DEBUGGING
+  void debugPrintMem(bool useHex, uint32_t offset, uint32_t length);
+  void debugPrintStorage(bool useHex, uint32_t pathOffset);
+  void debugEvmTrace(uint32_t pc, int32_t opcode, uint32_t cost, int32_t sp);
+#endif
+
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
   uint32_t eeiGetReturnDataSize();
   void eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size);

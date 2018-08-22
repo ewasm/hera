@@ -74,27 +74,7 @@ namespace hera {
       uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t length = static_cast<uint32_t>(arguments[1].geti32());
 
-      heraAssert((offset + length) > offset, "Overflow.");
-      heraAssert(memorySize() >= (offset + length), "Out of memory bounds.");
-
-      bool useHex = import->base == Name("printMemHex");
-
-      cerr << "DEBUG printMem" << (useHex ? "Hex(" : "(") << hex << "0x" << offset << ":0x" << length << "): " << dec;
-      if (useHex)
-      {
-        cerr << hex;
-        for (uint32_t i = offset; i < (offset + length); i++) {
-          cerr << static_cast<int>(memoryGet(i)) << " ";
-        }
-        cerr << dec;
-      }
-      else
-      {
-        for (uint32_t i = offset; i < (offset + length); i++) {
-          cerr << memoryGet(i) << " ";
-        }
-      }
-      cerr << endl;
+      debugPrintMem(import->base == Name("printMemHex"), offset, length);
 
       return Literal();
     }
@@ -104,34 +84,7 @@ namespace hera {
 
       uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      evmc_uint256be path = loadBytes32(pathOffset);
-
-      bool useHex = import->base == Name("printStorageHex");
-
-      HERA_DEBUG << "DEBUG printStorage" << (useHex ? "Hex" : "") << "(0x" << hex;
-
-      // Print out the path
-      for (uint8_t b: path.bytes)
-        cerr << static_cast<int>(b);
-
-      HERA_DEBUG << "): " << dec;
-
-      evmc_uint256be result;
-      m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
-
-      if (useHex)
-      {
-        cerr << hex;
-        for (uint8_t b: result.bytes)
-          cerr << static_cast<int>(b) << " ";
-        cerr << dec;
-      }
-      else
-      {
-        for (uint8_t b: result.bytes)
-          cerr << b << " ";
-      }
-      cerr << endl;
+      debugPrintStorage(import->base == Name("printStorageHex"), pathOffset);
 
       return Literal();
     }
@@ -144,31 +97,7 @@ namespace hera {
       uint32_t cost = static_cast<uint32_t>(arguments[2].geti32());
       int32_t sp = arguments[3].geti32();
 
-      HERA_DEBUG << "evmTrace\n";
-
-      static constexpr int stackItemSize = sizeof(evmc_uint256be);
-      heraAssert(sp <= (1024 * stackItemSize), "EVM stack pointer out of bounds.");
-      heraAssert(opcode >= 0x00 && opcode <= 0xff, "Invalid EVM instruction.");
-
-      const char* const* const opNamesTable = evmc_get_instruction_names_table(EVMC_BYZANTIUM);
-      const char* opName = opNamesTable[static_cast<uint8_t>(opcode)];
-      if (opName == nullptr)
-        opName = "UNDEFINED";
-
-      cout << "{\"depth\":" << dec << m_msg.depth
-        << ",\"gas\":" << m_result.gasLeft
-        << ",\"gasCost\":" << cost
-        << ",\"op\":" << opName
-        << ",\"pc\":" << pc
-        << ",\"stack\":[";
-
-      for (int32_t i = 0; i <= sp; i += stackItemSize) {
-        evmc_uint256be x = loadUint256(static_cast<uint32_t>(i));
-        cout << '"' << toHex(x) << '"';
-        if (i != sp)
-          cout << ',';
-      }
-      cout << "]}" << endl;
+      debugEvmTrace(pc, opcode, cost, sp);
 
       return Literal();
     }
@@ -670,6 +599,90 @@ namespace hera {
 
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
   }
+
+#if HERA_DEBUGGING
+  void EthereumInterface::debugPrintMem(bool useHex, uint32_t offset, uint32_t length)
+  {
+      heraAssert((offset + length) > offset, "Overflow.");
+      heraAssert(memorySize() >= (offset + length), "Out of memory bounds.");
+
+      cerr << "DEBUG printMem" << (useHex ? "Hex(" : "(") << hex << "0x" << offset << ":0x" << length << "): " << dec;
+      if (useHex)
+      {
+        cerr << hex;
+        for (uint32_t i = offset; i < (offset + length); i++) {
+          cerr << static_cast<int>(memoryGet(i)) << " ";
+        }
+        cerr << dec;
+      }
+      else
+      {
+        for (uint32_t i = offset; i < (offset + length); i++) {
+          cerr << memoryGet(i) << " ";
+        }
+      }
+      cerr << endl;
+  }
+
+  void EthereumInterface::debugPrintStorage(bool useHex, uint32_t pathOffset)
+  {
+      evmc_uint256be path = loadBytes32(pathOffset);
+
+      HERA_DEBUG << "DEBUG printStorage" << (useHex ? "Hex" : "") << "(0x" << hex;
+
+      // Print out the path
+      for (uint8_t b: path.bytes)
+        cerr << static_cast<int>(b);
+
+      HERA_DEBUG << "): " << dec;
+
+      evmc_uint256be result;
+      m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
+
+      if (useHex)
+      {
+        cerr << hex;
+        for (uint8_t b: result.bytes)
+          cerr << static_cast<int>(b) << " ";
+        cerr << dec;
+      }
+      else
+      {
+        for (uint8_t b: result.bytes)
+          cerr << b << " ";
+      }
+      cerr << endl;
+  }
+
+  void EthereumInterface::debugEvmTrace(uint32_t pc, int32_t opcode, uint32_t cost, int32_t sp)
+  {
+      HERA_DEBUG << "evmTrace\n";
+
+      static constexpr int stackItemSize = sizeof(evmc_uint256be);
+      heraAssert(sp <= (1024 * stackItemSize), "EVM stack pointer out of bounds.");
+      heraAssert(opcode >= 0x00 && opcode <= 0xff, "Invalid EVM instruction.");
+
+      const char* const* const opNamesTable = evmc_get_instruction_names_table(EVMC_BYZANTIUM);
+      const char* opName = opNamesTable[static_cast<uint8_t>(opcode)];
+      if (opName == nullptr)
+        opName = "UNDEFINED";
+
+      cout << "{\"depth\":" << dec << m_msg.depth
+        << ",\"gas\":" << m_result.gasLeft
+        << ",\"gasCost\":" << cost
+        << ",\"op\":" << opName
+        << ",\"pc\":" << pc
+        << ",\"stack\":[";
+
+      for (int32_t i = 0; i <= sp; i += stackItemSize) {
+        evmc_uint256be x = loadUint256(static_cast<uint32_t>(i));
+        cout << '"' << toHex(x) << '"';
+        if (i != sp)
+          cout << ',';
+      }
+      cout << "]}" << endl;
+  }
+#endif
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
   {
