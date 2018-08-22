@@ -164,11 +164,7 @@ namespace hera {
     if (import->base == Name("getCallDataSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "callDataSize\n";
-
-      takeInterfaceGas(GasSchedule::base);
-
-      return Literal(static_cast<uint32_t>(m_msg.input_size));
+      return Literal(eeiGetCallDataSize());
     }
 
     if (import->base == Name("callDataCopy")) {
@@ -707,6 +703,15 @@ namespace hera {
       storeBytes32(blockhash, resultOffset);
 
       return 0;
+  }
+
+  uint32_t EthereumInterface::eeiGetCallDataSize()
+  {
+      HERA_DEBUG << "getCallDataSize\n";
+
+      takeInterfaceGas(GasSchedule::base);
+
+      return static_cast<uint32_t>(m_msg.input_size);
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
