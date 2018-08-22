@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <string>
+
 namespace hera {
 
 class HeraException : public std::exception {

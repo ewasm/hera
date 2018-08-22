@@ -21,7 +21,42 @@
 
 #include "eei.h"
 
+#include "shell-interface.h"
+
+using namespace wasm;
+
 namespace hera {
+
+class BinaryenEthereumInterface : public ShellExternalInterface, EthereumInterface {
+public:
+  explicit BinaryenEthereumInterface(
+    evmc_context* _context,
+    std::vector<uint8_t> const& _code,
+    evmc_message const& _msg,
+    ExecutionResult & _result,
+    bool _meterGas
+  ):
+    ShellExternalInterface(),
+    EthereumInterface(_context, _code, _msg, _result, _meterGas)
+  { }
+
+protected:
+  Literal callImport(Import *import, LiteralList& arguments) override;
+#if HERA_DEBUGGING
+  Literal callDebugImport(Import *import, LiteralList& arguments);
+#endif
+
+  void importGlobals(std::map<Name, Literal>& globals, Module& wasm) override;
+
+  void trap(const char* why) override {
+    ensureCondition(false, VMTrap, why);
+  }
+
+private:
+  size_t memorySize() const override { return memory.size(); }
+  void memorySet(size_t offset, uint8_t value) override { memory.set<uint8_t>(offset, value); }
+  uint8_t memoryGet(size_t offset) override { return memory.get<uint8_t>(offset); }
+};
 
 class BinaryenEngine : WasmEngine {
 public:
