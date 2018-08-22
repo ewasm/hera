@@ -214,11 +214,7 @@ namespace hera {
     if (import->base == Name("getCodeSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getCodeSize\n";
-
-      takeInterfaceGas(GasSchedule::base);
-
-      return Literal(static_cast<uint32_t>(m_code.size()));
+      return Literal(eeiGetCodeSize());
     }
 
     if (import->base == Name("externalCodeCopy")) {
@@ -732,6 +728,15 @@ namespace hera {
       safeChargeDataCopy(length, GasSchedule::verylow);
 
       storeMemory(m_code, codeOffset, resultOffset, length);
+  }
+
+  uint32_t EthereumInterface::eeiGetCodeSize()
+  {
+      HERA_DEBUG << "getCodeSize\n";
+
+      takeInterfaceGas(GasSchedule::base);
+
+      return static_cast<uint32_t>(m_code.size());
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
