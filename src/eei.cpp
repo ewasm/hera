@@ -158,19 +158,7 @@ namespace hera {
       uint64_t number = static_cast<uint64_t>(arguments[0].geti64());
       uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
 
-      HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
-
-      evmc_uint256be blockhash;
-
-      takeInterfaceGas(GasSchedule::blockhash);
-      m_context->fn_table->get_block_hash(&blockhash, m_context, static_cast<int64_t>(number));
-
-      if (isZeroUint256(blockhash))
-        return Literal(uint32_t(1));
-
-      storeBytes32(blockhash, resultOffset);
-
-      return Literal(uint32_t(0));
+      return Literal(eeiGetBlockHash(number, resultOffset));
     }
 
     if (import->base == Name("getCallDataSize")) {
@@ -702,6 +690,23 @@ namespace hera {
       takeInterfaceGas(GasSchedule::balance);
       m_context->fn_table->get_balance(&result, m_context, &address);
       storeUint128(result, resultOffset);
+  }
+
+  uint32_t EthereumInterface::eeiGetBlockHash(uint64_t number, uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
+
+      evmc_uint256be blockhash;
+
+      takeInterfaceGas(GasSchedule::blockhash);
+      m_context->fn_table->get_block_hash(&blockhash, m_context, static_cast<int64_t>(number));
+
+      if (isZeroUint256(blockhash))
+        return 1;
+
+      storeBytes32(blockhash, resultOffset);
+
+      return 0;
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
