@@ -98,6 +98,7 @@ private:
   void eeiGetBlockCoinbase(uint32_t resultOffset);
   void eeiGetBlockDifficulty(uint32_t offset);
   int64_t eeiGetBlockGasLimit();
+  void eeiGetTxGasPrice(uint32_t valueOffset);
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
   uint32_t eeiGetReturnDataSize();
   void eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size);

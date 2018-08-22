@@ -269,13 +269,7 @@ namespace hera {
 
       uint32_t valueOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeUint128(tx_context.tx_gas_price, valueOffset);
+      eeiGetTxGasPrice(valueOffset);
 
       return Literal();
     }
@@ -762,6 +756,17 @@ namespace hera {
       static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
 
       return tx_context.block_gas_limit;
+  }
+
+  void EthereumInterface::eeiGetTxGasPrice(uint32_t valueOffset)
+  {
+      HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+      storeUint128(tx_context.tx_gas_price, valueOffset);
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
