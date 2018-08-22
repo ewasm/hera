@@ -243,13 +243,7 @@ namespace hera {
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeAddress(tx_context.block_coinbase, resultOffset);
+      eeiGetBlockCoinbase(resultOffset);
 
       return Literal();
     }
@@ -747,6 +741,17 @@ namespace hera {
       size_t code_size = m_context->fn_table->get_code_size(m_context, &address);
 
       return static_cast<uint32_t>(code_size);
+  }
+
+  void EthereumInterface::eeiGetBlockCoinbase(uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+      storeAddress(tx_context.block_coinbase, resultOffset);
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
