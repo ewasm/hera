@@ -285,30 +285,7 @@ namespace hera {
       uint32_t topic3 = static_cast<uint32_t>(arguments[5].geti32());
       uint32_t topic4 = static_cast<uint32_t>(arguments[6].geti32());
 
-      HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
-
-      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "log");
-
-      ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
-
-      // FIXME: should this assert that unused topic offsets must be 0?
-      array<evmc_uint256be, 4> topics;
-      topics[0] = (numberOfTopics >= 1) ? loadBytes32(topic1) : evmc_uint256be{};
-      topics[1] = (numberOfTopics >= 2) ? loadBytes32(topic2) : evmc_uint256be{};
-      topics[2] = (numberOfTopics >= 3) ? loadBytes32(topic3) : evmc_uint256be{};
-      topics[3] = (numberOfTopics == 4) ? loadBytes32(topic4) : evmc_uint256be{};
-
-      ensureSourceMemoryBounds(dataOffset, length);
-      vector<uint8_t> data(length);
-      loadMemory(dataOffset, data, length);
-
-      static_assert(GasSchedule::log <= 65536, "Gas cost of log could lead to overflow");
-      static_assert(GasSchedule::logTopic <= 65536, "Gas cost of logTopic could lead to overflow");
-      static_assert(GasSchedule::logData <= 65536, "Gas cost of logData could lead to overflow");
-      // Using uint64_t to force a type issue if the underlying API changes.
-      takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * int64_t(length)));
-
-      m_context->fn_table->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
+      eeiLog(dataOffset, length, numberOfTopics, topic1, topic2, topic3, topic4);
 
       return Literal();
     }
@@ -767,6 +744,34 @@ namespace hera {
       takeInterfaceGas(GasSchedule::base);
       m_context->fn_table->get_tx_context(&tx_context, m_context);
       storeUint128(tx_context.tx_gas_price, valueOffset);
+  }
+
+  void EthereumInterface::eeiLog(uint32_t dataOffset, uint32_t length, uint32_t numberOfTopics, uint32_t topic1, uint32_t topic2, uint32_t topic3, uint32_t topic4)
+  {
+      HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
+
+      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "log");
+
+      ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
+
+      // FIXME: should this assert that unused topic offsets must be 0?
+      array<evmc_uint256be, 4> topics;
+      topics[0] = (numberOfTopics >= 1) ? loadBytes32(topic1) : evmc_uint256be{};
+      topics[1] = (numberOfTopics >= 2) ? loadBytes32(topic2) : evmc_uint256be{};
+      topics[2] = (numberOfTopics >= 3) ? loadBytes32(topic3) : evmc_uint256be{};
+      topics[3] = (numberOfTopics == 4) ? loadBytes32(topic4) : evmc_uint256be{};
+
+      ensureSourceMemoryBounds(dataOffset, length);
+      vector<uint8_t> data(length);
+      loadMemory(dataOffset, data, length);
+
+      static_assert(GasSchedule::log <= 65536, "Gas cost of log could lead to overflow");
+      static_assert(GasSchedule::logTopic <= 65536, "Gas cost of logTopic could lead to overflow");
+      static_assert(GasSchedule::logData <= 65536, "Gas cost of logData could lead to overflow");
+      // Using uint64_t to force a type issue if the underlying API changes.
+      takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * int64_t(length)));
+
+      m_context->fn_table->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)

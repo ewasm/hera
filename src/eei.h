@@ -99,6 +99,7 @@ private:
   void eeiGetBlockDifficulty(uint32_t offset);
   int64_t eeiGetBlockGasLimit();
   void eeiGetTxGasPrice(uint32_t valueOffset);
+  void eeiLog(uint32_t dataOffset, uint32_t length, uint32_t numberOfTopics, uint32_t topic1, uint32_t topic2, uint32_t topic3, uint32_t topic4);
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
   uint32_t eeiGetReturnDataSize();
   void eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size);
