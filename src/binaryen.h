@@ -23,11 +23,9 @@
 
 #include "shell-interface.h"
 
-using namespace wasm;
-
 namespace hera {
 
-class BinaryenEthereumInterface : public ShellExternalInterface, EthereumInterface {
+class BinaryenEthereumInterface : public wasm::ShellExternalInterface, EthereumInterface {
 public:
   explicit BinaryenEthereumInterface(
     evmc_context* _context,
@@ -41,12 +39,12 @@ public:
   { }
 
 protected:
-  Literal callImport(Import *import, LiteralList& arguments) override;
+  wasm::Literal callImport(wasm::Import *import, wasm::LiteralList& arguments) override;
 #if HERA_DEBUGGING
-  Literal callDebugImport(Import *import, LiteralList& arguments);
+  wasm::Literal callDebugImport(wasm::Import *import, wasm::LiteralList& arguments);
 #endif
 
-  void importGlobals(std::map<Name, Literal>& globals, Module& wasm) override;
+  void importGlobals(std::map<wasm::Name, wasm::Literal>& globals, wasm::Module& wasm) override;
 
   void trap(const char* why) override {
     ensureCondition(false, VMTrap, why);
@@ -69,7 +67,7 @@ public:
   ) override;
 
 private:
-  void validate_contract(Module & module);
+  void validate_contract(wasm::Module & module);
 };
 
 }

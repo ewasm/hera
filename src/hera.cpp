@@ -35,7 +35,6 @@
 #include <hera/buildinfo.h>
 
 using namespace std;
-using namespace wasm;
 using namespace hera;
 
 enum class hera_wasm_engine {
