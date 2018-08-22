@@ -318,24 +318,7 @@ namespace hera {
       uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t valueOffset = static_cast<uint32_t>(arguments[1].geti32());
 
-      HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
-
-      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
-
-      evmc_uint256be path = loadBytes32(pathOffset);
-      evmc_uint256be value = loadBytes32(valueOffset);
-      evmc_uint256be current;
-
-      m_context->fn_table->get_storage(&current, m_context, &m_msg.destination, &path);
-
-      // We do not need to take care about the delete case (gas refund), the client does it.
-      takeInterfaceGas(
-        (isZeroUint256(current) && !isZeroUint256(value)) ?
-        GasSchedule::storageStoreCreate :
-        GasSchedule::storageStoreChange
-      );
-
-      m_context->fn_table->set_storage(m_context, &m_msg.destination, &path, &value);
+      eeiStorageStore(pathOffset, valueOffset);
 
       return Literal();
     }
@@ -787,6 +770,28 @@ namespace hera {
       takeInterfaceGas(GasSchedule::base);
       m_context->fn_table->get_tx_context(&tx_context, m_context);
       storeAddress(tx_context.tx_origin, resultOffset);
+  }
+
+  void EthereumInterface::eeiStorageStore(uint32_t pathOffset, uint32_t valueOffset)
+  {
+      HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
+
+      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
+
+      evmc_uint256be path = loadBytes32(pathOffset);
+      evmc_uint256be value = loadBytes32(valueOffset);
+      evmc_uint256be current;
+
+      m_context->fn_table->get_storage(&current, m_context, &m_msg.destination, &path);
+
+      // We do not need to take care about the delete case (gas refund), the client does it.
+      takeInterfaceGas(
+        (isZeroUint256(current) && !isZeroUint256(value)) ?
+        GasSchedule::storageStoreCreate :
+        GasSchedule::storageStoreChange
+      );
+
+      m_context->fn_table->set_storage(m_context, &m_msg.destination, &path, &value);
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
