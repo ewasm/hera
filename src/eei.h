@@ -96,6 +96,7 @@ private:
   void eeiExternalCodeCopy(uint32_t addressOffset, uint32_t resultOffset, uint32_t codeOffset, uint32_t length);
   uint32_t eeiGetExternalCodeSize(uint32_t addressOffset);
   void eeiGetBlockCoinbase(uint32_t resultOffset);
+  void eeiGetBlockDifficulty(uint32_t offset);
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
   uint32_t eeiGetReturnDataSize();
   void eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size);
