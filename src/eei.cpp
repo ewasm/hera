@@ -293,16 +293,7 @@ namespace hera {
     if (import->base == Name("getBlockNumber")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getBlockNumber\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-
-      static_assert(is_same<decltype(tx_context.block_number), int64_t>::value, "int64_t type expected");
-
-      return Literal(tx_context.block_number);
+      return Literal(eeiGetBlockNumber());
     }
 
     if (import->base == Name("getBlockTimestamp")) {
@@ -772,6 +763,20 @@ namespace hera {
       takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * int64_t(length)));
 
       m_context->fn_table->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
+  }
+
+  int64_t EthereumInterface::eeiGetBlockNumber()
+  {
+      HERA_DEBUG << "getBlockNumber\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+
+      static_assert(is_same<decltype(tx_context.block_number), int64_t>::value, "int64_t type expected");
+
+      return tx_context.block_number;
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
