@@ -120,11 +120,7 @@ namespace hera {
 
       int64_t gas = arguments[0].geti64();
 
-      HERA_DEBUG << "useGas " << gas << "\n";
-
-      ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
-
-      takeGas(gas);
+      eeiUseGas(gas);
 
       return Literal();
     }
@@ -132,13 +128,7 @@ namespace hera {
     if (import->base == Name("getGasLeft")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getGasLeft\n";
-
-      static_assert(is_same<decltype(m_result.gasLeft), int64_t>::value, "int64_t type expected");
-
-      takeInterfaceGas(GasSchedule::base);
-
-      return Literal(m_result.gasLeft);
+      return Literal(eeiGetGasLeft());
     }
 
     if (import->base == Name("getAddress")) {
@@ -146,11 +136,7 @@ namespace hera {
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
-
-      storeAddress(m_msg.destination, resultOffset);
-
-      takeInterfaceGas(GasSchedule::base);
+      eeiGetAddress(resultOffset);
 
       return Literal();
     }
@@ -161,14 +147,7 @@ namespace hera {
       uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
 
-      HERA_DEBUG << "getExternalBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
-
-      evmc_address address = loadAddress(addressOffset);
-      evmc_uint256be result;
-
-      takeInterfaceGas(GasSchedule::balance);
-      m_context->fn_table->get_balance(&result, m_context, &address);
-      storeUint128(result, resultOffset);
+      eeiGetExternalBalance(addressOffset, resultOffset);
 
       return Literal();
     }
@@ -179,29 +158,13 @@ namespace hera {
       uint64_t number = static_cast<uint64_t>(arguments[0].geti64());
       uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
 
-      HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
-
-      evmc_uint256be blockhash;
-
-      takeInterfaceGas(GasSchedule::blockhash);
-      m_context->fn_table->get_block_hash(&blockhash, m_context, static_cast<int64_t>(number));
-
-      if (isZeroUint256(blockhash))
-        return Literal(uint32_t(1));
-
-      storeBytes32(blockhash, resultOffset);
-
-      return Literal(uint32_t(0));
+      return Literal(eeiGetBlockHash(number, resultOffset));
     }
 
     if (import->base == Name("getCallDataSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "callDataSize\n";
-
-      takeInterfaceGas(GasSchedule::base);
-
-      return Literal(static_cast<uint32_t>(m_msg.input_size));
+      return Literal(eeiGetCallDataSize());
     }
 
     if (import->base == Name("callDataCopy")) {
@@ -211,12 +174,7 @@ namespace hera {
       uint32_t dataOffset = static_cast<uint32_t>(arguments[1].geti32());
       uint32_t length = static_cast<uint32_t>(arguments[2].geti32());
 
-      HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
-
-      safeChargeDataCopy(length, GasSchedule::verylow);
-
-      vector<uint8_t> input(m_msg.input_data, m_msg.input_data + m_msg.input_size);
-      storeMemory(input, dataOffset, resultOffset, length);
+      eeiCallDataCopy(resultOffset, dataOffset, length);
 
       return Literal();
     }
@@ -226,10 +184,7 @@ namespace hera {
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getCaller " << hex << resultOffset << dec << "\n";
-
-      takeInterfaceGas(GasSchedule::base);
-      storeAddress(m_msg.sender, resultOffset);
+      eeiGetCaller(resultOffset);
 
       return Literal();
     }
@@ -239,10 +194,7 @@ namespace hera {
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
-
-      takeInterfaceGas(GasSchedule::base);
-      storeUint128(m_msg.value, resultOffset);
+      eeiGetCallValue(resultOffset);
 
       return Literal();
     }
@@ -254,11 +206,7 @@ namespace hera {
       uint32_t codeOffset = static_cast<uint32_t>(arguments[1].geti32());
       uint32_t length = static_cast<uint32_t>(arguments[2].geti32());
 
-      HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
-
-      safeChargeDataCopy(length, GasSchedule::verylow);
-
-      storeMemory(m_code, codeOffset, resultOffset, length);
+      eeiCodeCopy(resultOffset, codeOffset, length);
 
       return Literal();
     }
@@ -266,11 +214,7 @@ namespace hera {
     if (import->base == Name("getCodeSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getCodeSize\n";
-
-      takeInterfaceGas(GasSchedule::base);
-
-      return Literal(static_cast<uint32_t>(m_code.size()));
+      return Literal(eeiGetCodeSize());
     }
 
     if (import->base == Name("externalCodeCopy")) {
@@ -281,17 +225,7 @@ namespace hera {
       uint32_t codeOffset = static_cast<uint32_t>(arguments[2].geti32());
       uint32_t length = static_cast<uint32_t>(arguments[3].geti32());
 
-      HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
-
-      safeChargeDataCopy(length, GasSchedule::extcode);
-
-      evmc_address address = loadAddress(addressOffset);
-      // FIXME: optimise this so no vector needs to be created
-      vector<uint8_t> codeBuffer(length);
-      size_t numCopied = m_context->fn_table->copy_code(m_context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
-      ensureCondition(numCopied == length, InvalidMemoryAccess, "Out of bounds (source) memory copy");
-
-      storeMemory(codeBuffer, 0, resultOffset, length);
+      eeiExternalCodeCopy(addressOffset, resultOffset, codeOffset, length);
 
       return Literal();
     }
@@ -301,13 +235,7 @@ namespace hera {
 
       uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
-
-      evmc_address address = loadAddress(addressOffset);
-      takeInterfaceGas(GasSchedule::extcode);
-      size_t code_size = m_context->fn_table->get_code_size(m_context, &address);
-
-      return Literal(static_cast<uint32_t>(code_size));
+      return Literal(eeiGetExternalCodeSize(addressOffset));
     }
 
     if (import->base == Name("getBlockCoinbase")) {
@@ -315,13 +243,7 @@ namespace hera {
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeAddress(tx_context.block_coinbase, resultOffset);
+      eeiGetBlockCoinbase(resultOffset);
 
       return Literal();
     }
@@ -331,13 +253,7 @@ namespace hera {
 
       uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeUint256(tx_context.block_difficulty, offset);
+      eeiGetBlockDifficulty(offset);
 
       return Literal();
     }
@@ -345,16 +261,7 @@ namespace hera {
     if (import->base == Name("getBlockGasLimit")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getBlockGasLimit\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-
-      static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
-
-      return Literal(tx_context.block_gas_limit);
+      return Literal(eeiGetBlockGasLimit());
     }
 
     if (import->base == Name("getTxGasPrice")) {
@@ -362,13 +269,7 @@ namespace hera {
 
       uint32_t valueOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeUint128(tx_context.tx_gas_price, valueOffset);
+      eeiGetTxGasPrice(valueOffset);
 
       return Literal();
     }
@@ -384,30 +285,7 @@ namespace hera {
       uint32_t topic3 = static_cast<uint32_t>(arguments[5].geti32());
       uint32_t topic4 = static_cast<uint32_t>(arguments[6].geti32());
 
-      HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
-
-      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "log");
-
-      ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
-
-      // FIXME: should this assert that unused topic offsets must be 0?
-      array<evmc_uint256be, 4> topics;
-      topics[0] = (numberOfTopics >= 1) ? loadBytes32(topic1) : evmc_uint256be{};
-      topics[1] = (numberOfTopics >= 2) ? loadBytes32(topic2) : evmc_uint256be{};
-      topics[2] = (numberOfTopics >= 3) ? loadBytes32(topic3) : evmc_uint256be{};
-      topics[3] = (numberOfTopics == 4) ? loadBytes32(topic4) : evmc_uint256be{};
-
-      ensureSourceMemoryBounds(dataOffset, length);
-      vector<uint8_t> data(length);
-      loadMemory(dataOffset, data, length);
-
-      static_assert(GasSchedule::log <= 65536, "Gas cost of log could lead to overflow");
-      static_assert(GasSchedule::logTopic <= 65536, "Gas cost of logTopic could lead to overflow");
-      static_assert(GasSchedule::logData <= 65536, "Gas cost of logData could lead to overflow");
-      // Using uint64_t to force a type issue if the underlying API changes.
-      takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * int64_t(length)));
-
-      m_context->fn_table->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
+      eeiLog(dataOffset, length, numberOfTopics, topic1, topic2, topic3, topic4);
 
       return Literal();
     }
@@ -415,31 +293,13 @@ namespace hera {
     if (import->base == Name("getBlockNumber")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getBlockNumber\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-
-      static_assert(is_same<decltype(tx_context.block_number), int64_t>::value, "int64_t type expected");
-
-      return Literal(tx_context.block_number);
+      return Literal(eeiGetBlockNumber());
     }
 
     if (import->base == Name("getBlockTimestamp")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getBlockTimestamp\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-
-      static_assert(is_same<decltype(tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
-
-      return Literal(tx_context.block_timestamp);
+      return Literal(eeiGetBlockTimestamp());
     }
 
     if (import->base == Name("getTxOrigin")) {
@@ -447,13 +307,7 @@ namespace hera {
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeAddress(tx_context.tx_origin, resultOffset);
+      eeiGetTxOrigin(resultOffset);
 
       return Literal();
     }
@@ -464,24 +318,7 @@ namespace hera {
       uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t valueOffset = static_cast<uint32_t>(arguments[1].geti32());
 
-      HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
-
-      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
-
-      evmc_uint256be path = loadBytes32(pathOffset);
-      evmc_uint256be value = loadBytes32(valueOffset);
-      evmc_uint256be current;
-
-      m_context->fn_table->get_storage(&current, m_context, &m_msg.destination, &path);
-
-      // We do not need to take care about the delete case (gas refund), the client does it.
-      takeInterfaceGas(
-        (isZeroUint256(current) && !isZeroUint256(value)) ?
-        GasSchedule::storageStoreCreate :
-        GasSchedule::storageStoreChange
-      );
-
-      m_context->fn_table->set_storage(m_context, &m_msg.destination, &path, &value);
+      eeiStorageStore(pathOffset, valueOffset);
 
       return Literal();
     }
@@ -492,15 +329,7 @@ namespace hera {
       uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
 
-      HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
-
-      evmc_uint256be path = loadBytes32(pathOffset);
-      evmc_uint256be result;
-
-      takeInterfaceGas(GasSchedule::storageLoad);
-      m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
-
-      storeBytes32(result, resultOffset);
+      eeiStorageLoad(pathOffset, resultOffset);
 
       return Literal();
     }
@@ -683,6 +512,292 @@ namespace hera {
       cout << "]}" << endl;
   }
 #endif
+
+  void EthereumInterface::eeiUseGas(int64_t gas)
+  {
+      HERA_DEBUG << "useGas " << gas << "\n";
+
+      ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
+
+      takeGas(gas);
+  }
+
+  int64_t EthereumInterface::eeiGetGasLeft()
+  {
+      HERA_DEBUG << "getGasLeft\n";
+
+      static_assert(is_same<decltype(m_result.gasLeft), int64_t>::value, "int64_t type expected");
+
+      takeInterfaceGas(GasSchedule::base);
+
+      return m_result.gasLeft;
+  }
+
+  void EthereumInterface::eeiGetAddress(uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
+
+      storeAddress(m_msg.destination, resultOffset);
+
+      takeInterfaceGas(GasSchedule::base);
+  }
+
+  void EthereumInterface::eeiGetExternalBalance(uint32_t addressOffset, uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getExternalBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
+
+      evmc_address address = loadAddress(addressOffset);
+      evmc_uint256be result;
+
+      takeInterfaceGas(GasSchedule::balance);
+      m_context->fn_table->get_balance(&result, m_context, &address);
+      storeUint128(result, resultOffset);
+  }
+
+  uint32_t EthereumInterface::eeiGetBlockHash(uint64_t number, uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
+
+      evmc_uint256be blockhash;
+
+      takeInterfaceGas(GasSchedule::blockhash);
+      m_context->fn_table->get_block_hash(&blockhash, m_context, static_cast<int64_t>(number));
+
+      if (isZeroUint256(blockhash))
+        return 1;
+
+      storeBytes32(blockhash, resultOffset);
+
+      return 0;
+  }
+
+  uint32_t EthereumInterface::eeiGetCallDataSize()
+  {
+      HERA_DEBUG << "getCallDataSize\n";
+
+      takeInterfaceGas(GasSchedule::base);
+
+      return static_cast<uint32_t>(m_msg.input_size);
+  }
+
+  void EthereumInterface::eeiCallDataCopy(uint32_t resultOffset, uint32_t dataOffset, uint32_t length)
+  {
+      HERA_DEBUG << "callDataCopy " << hex << resultOffset << " " << dataOffset << " " << length << dec << "\n";
+
+      safeChargeDataCopy(length, GasSchedule::verylow);
+
+      vector<uint8_t> input(m_msg.input_data, m_msg.input_data + m_msg.input_size);
+      storeMemory(input, dataOffset, resultOffset, length);
+  }
+
+  void EthereumInterface::eeiGetCaller(uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getCaller " << hex << resultOffset << dec << "\n";
+
+      takeInterfaceGas(GasSchedule::base);
+      storeAddress(m_msg.sender, resultOffset);
+  }
+
+  void EthereumInterface::eeiGetCallValue(uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
+
+      takeInterfaceGas(GasSchedule::base);
+      storeUint128(m_msg.value, resultOffset);
+  }
+
+  void EthereumInterface::eeiCodeCopy(uint32_t resultOffset, uint32_t codeOffset, uint32_t length)
+  {
+      HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
+
+      safeChargeDataCopy(length, GasSchedule::verylow);
+
+      storeMemory(m_code, codeOffset, resultOffset, length);
+  }
+
+  uint32_t EthereumInterface::eeiGetCodeSize()
+  {
+      HERA_DEBUG << "getCodeSize\n";
+
+      takeInterfaceGas(GasSchedule::base);
+
+      return static_cast<uint32_t>(m_code.size());
+  }
+
+  void EthereumInterface::eeiExternalCodeCopy(uint32_t addressOffset, uint32_t resultOffset, uint32_t codeOffset, uint32_t length)
+  {
+      HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
+
+      safeChargeDataCopy(length, GasSchedule::extcode);
+
+      evmc_address address = loadAddress(addressOffset);
+      // FIXME: optimise this so no vector needs to be created
+      vector<uint8_t> codeBuffer(length);
+      size_t numCopied = m_context->fn_table->copy_code(m_context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
+      ensureCondition(numCopied == length, InvalidMemoryAccess, "Out of bounds (source) memory copy");
+
+      storeMemory(codeBuffer, 0, resultOffset, length);
+  }
+
+  uint32_t EthereumInterface::eeiGetExternalCodeSize(uint32_t addressOffset)
+  {
+      HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
+
+      evmc_address address = loadAddress(addressOffset);
+      takeInterfaceGas(GasSchedule::extcode);
+      size_t code_size = m_context->fn_table->get_code_size(m_context, &address);
+
+      return static_cast<uint32_t>(code_size);
+  }
+
+  void EthereumInterface::eeiGetBlockCoinbase(uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+      storeAddress(tx_context.block_coinbase, resultOffset);
+  }
+
+  void EthereumInterface::eeiGetBlockDifficulty(uint32_t offset)
+  {
+      HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+      storeUint256(tx_context.block_difficulty, offset);
+  }
+
+  int64_t EthereumInterface::eeiGetBlockGasLimit()
+  {
+      HERA_DEBUG << "getBlockGasLimit\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+
+      static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
+
+      return tx_context.block_gas_limit;
+  }
+
+  void EthereumInterface::eeiGetTxGasPrice(uint32_t valueOffset)
+  {
+      HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+      storeUint128(tx_context.tx_gas_price, valueOffset);
+  }
+
+  void EthereumInterface::eeiLog(uint32_t dataOffset, uint32_t length, uint32_t numberOfTopics, uint32_t topic1, uint32_t topic2, uint32_t topic3, uint32_t topic4)
+  {
+      HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
+
+      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "log");
+
+      ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
+
+      // FIXME: should this assert that unused topic offsets must be 0?
+      array<evmc_uint256be, 4> topics;
+      topics[0] = (numberOfTopics >= 1) ? loadBytes32(topic1) : evmc_uint256be{};
+      topics[1] = (numberOfTopics >= 2) ? loadBytes32(topic2) : evmc_uint256be{};
+      topics[2] = (numberOfTopics >= 3) ? loadBytes32(topic3) : evmc_uint256be{};
+      topics[3] = (numberOfTopics == 4) ? loadBytes32(topic4) : evmc_uint256be{};
+
+      ensureSourceMemoryBounds(dataOffset, length);
+      vector<uint8_t> data(length);
+      loadMemory(dataOffset, data, length);
+
+      static_assert(GasSchedule::log <= 65536, "Gas cost of log could lead to overflow");
+      static_assert(GasSchedule::logTopic <= 65536, "Gas cost of logTopic could lead to overflow");
+      static_assert(GasSchedule::logData <= 65536, "Gas cost of logData could lead to overflow");
+      // Using uint64_t to force a type issue if the underlying API changes.
+      takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * int64_t(length)));
+
+      m_context->fn_table->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
+  }
+
+  int64_t EthereumInterface::eeiGetBlockNumber()
+  {
+      HERA_DEBUG << "getBlockNumber\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+
+      static_assert(is_same<decltype(tx_context.block_number), int64_t>::value, "int64_t type expected");
+
+      return tx_context.block_number;
+  }
+
+  int64_t EthereumInterface::eeiGetBlockTimestamp()
+  {
+      HERA_DEBUG << "getBlockTimestamp\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+
+      static_assert(is_same<decltype(tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
+
+      return tx_context.block_timestamp;
+  }
+
+  void EthereumInterface::eeiGetTxOrigin(uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+      storeAddress(tx_context.tx_origin, resultOffset);
+  }
+
+  void EthereumInterface::eeiStorageStore(uint32_t pathOffset, uint32_t valueOffset)
+  {
+      HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
+
+      ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
+
+      evmc_uint256be path = loadBytes32(pathOffset);
+      evmc_uint256be value = loadBytes32(valueOffset);
+      evmc_uint256be current;
+
+      m_context->fn_table->get_storage(&current, m_context, &m_msg.destination, &path);
+
+      // We do not need to take care about the delete case (gas refund), the client does it.
+      takeInterfaceGas(
+        (isZeroUint256(current) && !isZeroUint256(value)) ?
+        GasSchedule::storageStoreCreate :
+        GasSchedule::storageStoreChange
+      );
+
+      m_context->fn_table->set_storage(m_context, &m_msg.destination, &path, &value);
+  }
+
+  void EthereumInterface::eeiStorageLoad(uint32_t pathOffset, uint32_t resultOffset)
+  {
+      HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
+
+      evmc_uint256be path = loadBytes32(pathOffset);
+      evmc_uint256be result;
+
+      takeInterfaceGas(GasSchedule::storageLoad);
+      m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
+
+      storeBytes32(result, resultOffset);
+  }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
   {

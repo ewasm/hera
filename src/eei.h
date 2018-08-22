@@ -82,6 +82,29 @@ private:
   void debugEvmTrace(uint32_t pc, int32_t opcode, uint32_t cost, int32_t sp);
 #endif
 
+  void eeiUseGas(int64_t gas);
+  int64_t eeiGetGasLeft();
+  void eeiGetAddress(uint32_t resultOffset);
+  void eeiGetExternalBalance(uint32_t addressOffset, uint32_t resultOffset);
+  uint32_t eeiGetBlockHash(uint64_t number, uint32_t resultOffset);
+  uint32_t eeiGetCallDataSize();
+  void eeiCallDataCopy(uint32_t resultOffset, uint32_t dataOffset, uint32_t length);
+  void eeiGetCaller(uint32_t resultOffset);
+  void eeiGetCallValue(uint32_t resultOffset);
+  void eeiCodeCopy(uint32_t resultOffset, uint32_t codeOffset, uint32_t length);
+  uint32_t eeiGetCodeSize();
+  void eeiExternalCodeCopy(uint32_t addressOffset, uint32_t resultOffset, uint32_t codeOffset, uint32_t length);
+  uint32_t eeiGetExternalCodeSize(uint32_t addressOffset);
+  void eeiGetBlockCoinbase(uint32_t resultOffset);
+  void eeiGetBlockDifficulty(uint32_t offset);
+  int64_t eeiGetBlockGasLimit();
+  void eeiGetTxGasPrice(uint32_t valueOffset);
+  void eeiLog(uint32_t dataOffset, uint32_t length, uint32_t numberOfTopics, uint32_t topic1, uint32_t topic2, uint32_t topic3, uint32_t topic4);
+  int64_t eeiGetBlockNumber();
+  int64_t eeiGetBlockTimestamp();
+  void eeiGetTxOrigin(uint32_t resultOffset);
+  void eeiStorageStore(uint32_t pathOffset, uint32_t valueOffset);
+  void eeiStorageLoad(uint32_t pathOffset, uint32_t resultOffset);
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
   uint32_t eeiGetReturnDataSize();
   void eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size);
