@@ -120,11 +120,7 @@ namespace hera {
 
       int64_t gas = arguments[0].geti64();
 
-      HERA_DEBUG << "useGas " << gas << "\n";
-
-      ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
-
-      takeGas(gas);
+      eeiUseGas(gas);
 
       return Literal();
     }
@@ -132,13 +128,7 @@ namespace hera {
     if (import->base == Name("getGasLeft")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getGasLeft\n";
-
-      static_assert(is_same<decltype(m_result.gasLeft), int64_t>::value, "int64_t type expected");
-
-      takeInterfaceGas(GasSchedule::base);
-
-      return Literal(m_result.gasLeft);
+      return Literal(eeiGetGasLeft());
     }
 
     if (import->base == Name("getAddress")) {
@@ -683,6 +673,26 @@ namespace hera {
       cout << "]}" << endl;
   }
 #endif
+
+  void EthereumInterface::eeiUseGas(int64_t gas)
+  {
+      HERA_DEBUG << "useGas " << gas << "\n";
+
+      ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
+
+      takeGas(gas);
+  }
+
+  int64_t EthereumInterface::eeiGetGasLeft()
+  {
+      HERA_DEBUG << "getGasLeft\n";
+
+      static_assert(is_same<decltype(m_result.gasLeft), int64_t>::value, "int64_t type expected");
+
+      takeInterfaceGas(GasSchedule::base);
+
+      return m_result.gasLeft;
+  }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
   {

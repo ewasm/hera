@@ -82,6 +82,8 @@ private:
   void debugEvmTrace(uint32_t pc, int32_t opcode, uint32_t cost, int32_t sp);
 #endif
 
+  void eeiUseGas(int64_t gas);
+  int64_t eeiGetGasLeft();
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
   uint32_t eeiGetReturnDataSize();
   void eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size);
