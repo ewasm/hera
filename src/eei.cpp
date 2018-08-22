@@ -225,17 +225,7 @@ namespace hera {
       uint32_t codeOffset = static_cast<uint32_t>(arguments[2].geti32());
       uint32_t length = static_cast<uint32_t>(arguments[3].geti32());
 
-      HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
-
-      safeChargeDataCopy(length, GasSchedule::extcode);
-
-      evmc_address address = loadAddress(addressOffset);
-      // FIXME: optimise this so no vector needs to be created
-      vector<uint8_t> codeBuffer(length);
-      size_t numCopied = m_context->fn_table->copy_code(m_context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
-      ensureCondition(numCopied == length, InvalidMemoryAccess, "Out of bounds (source) memory copy");
-
-      storeMemory(codeBuffer, 0, resultOffset, length);
+      eeiExternalCodeCopy(addressOffset, resultOffset, codeOffset, length);
 
       return Literal();
     }
@@ -737,6 +727,21 @@ namespace hera {
       takeInterfaceGas(GasSchedule::base);
 
       return static_cast<uint32_t>(m_code.size());
+  }
+
+  void EthereumInterface::eeiExternalCodeCopy(uint32_t addressOffset, uint32_t resultOffset, uint32_t codeOffset, uint32_t length)
+  {
+      HERA_DEBUG << "externalCodeCopy " << hex << addressOffset << " " << resultOffset << " " << codeOffset << " " << length << dec << "\n";
+
+      safeChargeDataCopy(length, GasSchedule::extcode);
+
+      evmc_address address = loadAddress(addressOffset);
+      // FIXME: optimise this so no vector needs to be created
+      vector<uint8_t> codeBuffer(length);
+      size_t numCopied = m_context->fn_table->copy_code(m_context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
+      ensureCondition(numCopied == length, InvalidMemoryAccess, "Out of bounds (source) memory copy");
+
+      storeMemory(codeBuffer, 0, resultOffset, length);
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)

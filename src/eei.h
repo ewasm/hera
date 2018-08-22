@@ -93,6 +93,7 @@ private:
   void eeiGetCallValue(uint32_t resultOffset);
   void eeiCodeCopy(uint32_t resultOffset, uint32_t codeOffset, uint32_t length);
   uint32_t eeiGetCodeSize();
+  void eeiExternalCodeCopy(uint32_t addressOffset, uint32_t resultOffset, uint32_t codeOffset, uint32_t length);
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
   uint32_t eeiGetReturnDataSize();
   void eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size);
