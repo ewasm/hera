@@ -84,6 +84,8 @@ private:
 
   void eeiUseGas(int64_t gas);
   int64_t eeiGetGasLeft();
+  void eeiGetAddress(uint32_t resultOffset);
+  void eeiGetExternalBalance(uint32_t addressOffset, uint32_t resultOffset);
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
   uint32_t eeiGetReturnDataSize();
   void eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size);

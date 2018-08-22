@@ -136,11 +136,7 @@ namespace hera {
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
-
-      storeAddress(m_msg.destination, resultOffset);
-
-      takeInterfaceGas(GasSchedule::base);
+      eeiGetAddress(resultOffset);
 
       return Literal();
     }
@@ -151,14 +147,7 @@ namespace hera {
       uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
 
-      HERA_DEBUG << "getExternalBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
-
-      evmc_address address = loadAddress(addressOffset);
-      evmc_uint256be result;
-
-      takeInterfaceGas(GasSchedule::balance);
-      m_context->fn_table->get_balance(&result, m_context, &address);
-      storeUint128(result, resultOffset);
+      eeiGetExternalBalance(addressOffset, resultOffset);
 
       return Literal();
     }
@@ -692,6 +681,27 @@ namespace hera {
       takeInterfaceGas(GasSchedule::base);
 
       return m_result.gasLeft;
+  }
+
+  void EthereumInterface::eeiGetAddress(uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
+
+      storeAddress(m_msg.destination, resultOffset);
+
+      takeInterfaceGas(GasSchedule::base);
+  }
+
+  void EthereumInterface::eeiGetExternalBalance(uint32_t addressOffset, uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getExternalBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
+
+      evmc_address address = loadAddress(addressOffset);
+      evmc_uint256be result;
+
+      takeInterfaceGas(GasSchedule::balance);
+      m_context->fn_table->get_balance(&result, m_context, &address);
+      storeUint128(result, resultOffset);
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
