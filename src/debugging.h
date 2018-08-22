@@ -28,7 +28,7 @@ struct NullStream {
   template<typename T> NullStream& operator<<(const T&) { return *this; }
 };
 
-#define HERA_DEBUG NullStream()
+#define HERA_DEBUG true ? NullStream{} : NullStream{}
 
 #endif
 
