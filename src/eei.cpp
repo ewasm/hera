@@ -307,13 +307,7 @@ namespace hera {
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeAddress(tx_context.tx_origin, resultOffset);
+      eeiGetTxOrigin(resultOffset);
 
       return Literal();
     }
@@ -782,6 +776,17 @@ namespace hera {
       static_assert(is_same<decltype(tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
 
       return tx_context.block_timestamp;
+  }
+
+  void EthereumInterface::eeiGetTxOrigin(uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+      storeAddress(tx_context.tx_origin, resultOffset);
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
