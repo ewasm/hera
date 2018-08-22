@@ -329,15 +329,7 @@ namespace hera {
       uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
 
-      HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
-
-      evmc_uint256be path = loadBytes32(pathOffset);
-      evmc_uint256be result;
-
-      takeInterfaceGas(GasSchedule::storageLoad);
-      m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
-
-      storeBytes32(result, resultOffset);
+      eeiStorageLoad(pathOffset, resultOffset);
 
       return Literal();
     }
@@ -792,6 +784,19 @@ namespace hera {
       );
 
       m_context->fn_table->set_storage(m_context, &m_msg.destination, &path, &value);
+  }
+
+  void EthereumInterface::eeiStorageLoad(uint32_t pathOffset, uint32_t resultOffset)
+  {
+      HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
+
+      evmc_uint256be path = loadBytes32(pathOffset);
+      evmc_uint256be result;
+
+      takeInterfaceGas(GasSchedule::storageLoad);
+      m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
+
+      storeBytes32(result, resultOffset);
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)

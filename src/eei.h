@@ -104,6 +104,7 @@ private:
   int64_t eeiGetBlockTimestamp();
   void eeiGetTxOrigin(uint32_t resultOffset);
   void eeiStorageStore(uint32_t pathOffset, uint32_t valueOffset);
+  void eeiStorageLoad(uint32_t pathOffset, uint32_t resultOffset);
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
   uint32_t eeiGetReturnDataSize();
   void eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size);
