@@ -33,6 +33,17 @@ struct ExecutionResult {
   bool isRevert = false;
 };
 
+class WasmEngine {
+public:
+  virtual ExecutionResult execute(
+    evmc_context* context,
+    std::vector<uint8_t> const& code,
+    std::vector<uint8_t> const& state_code,
+    evmc_message const& msg,
+    bool meterInterfaceGas
+  ) = 0;
+};
+
 class EthereumInterface {
 public:
   explicit EthereumInterface(
