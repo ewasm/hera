@@ -261,16 +261,7 @@ namespace hera {
     if (import->base == Name("getBlockGasLimit")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      HERA_DEBUG << "getBlockGasLimit\n";
-
-      evmc_tx_context tx_context;
-
-      takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-
-      static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
-
-      return Literal(tx_context.block_gas_limit);
+      return Literal(eeiGetBlockGasLimit());
     }
 
     if (import->base == Name("getTxGasPrice")) {
@@ -757,6 +748,20 @@ namespace hera {
       takeInterfaceGas(GasSchedule::base);
       m_context->fn_table->get_tx_context(&tx_context, m_context);
       storeUint256(tx_context.block_difficulty, offset);
+  }
+
+  int64_t EthereumInterface::eeiGetBlockGasLimit()
+  {
+      HERA_DEBUG << "getBlockGasLimit\n";
+
+      evmc_tx_context tx_context;
+
+      takeInterfaceGas(GasSchedule::base);
+      m_context->fn_table->get_tx_context(&tx_context, m_context);
+
+      static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
+
+      return tx_context.block_gas_limit;
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
