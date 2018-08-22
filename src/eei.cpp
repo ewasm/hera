@@ -194,10 +194,7 @@ namespace hera {
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
-
-      takeInterfaceGas(GasSchedule::base);
-      storeUint128(m_msg.value, resultOffset);
+      eeiGetCallValue(resultOffset);
 
       return Literal();
     }
@@ -722,6 +719,14 @@ namespace hera {
 
       takeInterfaceGas(GasSchedule::base);
       storeAddress(m_msg.sender, resultOffset);
+  }
+
+  void EthereumInterface::eeiGetCallValue(uint32_t resultOffset)
+  {
+      HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
+
+      takeInterfaceGas(GasSchedule::base);
+      storeUint128(m_msg.value, resultOffset);
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
