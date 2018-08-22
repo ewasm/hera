@@ -206,11 +206,7 @@ namespace hera {
       uint32_t codeOffset = static_cast<uint32_t>(arguments[1].geti32());
       uint32_t length = static_cast<uint32_t>(arguments[2].geti32());
 
-      HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
-
-      safeChargeDataCopy(length, GasSchedule::verylow);
-
-      storeMemory(m_code, codeOffset, resultOffset, length);
+      eeiCodeCopy(resultOffset, codeOffset, length);
 
       return Literal();
     }
@@ -727,6 +723,15 @@ namespace hera {
 
       takeInterfaceGas(GasSchedule::base);
       storeUint128(m_msg.value, resultOffset);
+  }
+
+  void EthereumInterface::eeiCodeCopy(uint32_t resultOffset, uint32_t codeOffset, uint32_t length)
+  {
+      HERA_DEBUG << "codeCopy " << hex << resultOffset << " " << codeOffset << " " << length << dec << "\n";
+
+      safeChargeDataCopy(length, GasSchedule::verylow);
+
+      storeMemory(m_code, codeOffset, resultOffset, length);
   }
 
   void EthereumInterface::eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size)
