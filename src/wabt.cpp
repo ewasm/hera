@@ -63,6 +63,12 @@ wabt::Result WabtEthereumInterface::ImportFunc(
     hostFunc->callback = wabtUseGas;
     hostFunc->user_data = this;
     return wabt::Result::Ok;
+  } else if (import->field_name == "finish") {
+    if (func_sig->param_types.size() != 2 || func_sig->result_types.size() != 0)
+      return wabt::Result::Error;
+    hostFunc->callback = wabtFinish;
+    hostFunc->user_data = this;
+    return wabt::Result::Ok;
   }
   return wabt::Result::Error;
 }
@@ -125,6 +131,32 @@ interp::Result WabtEthereumInterface::wabtUseGas(
   return interp::Result::Ok;
 }
 
+interp::Result WabtEthereumInterface::wabtFinish(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
+  void* user_data
+) {
+  (void)func;
+  (void)sig;
+  (void)num_args;
+  (void)num_results;
+  (void)out_results;
+
+  WabtEthereumInterface *interface = reinterpret_cast<WabtEthereumInterface*>(user_data);
+
+  uint32_t offset = args[0].value.i32;
+  uint32_t length = args[1].value.i32;
+
+  // FIXME: handle host trap here
+  interface->eeiFinish(offset, length);
+
+  return interp::Result::Ok;
+}
+
 ExecutionResult WabtEngine::execute(
   evmc_context* context,
   vector<uint8_t> const& code,
@@ -173,9 +205,14 @@ ExecutionResult WabtEngine::execute(
 
   // No tracing, no threads
   wabt::interp::Executor executor(&env, nullptr, wabt::interp::Thread::Options{});
-  
+
   // Execute main
-  wabt::interp::ExecResult wabtResult = executor.RunExport(mainFunction, wabt::interp::TypedValues{});
+  try {
+    wabt::interp::ExecResult wabtResult = executor.RunExport(mainFunction, wabt::interp::TypedValues{});
+  } catch (EndExecution const&) {
+    // This exception is ignored here because we consider it to be a success.
+    // It is only a clutch for POSIX style exit()
+  }
 
   return result;
 }
