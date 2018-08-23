@@ -54,9 +54,16 @@ wabt::Result WabtEthereumInterface::ImportFunc(
 ) {
   (void)import;
   (void)func;
-  (void)func_sig;
   (void)callback;
   HERA_DEBUG << "Importing " << import->field_name << "\n";
+  wabt::interp::HostFunc *hostFunc = reinterpret_cast<wabt::interp::HostFunc*>(func);
+  if (import->field_name == "useGas") {
+    if (func_sig->param_types.size() != 1 || func_sig->result_types.size() != 0)
+      return wabt::Result::Error;
+    hostFunc->callback = wabtUseGas;
+    hostFunc->user_data = this;
+    return wabt::Result::Ok;
+  }
   return wabt::Result::Error;
 }
 
@@ -91,6 +98,31 @@ wabt::Result WabtEthereumInterface::ImportTable(
   (void)table;
   (void)callback;
   return wabt::Result::Error;
+}
+
+interp::Result WabtEthereumInterface::wabtUseGas(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
+  void* user_data
+) {
+  (void)func;
+  (void)sig;
+  (void)num_args;
+  (void)num_results;
+  (void)out_results;
+
+  WabtEthereumInterface *interface = reinterpret_cast<WabtEthereumInterface*>(user_data);
+
+  int64_t gas = static_cast<int64_t>(args[0].value.i64);
+
+  // FIXME: handle host trap here
+  interface->eeiUseGas(gas);
+
+  return interp::Result::Ok;
 }
 
 ExecutionResult WabtEngine::execute(
