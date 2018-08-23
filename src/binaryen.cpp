@@ -85,10 +85,6 @@ ExecutionResult BinaryenEngine::execute(
   evmc_message const& msg,
   bool meterInterfaceGas
 ) {
-#if HERA_DEBUGGING
-  HERA_DEBUG << "Executing..." << endl;
-#endif
-
   Module module;
 
   // Load module
