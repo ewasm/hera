@@ -260,6 +260,8 @@ evmc_result hera_execute(
 ) noexcept {
   hera_instance* hera = static_cast<hera_instance*>(instance);
 
+  HERA_DEBUG << "Executing message in Hera\n";
+
   evmc_result ret;
   memset(&ret, 0, sizeof(evmc_result));
 
@@ -299,9 +301,11 @@ evmc_result hera_execute(
         // meterInterfaceGas = false;
         break;
       case hera_evm_mode::fallback:
+        HERA_DEBUG << "Non-WebAssembly input, but fallback mode enabled, asking client to deal with it.\n";
         ret.status_code = EVMC_REJECTED;
         return ret;
       case hera_evm_mode::reject:
+        HERA_DEBUG << "Non-WebAssembly input, failure.n\n";
         ret.status_code = EVMC_FAILURE;
         return ret;
       default:
