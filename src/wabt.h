@@ -32,7 +32,12 @@ public:
     bool _meterGas
   ):
     EthereumInterface(_context, _code, _msg, _result, _meterGas)
-  { }
+  {}
+
+  // TODO: improve this design...
+  void setWasmMemory(wabt::interp::Memory* _wasmMemory) {
+    m_wasmMemory = _wasmMemory;
+  }
 
 protected:
   wabt::Result ImportFunc(
@@ -81,9 +86,12 @@ protected:
   );
 
 private:
-  size_t memorySize() const override { abort(); }
-  void memorySet(size_t offset, uint8_t value) override { (void)offset; (void)value; abort(); }
-  uint8_t memoryGet(size_t offset) override { (void)offset; abort(); }
+  // These assume that m_wasmMemory was set prior to execution.
+  size_t memorySize() const override { return m_wasmMemory->data.size(); }
+  void memorySet(size_t offset, uint8_t value) override { m_wasmMemory->data[offset] = static_cast<char>(value); }
+  uint8_t memoryGet(size_t offset) override { return static_cast<uint8_t>(m_wasmMemory->data[offset]); }
+
+  wabt::interp::Memory* m_wasmMemory;
 };
 
 class WabtEngine : public WasmEngine {

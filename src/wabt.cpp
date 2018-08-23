@@ -171,7 +171,9 @@ ExecutionResult WabtEngine::execute(
 
   // Lets instantiate our state
   ExecutionResult result;
-  WabtEthereumInterface* interface = new WabtEthereumInterface(context, state_code, msg, result, meterInterfaceGas);
+
+  // FIXME: shouldn't have this loose pointer here, but needed for setWasmMemory
+  WabtEthereumInterface* interface = new WabtEthereumInterface{context, state_code, msg, result, meterInterfaceGas};
 
   // Lets add our host module
   // The lifecycle of this pointer is handled by `env`.
@@ -198,6 +200,7 @@ ExecutionResult WabtEngine::execute(
     &module
   );
   ensureCondition(module, ContractValidationFailure, "Module failed to load.");
+  ensureCondition(env.GetMemoryCount() == 1, ContractValidationFailure, "Multiple memory sections exported.");
 
   wabt::interp::Export* mainFunction = module->GetExport("main");
   ensureCondition(mainFunction, ContractValidationFailure, "\"main\" not found");
@@ -205,6 +208,9 @@ ExecutionResult WabtEngine::execute(
 
   // No tracing, no threads
   wabt::interp::Executor executor(&env, nullptr, wabt::interp::Thread::Options{});
+
+  // FIXME: really bad design
+  interface->setWasmMemory(env.GetMemory(0));
 
   // Execute main
   try {
