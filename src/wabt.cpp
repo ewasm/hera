@@ -69,6 +69,12 @@ wabt::Result WabtEthereumInterface::ImportFunc(
     hostFunc->callback = wabtFinish;
     hostFunc->user_data = this;
     return wabt::Result::Ok;
+  } else if (import->field_name == "getCallDataSize") {
+    if (func_sig->param_types.size() != 0 || func_sig->result_types.size() != 1)
+      return wabt::Result::Error;
+    hostFunc->callback = wabtGetCallDataSize;
+    hostFunc->user_data = this;
+    return wabt::Result::Ok;
   }
   return wabt::Result::Error;
 }
@@ -153,6 +159,28 @@ interp::Result WabtEthereumInterface::wabtFinish(
 
   // FIXME: handle host trap here
   interface->eeiFinish(offset, length);
+
+  return interp::Result::Ok;
+}
+
+interp::Result WabtEthereumInterface::wabtGetCallDataSize(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
+  void* user_data
+) {
+  (void)func;
+  (void)num_results;
+  (void)args;
+  (void)num_args;
+
+  WabtEthereumInterface *interface = reinterpret_cast<WabtEthereumInterface*>(user_data);
+
+  out_results[0].type = sig->result_types[0];
+  out_results[0].value.i32 = interface->eeiGetCallDataSize();
 
   return interp::Result::Ok;
 }
