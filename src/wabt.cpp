@@ -46,6 +46,53 @@ using namespace wabt;
 
 namespace hera {
 
+wabt::Result WabtEthereumInterface::ImportFunc(
+  wabt::interp::FuncImport* import,
+  wabt::interp::Func* func,
+  wabt::interp::FuncSignature* func_sig,
+  const ErrorCallback& callback
+) {
+  (void)import;
+  (void)func;
+  (void)func_sig;
+  (void)callback;
+  HERA_DEBUG << "Importing " << import->field_name << "\n";
+  return wabt::Result::Error;
+}
+
+wabt::Result WabtEthereumInterface::ImportMemory(
+  wabt::interp::MemoryImport* import,
+  wabt::interp::Memory* mem,
+  const ErrorCallback& callback
+) {
+  (void)import;
+  (void)mem;
+  (void)callback;
+  return wabt::Result::Error;
+}
+
+wabt::Result WabtEthereumInterface::ImportGlobal(
+  wabt::interp::GlobalImport* import,
+  wabt::interp::Global* global,
+  const ErrorCallback& callback
+) {
+  (void)import;
+  (void)global;
+  (void)callback;
+  return wabt::Result::Error;
+}
+
+wabt::Result WabtEthereumInterface::ImportTable(
+  wabt::interp::TableImport* import,
+  wabt::interp::Table* table,
+  const ErrorCallback& callback
+) {
+  (void)import;
+  (void)table;
+  (void)callback;
+  return wabt::Result::Error;
+}
+
 ExecutionResult WabtEngine::execute(
   evmc_context* context,
   vector<uint8_t> const& code,
@@ -53,18 +100,20 @@ ExecutionResult WabtEngine::execute(
   evmc_message const& msg,
   bool meterInterfaceGas
 ) {
-  (void)context;
-  (void)state_code;
-  (void)msg;
-  (void)meterInterfaceGas;
-  
   HERA_DEBUG << "Executing with wabt...\n";
 
   // This is the wasm state
   wabt::interp::Environment env;
 
+  // Lets instantiate our state
+  ExecutionResult result;
+  WabtEthereumInterface* interface = new WabtEthereumInterface(context, state_code, msg, result, meterInterfaceGas);
+
   // Lets add our host module
-  // TODO: append import delegate here
+  // The lifecycle of this pointer is handled by `env`.
+  wabt::interp::HostModule* hostModule = env.AppendHostModule("ethereum");
+  heraAssert(hostModule, "Failed to create host module.");
+  hostModule->import_delegate = std::unique_ptr<WabtEthereumInterface>(interface);
 
   wabt::ReadBinaryOptions options(
     wabt::Features{},
@@ -94,11 +143,9 @@ ExecutionResult WabtEngine::execute(
   wabt::interp::Executor executor(&env, nullptr, wabt::interp::Thread::Options{});
   
   // Execute main
-  wabt::interp::ExecResult result = executor.RunExport(mainFunction, wabt::interp::TypedValues{});
+  wabt::interp::ExecResult wabtResult = executor.RunExport(mainFunction, wabt::interp::TypedValues{});
 
-  // FIXME populate output
-
-  return ExecutionResult{};
+  return result;
 }
 
 }

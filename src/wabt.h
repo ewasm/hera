@@ -22,7 +22,7 @@
 
 namespace hera {
 
-class WabtEthereumInterface : EthereumInterface {
+class WabtEthereumInterface : EthereumInterface, public wabt::interp::HostImportDelegate {
 public:
   explicit WabtEthereumInterface(
     evmc_context* _context,
@@ -33,6 +33,32 @@ public:
   ):
     EthereumInterface(_context, _code, _msg, _result, _meterGas)
   { }
+
+protected:
+  wabt::Result ImportFunc(
+    wabt::interp::FuncImport* import,
+    wabt::interp::Func* func,
+    wabt::interp::FuncSignature* func_sig,
+    const ErrorCallback& callback
+  ) override;
+
+  wabt::Result ImportMemory(
+    wabt::interp::MemoryImport* import,
+    wabt::interp::Memory* mem,
+    const ErrorCallback& callback
+  ) override;
+
+  wabt::Result ImportGlobal(
+    wabt::interp::GlobalImport* import,
+    wabt::interp::Global* global,
+    const ErrorCallback& callback
+  ) override;
+
+  wabt::Result ImportTable(
+    wabt::interp::TableImport* import,
+    wabt::interp::Table* table,
+    const ErrorCallback& callback
+  ) override;
 
 private:
   size_t memorySize() const override { abort(); }
