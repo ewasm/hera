@@ -37,6 +37,8 @@
 using namespace std;
 using namespace hera;
 
+namespace {
+
 enum class hera_wasm_engine {
   binaryen,
   wavm,
@@ -53,6 +55,16 @@ enum class hera_evm_mode {
   evm2wasm_js_tracing
 };
 
+const map<string, hera_wasm_engine> wasm_engine_options {
+  { "binaryen", hera_wasm_engine::binaryen },
+#if HERA_WAVM
+  { "wavm", hera_wasm_engine::wavm },
+#endif
+#if HERA_WABT
+  { "wabt", hera_wasm_engine::wabt },
+#endif
+};
+
 struct hera_instance : evmc_instance {
   hera_wasm_engine wasm_engine = hera_wasm_engine::binaryen;
   hera_evm_mode evm_mode = hera_evm_mode::reject;
@@ -60,8 +72,6 @@ struct hera_instance : evmc_instance {
 
   hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr}) {}
 };
-
-namespace {
 
 const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } };
 const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } };
@@ -409,17 +419,10 @@ int hera_set_option(
   }
 
   if (strcmp(name, "engine") == 0) {
-     if (strcmp(value, "binaryen") == 0)
-       hera->wasm_engine = hera_wasm_engine::binaryen;
-#if HERA_WABT
-     if (strcmp(value, "wabt") == 0)
-       hera->wasm_engine = hera_wasm_engine::wabt;
-#endif
-#if HERA_WAVM
-     if (strcmp(value, "wavm") == 0)
-       hera->wasm_engine = hera_wasm_engine::wavm;
-#endif
-     return 1;
+    if (wasm_engine_options.count(value)) {
+      hera->wasm_engine = wasm_engine_options.at(value);
+      return 1;
+    }
   }
 
   return 0;
