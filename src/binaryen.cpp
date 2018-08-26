@@ -347,9 +347,8 @@ namespace hera {
       uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t size = static_cast<uint32_t>(arguments[1].geti32());
 
+      // This traps.
       eeiFinish(offset, size);
-
-      return Literal();
     }
 
     if (import->base == Name("revert")) {
@@ -358,9 +357,8 @@ namespace hera {
       uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t size = static_cast<uint32_t>(arguments[1].geti32());
 
+      // This traps.
       eeiRevert(offset, size);
-
-      return Literal();
     }
 
     if (import->base == Name("getReturnDataSize")) {
@@ -439,9 +437,9 @@ namespace hera {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
-      eeiSelfDestruct(addressOffset);
 
-      return Literal();
+      // This traps.
+      eeiSelfDestruct(addressOffset);
     }
 
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
