@@ -30,12 +30,13 @@ These are to be used via EVMC `set_option`:
 
 - `engine=<engine>` will select the underlying WebAssembly engine, where the only accepted value currently is `binaryen`
 - `metering=true` will enable metering of bytecode at deployment using the [Sentinel system contract](https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract) (set to `false` by default)
-- `evm2wasm=true` will enable metering of bytecode at deployment using the [EVM Transcompiler](https://github.com/ewasm/design/blob/master/system_contracts.md#evm-transcompiler) (set to `false` by default)
-- `fallback=true` will allow EVM bytecode to be passed through to the client for execution (if set to `false`, the default, it will be rejected as invalid) (note: is ignored if `evm2wasm` is `true`)
-- `evm2wasm.js=true` will use a `evm2wasm.js` as an external commandline tool instead of the system contract
-- `evm2wasm.js-trace=true` will turn on EVM tracing for `evm2wasm.js`
-- `evm2wasm.cpp=true` will use a `evm2wasm` as a compiled-in dependency instead of the system contract
-- `evm2wasm.cpp-trace=true` will turn on EVM tracing for `evm2wasm.cpp`
+- `evm1mode=reject` will reject any EVM1 bytecode with an error (the default setting)
+- `evm1mode=fallback` will allow EVM1 bytecode to be passed through to the client for execution
+- `evm1mode=evm2wasm` will enable transformation of bytecode using the [EVM Transcompiler](https://github.com/ewasm/design/blob/master/system_contracts.md#evm-transcompiler)
+- `evm1mode=evm2wasm.js` will use a `evm2wasm.js` as an external commandline tool instead of the system contract
+- `evm1mode=evm2wasm.js-trace` will use `evm2wasm.js` with tracing option turned on
+- `evm1mode=evm2wasm.cpp` will use a `evm2wasm` as a compiled-in dependency instead of the system contract
+- `evm1mode=evm2wasm.cpp-trace` will turn use `evm2wasm` with tracing option turned on
 
 ## Interfaces
 

@@ -388,9 +388,11 @@ int hera_set_option(
 ) noexcept {
   hera_instance* hera = static_cast<hera_instance*>(instance);
 
-  if (evm_mode_options.count(name) && strcmp(value, "true") == 0) {
-    hera->evm_mode = evm_mode_options.at(name);
-    return 1;
+  if (strcmp(name, "evm1mode") == 0) {
+    if (evm_mode_options.count(value)) {
+      hera->evm_mode = evm_mode_options.at(value);
+      return 1;
+    }
   }
 
   if (strcmp(name, "metering") == 0) {
