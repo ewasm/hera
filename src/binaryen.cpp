@@ -341,13 +341,24 @@ namespace hera {
       return Literal();
     }
 
-    if (import->base == Name("finish") || import->base == Name("revert")) {
+    if (import->base == Name("finish")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t size = static_cast<uint32_t>(arguments[1].geti32());
 
-      eeiRevertOrFinish(import->base == Name("revert"), offset, size);
+      eeiFinish(offset, size);
+
+      return Literal();
+    }
+
+    if (import->base == Name("revert")) {
+      heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
+      uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
+      uint32_t size = static_cast<uint32_t>(arguments[1].geti32());
+
+      eeiRevert(offset, size);
 
       return Literal();
     }

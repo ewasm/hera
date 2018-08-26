@@ -106,7 +106,8 @@ protected:
   void eeiGetTxOrigin(uint32_t resultOffset);
   void eeiStorageStore(uint32_t pathOffset, uint32_t valueOffset);
   void eeiStorageLoad(uint32_t pathOffset, uint32_t resultOffset);
-  void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
+  void eeiFinish(uint32_t offset, uint32_t size) { eeiRevertOrFinish(false, offset, size); }
+  void eeiRevert(uint32_t offset, uint32_t size) { eeiRevertOrFinish(true, offset, size); }
   uint32_t eeiGetReturnDataSize();
   void eeiReturnDataCopy(uint32_t dataOffset, uint32_t offset, uint32_t size);
   uint32_t eeiCall(EEICallKind kind, int64_t gas, uint32_t addressOffset, uint32_t valueOffset, uint32_t dataOffset, uint32_t dataLength);
@@ -114,6 +115,8 @@ protected:
   void eeiSelfDestruct(uint32_t addressOffset);
 
 private:
+  void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
+
   // Helpers methods
 
   void takeGas(int64_t gas);
