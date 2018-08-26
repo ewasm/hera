@@ -10,6 +10,8 @@ add_library(hera
     ${hera_include_dir}/hera/hera.h
     eei.cpp
     eei.h
+    helpers.cpp
+    helpers.h
     hera.cpp
 )
 

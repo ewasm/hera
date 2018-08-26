@@ -23,22 +23,11 @@
 #include "debugging.h"
 #include "eei.h"
 #include "exceptions.h"
+#include "helpers.h"
 
 #include <evmc/instructions.h>
 
 using namespace std;
-
-#if HERA_DEBUGGING
-namespace {
-string toHex(evmc_uint256be const& value) {
-  ostringstream os;
-  os << hex;
-  for (auto b: value.bytes)
-    os << setw(2) << setfill('0') << unsigned(b);
-  return "0x" + os.str();
-}
-}
-#endif
 
 namespace hera {
 #if HERA_DEBUGGING
