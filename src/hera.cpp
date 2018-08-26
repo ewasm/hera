@@ -411,11 +411,11 @@ int hera_set_option(
   if (strcmp(name, "engine") == 0) {
      if (strcmp(value, "binaryen") == 0)
        hera->wasm_engine = hera_wasm_engine::binaryen;
-#if HAVE_WABT
+#if HERA_WABT
      if (strcmp(value, "wabt") == 0)
        hera->wasm_engine = hera_wasm_engine::wabt;
 #endif
-#if HAVE_WAVM
+#if HERA_WAVM
      if (strcmp(value, "wavm") == 0)
        hera->wasm_engine = hera_wasm_engine::wavm;
 #endif
