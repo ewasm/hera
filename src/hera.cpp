@@ -297,8 +297,6 @@ evmc_result hera_execute(
         HERA_DEBUG << "Non-WebAssembly input, failure.n\n";
         ret.status_code = EVMC_FAILURE;
         return ret;
-      default:
-        heraAssert(false, "");
       }
     } else if (msg->kind == EVMC_CREATE) {
       // Meter the deployment (constructor) code if it is WebAssembly
