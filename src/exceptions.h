@@ -55,14 +55,11 @@ class EndExecution : public HeraException {
 ///
 /// This exception is thrown when state modifying EEI function is called
 /// in static mode.
-class StaticModeViolation : public std::exception {
+class StaticModeViolation : public HeraException {
 public:
   explicit StaticModeViolation(std::string const& _functionName):
-    msg("Static mode violation in " + _functionName + ".")
+    HeraException("Static mode violation in " + _functionName + ".")
   {}
-  const char* what() const noexcept override { return msg.c_str(); }
-protected:
-  std::string msg;
 };
 
 #define heraAssert(condition, msg) { \
