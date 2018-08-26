@@ -22,6 +22,7 @@ namespace hera {
 
 class HeraException : public std::exception {
 public:
+  explicit HeraException(): msg({}) {}
   explicit HeraException(std::string _msg): msg(std::move(_msg)) {}
   const char* what() const noexcept override { return msg.c_str(); }
 protected:
@@ -46,25 +47,19 @@ class ContractValidationFailure : public HeraException {
 class InvalidMemoryAccess : public HeraException {
   using HeraException::HeraException;
 };
-
-class EndExecution : public std::exception {
-public:
-  explicit EndExecution() {}
-  const char* what() const noexcept override { return ""; }
+class EndExecution : public HeraException {
+  using HeraException::HeraException;
 };
 
 /// Static Mode Violation.
 ///
 /// This exception is thrown when state modifying EEI function is called
 /// in static mode.
-class StaticModeViolation : public std::exception {
+class StaticModeViolation : public HeraException {
 public:
   explicit StaticModeViolation(std::string const& _functionName):
-    msg("Static mode violation in " + _functionName + ".")
+    HeraException("Static mode violation in " + _functionName + ".")
   {}
-  const char* what() const noexcept override { return msg.c_str(); }
-protected:
-  std::string msg;
 };
 
 #define heraAssert(condition, msg) { \
