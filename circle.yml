@@ -103,20 +103,6 @@ defaults:
         cd hera
         echo "hera branch: $(git rev-parse --abbrev-ref HEAD)  commit: $(git rev-parse HEAD)"
 
-  test-evm2wasm: &test-evm2wasm
-    run:
-      name: "Run evm2wasm state tests"
-      working_directory: ~/project
-      command: |
-        echo "print working directory:"
-        pwd
-        echo "list files in working directory:"
-        ls -al .
-        echo "check testeth command"
-        testeth --help
-        echo "run tests script."
-        ./scripts/evm2wasm-tests.sh
-
   install-cpp-ethereum: &install-cpp-ethereum
     run:
       name: "Install cpp-ethereum"
@@ -137,6 +123,14 @@ defaults:
         testeth --version
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium
 
+  evm2wasm-test: &evm2wasm-test
+    run:
+      name: "Run evm2wasm state tests"
+      command: |
+        testeth --version
+        testeth -t GeneralStateTests/stExample -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "add11" --evmc evm2wasm.cpp=true
+        testeth -t GeneralStateTests/stStackTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc evm2wasm.cpp=true
+
   upload-coverage-data: &upload-coverage-data
     run:
       name: "Upload coverage data"
@@ -146,28 +140,6 @@ defaults:
 
 version: 2
 jobs:
-  evm2wasm-tests:
-    environment:
-      - BUILD_TYPE: Release
-      - CXX: clang++
-      - CC:  clang
-      - GENERATOR: Ninja
-      - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DHERA_DEBUGGING=OFF
-    docker:
-      - image: cdetrio/nodejs-cpp-build-env
-    steps:
-      - *install-system-deps
-      - checkout
-      - *update-submodules
-      - *environment-info
-      - *checkout-cpp-eth
-      - *restore-eth-cache
-      - *link-hera
-      - *build-cpp-eth
-      - *save-eth-cache
-      - *test-evm2wasm
-
   linux-clang-shared-release:
     environment:
       - BUILD_TYPE: Release
@@ -191,6 +163,7 @@ jobs:
       - *store-hera
       - *fetch-tests
       - *test
+      - *evm2wasm-test
 
   linux-gcc-shared-coverage:
     environment:
@@ -244,4 +217,3 @@ workflows:
       - linux-clang-shared-release
       - linux-gcc-shared-coverage
       - linux-gcc-debug
-      - evm2wasm-tests
