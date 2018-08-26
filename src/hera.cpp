@@ -31,6 +31,7 @@
 #include "debugging.h"
 #include "eei.h"
 #include "exceptions.h"
+#include "helpers.h"
 
 #include <hera/buildinfo.h>
 
@@ -75,19 +76,6 @@ struct hera_instance : evmc_instance {
 
 const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } };
 const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } };
-
-bool hasWasmPreamble(vector<uint8_t> const& _input) {
-  return
-    _input.size() >= 8 &&
-    _input[0] == 0 &&
-    _input[1] == 'a' &&
-    _input[2] == 's' &&
-    _input[3] == 'm' &&
-    _input[4] == 1 &&
-    _input[5] == 0 &&
-    _input[6] == 0 &&
-    _input[7] == 0;
-}
 
 // Calls a system contract at @address with input data @input.
 // It is a "staticcall" with sender 000...000 and no value.
