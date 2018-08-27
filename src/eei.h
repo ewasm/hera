@@ -32,6 +32,8 @@ struct ExecutionResult {
 
 class WasmEngine {
 public:
+  virtual ~WasmEngine() noexcept = default;
+
   virtual ExecutionResult execute(
     evmc_context* context,
     std::vector<uint8_t> const& code,
