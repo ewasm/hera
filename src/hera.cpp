@@ -49,7 +49,7 @@ enum class hera_wasm_engine {
   wabt
 };
 
-enum class hera_evm_mode {
+enum class hera_evm1mode {
   reject,
   fallback,
   evm2wasm_contract,
@@ -69,19 +69,19 @@ const map<string, hera_wasm_engine> wasm_engine_options {
 #endif
 };
 
-const map<string, hera_evm_mode> evm_mode_options {
-  { "reject", hera_evm_mode::reject },
-  { "fallback", hera_evm_mode::fallback },
-  { "evm2wasm", hera_evm_mode::evm2wasm_contract },
-  { "evm2wasm.cpp", hera_evm_mode::evm2wasm_cpp },
-  { "evm2wasm.cpp-trace", hera_evm_mode::evm2wasm_cpp_tracing },
-  { "evm2wasm.js", hera_evm_mode::evm2wasm_js },
-  { "evm2wasm.js-trace", hera_evm_mode::evm2wasm_js_tracing },
+const map<string, hera_evm1mode> evm1mode_options {
+  { "reject", hera_evm1mode::reject },
+  { "fallback", hera_evm1mode::fallback },
+  { "evm2wasm", hera_evm1mode::evm2wasm_contract },
+  { "evm2wasm.cpp", hera_evm1mode::evm2wasm_cpp },
+  { "evm2wasm.cpp-trace", hera_evm1mode::evm2wasm_cpp_tracing },
+  { "evm2wasm.js", hera_evm1mode::evm2wasm_js },
+  { "evm2wasm.js-trace", hera_evm1mode::evm2wasm_js_tracing },
 };
 
 struct hera_instance : evmc_instance {
   std::unique_ptr<WasmEngine> engine{new BinaryenEngine};
-  hera_evm_mode evm_mode = hera_evm_mode::reject;
+  hera_evm1mode evm1mode = hera_evm1mode::reject;
   bool metering = false;
 
   hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr}) {}
@@ -286,32 +286,32 @@ evmc_result hera_execute(
 
     // ensure we can only handle WebAssembly version 1
     if (!hasWasmPreamble(run_code)) {
-      switch (hera->evm_mode) {
-      case hera_evm_mode::evm2wasm_contract:
+      switch (hera->evm1mode) {
+      case hera_evm1mode::evm2wasm_contract:
         run_code = evm2wasm(context, run_code);
         ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
-      case hera_evm_mode::evm2wasm_cpp:
-      case hera_evm_mode::evm2wasm_cpp_tracing:
-        run_code = evm2wasm_cpp(run_code, hera->evm_mode == hera_evm_mode::evm2wasm_cpp_tracing);
+      case hera_evm1mode::evm2wasm_cpp:
+      case hera_evm1mode::evm2wasm_cpp_tracing:
+        run_code = evm2wasm_cpp(run_code, hera->evm1mode == hera_evm1mode::evm2wasm_cpp_tracing);
         ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.cpp failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
-      case hera_evm_mode::evm2wasm_js:
-      case hera_evm_mode::evm2wasm_js_tracing:
-        run_code = evm2wasm_js(run_code, hera->evm_mode == hera_evm_mode::evm2wasm_js_tracing);
+      case hera_evm1mode::evm2wasm_js:
+      case hera_evm1mode::evm2wasm_js_tracing:
+        run_code = evm2wasm_js(run_code, hera->evm1mode == hera_evm1mode::evm2wasm_js_tracing);
         ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
-      case hera_evm_mode::fallback:
+      case hera_evm1mode::fallback:
         HERA_DEBUG << "Non-WebAssembly input, but fallback mode enabled, asking client to deal with it.\n";
         ret.status_code = EVMC_REJECTED;
         return ret;
-      case hera_evm_mode::reject:
+      case hera_evm1mode::reject:
         HERA_DEBUG << "Non-WebAssembly input, failure.n\n";
         ret.status_code = EVMC_FAILURE;
         return ret;
@@ -396,8 +396,8 @@ int hera_set_option(
   hera_instance* hera = static_cast<hera_instance*>(instance);
 
   if (strcmp(name, "evm1mode") == 0) {
-    if (evm_mode_options.count(value)) {
-      hera->evm_mode = evm_mode_options.at(value);
+    if (evm1mode_options.count(value)) {
+      hera->evm1mode = evm1mode_options.at(value);
       return 1;
     }
   }
