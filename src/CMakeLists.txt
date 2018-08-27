@@ -3,6 +3,9 @@ find_package(Threads REQUIRED)
 set(hera_include_dir ${PROJECT_SOURCE_DIR}/include)
 get_filename_component(evmc_include_dir .. ABSOLUTE)
 
+# enforce some strictness around switch statements
+add_compile_options(-Wswitch-default -Wswitch-bool -Wimplicit-fallthrough)
+
 add_library(hera
     binaryen.cpp
     binaryen.h
