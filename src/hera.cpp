@@ -415,4 +415,12 @@ evmc_instance* evmc_create_hera() noexcept
   return instance;
 }
 
+#if hera_EXPORTS
+// If compiled as shared library, also export this symbol.
+EVMC_EXPORT evmc_instance* evmc_create() noexcept
+{
+  return evmc_create_hera();
+}
+#endif
+
 }
