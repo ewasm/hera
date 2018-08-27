@@ -66,6 +66,16 @@ const map<string, hera_wasm_engine> wasm_engine_options {
 #endif
 };
 
+const map<string, hera_evm_mode> evm_mode_options {
+  { "reject", hera_evm_mode::reject },
+  { "fallback", hera_evm_mode::fallback },
+  { "evm2wasm", hera_evm_mode::evm2wasm_contract },
+  { "evm2wasm.cpp", hera_evm_mode::evm2wasm_cpp },
+  { "evm2wasm.cpp-trace", hera_evm_mode::evm2wasm_cpp_tracing },
+  { "evm2wasm.js", hera_evm_mode::evm2wasm_js },
+  { "evm2wasm.js-trace", hera_evm_mode::evm2wasm_js_tracing },
+};
+
 struct hera_instance : evmc_instance {
   hera_wasm_engine wasm_engine = hera_wasm_engine::binaryen;
   hera_evm_mode evm_mode = hera_evm_mode::reject;
@@ -363,40 +373,12 @@ int hera_set_option(
   char const *value
 ) noexcept {
   hera_instance* hera = static_cast<hera_instance*>(instance);
-  if (strcmp(name, "fallback") == 0) {
-    if (strcmp(value, "true") == 0)
-      hera->evm_mode = hera_evm_mode::fallback;
-    return 1;
-  }
 
-  if (strcmp(name, "evm2wasm") == 0) {
-    if (strcmp(value, "true") == 0)
-      hera->evm_mode = hera_evm_mode::evm2wasm_contract;
-    return 1;
-  }
-
-  if (strcmp(name, "evm2wasm.cpp") == 0) {
-    if (strcmp(value, "true") == 0)
-      hera->evm_mode = hera_evm_mode::evm2wasm_cpp;
-    return 1;
-  }
-
-  if (strcmp(name, "evm2wasm.cpp-trace") == 0) {
-    if (strcmp(value, "true") == 0)
-      hera->evm_mode = hera_evm_mode::evm2wasm_cpp_tracing;
-    return 1;
-  }
-
-  if (strcmp(name, "evm2wasm.js") == 0) {
-    if (strcmp(value, "true") == 0)
-      hera->evm_mode = hera_evm_mode::evm2wasm_js;
-    return 1;
-  }
-
-  if (strcmp(name, "evm2wasm.js-trace") == 0) {
-    if (strcmp(value, "true") == 0)
-      hera->evm_mode = hera_evm_mode::evm2wasm_js_tracing;
-    return 1;
+  if (strcmp(name, "evm1mode") == 0) {
+    if (evm_mode_options.count(value)) {
+      hera->evm_mode = evm_mode_options.at(value);
+      return 1;
+    }
   }
 
   if (strcmp(name, "metering") == 0) {

@@ -31,5 +31,5 @@ echo "fetch ethereum tests."
 git clone https://github.com/ethereum/tests
 
 echo "run evm2wasm tests"
-${TESTETH} -t GeneralStateTests/stExample -- --testpath ${WORKING_DIR}/tests --singlenet "Byzantium" --singletest "add11" --vm hera --evmc evm2wasm.cpp=true
-${TESTETH} -t GeneralStateTests/stStackTests -- --testpath ${WORKING_DIR}/tests --singlenet "Byzantium" --vm hera --evmc evm2wasm.cpp=true
+${TESTETH} -t GeneralStateTests/stExample -- --testpath ${WORKING_DIR}/tests --singlenet "Byzantium" --singletest "add11" --vm hera --evmc evm1mode=evm2wasm.cpp
+${TESTETH} -t GeneralStateTests/stStackTests -- --testpath ${WORKING_DIR}/tests --singlenet "Byzantium" --vm hera --evmc evm1mode=evm2wasm.cpp
