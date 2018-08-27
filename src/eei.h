@@ -30,8 +30,14 @@ struct ExecutionResult {
   bool isRevert = false;
 };
 
+// There is a single engine instance in each VM instance and
+// likely execute() is called multiple times. As a result
+// an engine implementation cannot have instance variables with
+// side-effects.
 class WasmEngine {
 public:
+  virtual ~WasmEngine() noexcept = default;
+
   virtual ExecutionResult execute(
     evmc_context* context,
     std::vector<uint8_t> const& code,

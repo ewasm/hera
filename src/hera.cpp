@@ -77,12 +77,24 @@ const map<string, hera_evm_mode> evm_mode_options {
 };
 
 struct hera_instance : evmc_instance {
-  hera_wasm_engine wasm_engine = hera_wasm_engine::binaryen;
+  std::unique_ptr<WasmEngine> engine{new BinaryenEngine};
   hera_evm_mode evm_mode = hera_evm_mode::reject;
   bool metering = false;
 
   hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr}) {}
 };
+
+int hera_create_wasm_engine(struct hera_instance *hera, hera_wasm_engine engine)
+{
+  switch (engine) {
+  case hera_wasm_engine::binaryen:
+    hera->engine.reset(new BinaryenEngine);
+    break;
+  default:
+    return 0;
+  }
+  return 1;
+}
 
 const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } };
 const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } };
@@ -303,8 +315,9 @@ evmc_result hera_execute(
       ensureCondition(run_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
     }
 
-    heraAssert(hera->wasm_engine == hera_wasm_engine::binaryen, "Unsupported wasm engine.");
-    BinaryenEngine engine = BinaryenEngine{};
+    heraAssert(hera->engine, "Wasm engine not set.");
+    WasmEngine& engine = *hera->engine;
+
     ExecutionResult result = engine.execute(context, run_code, state_code, *msg, meterInterfaceGas);
     heraAssert(result.gasLeft >= 0, "Negative gas left after execution.");
 
@@ -387,9 +400,9 @@ int hera_set_option(
   }
 
   if (strcmp(name, "engine") == 0) {
-    if (wasm_engine_options.count(value)) {
-      hera->wasm_engine = wasm_engine_options.at(value);
-      return 1;
+    auto it = wasm_engine_options.find(value);
+    if (it != wasm_engine_options.end()) {
+      return hera_create_wasm_engine(hera, it->second);
     }
   }
 

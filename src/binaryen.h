@@ -56,7 +56,7 @@ private:
   uint8_t memoryGet(size_t offset) override { return memory.get<uint8_t>(offset); }
 };
 
-class BinaryenEngine : WasmEngine {
+class BinaryenEngine : public WasmEngine {
 public:
   ExecutionResult execute(
     evmc_context* context,
@@ -67,7 +67,7 @@ public:
   ) override;
 
 private:
-  void validate_contract(wasm::Module & module);
+  static void validate_contract(wasm::Module & module);
 };
 
 }
