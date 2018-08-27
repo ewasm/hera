@@ -67,7 +67,7 @@ public:
   ) override;
 
 private:
-  void validate_contract(wasm::Module & module);
+  static void validate_contract(wasm::Module & module);
 };
 
 }
