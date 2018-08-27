@@ -105,6 +105,16 @@ protected:
     void* user_data
   );
 
+  static wabt::interp::Result wabtCallDataCopy(
+    const wabt::interp::HostFunc* func,
+    const wabt::interp::FuncSignature* sig,
+    wabt::Index num_args,
+    wabt::interp::TypedValue* args,
+    wabt::Index num_results,
+    wabt::interp::TypedValue* out_results,
+    void* user_data
+  );
+
 private:
   // These assume that m_wasmMemory was set prior to execution.
   size_t memorySize() const override { return m_wasmMemory->data.size(); }

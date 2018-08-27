@@ -81,6 +81,12 @@ wabt::Result WabtEthereumInterface::ImportFunc(
     hostFunc->callback = wabtGetCallDataSize;
     hostFunc->user_data = this;
     return wabt::Result::Ok;
+  } else if (import->field_name == "callDataCopy") {
+    if (func_sig->param_types.size() != 3 || func_sig->result_types.size() != 0)
+      return wabt::Result::Error;
+    hostFunc->callback = wabtCallDataCopy;
+    hostFunc->user_data = this;
+    return wabt::Result::Ok;
   }
   return wabt::Result::Error;
 }
@@ -213,6 +219,32 @@ interp::Result WabtEthereumInterface::wabtGetCallDataSize(
 
   out_results[0].type = sig->result_types[0];
   out_results[0].value.i32 = interface->eeiGetCallDataSize();
+
+  return interp::Result::Ok;
+}
+
+interp::Result WabtEthereumInterface::wabtCallDataCopy(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
+  void* user_data
+) {
+  (void)func;
+  (void)sig;
+  (void)num_args;
+  (void)num_results;
+  (void)out_results;
+
+  WabtEthereumInterface *interface = reinterpret_cast<WabtEthereumInterface*>(user_data);
+
+  uint32_t resultOffset = args[0].value.i32;
+  uint32_t dataOffset = args[1].value.i32;
+  uint32_t length = args[2].value.i32;
+
+  interface->eeiCallDataCopy(resultOffset, dataOffset, length);
 
   return interp::Result::Ok;
 }
