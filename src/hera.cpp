@@ -43,12 +43,6 @@ using namespace hera;
 
 namespace {
 
-enum class hera_wasm_engine {
-  binaryen,
-  wavm,
-  wabt
-};
-
 enum class hera_evm1mode {
   reject,
   fallback,
@@ -59,13 +53,15 @@ enum class hera_evm1mode {
   evm2wasm_js_tracing
 };
 
-const map<string, hera_wasm_engine> wasm_engine_options {
-  { "binaryen", hera_wasm_engine::binaryen },
+using WasmEngineCreateFn = std::unique_ptr<WasmEngine>(*)();
+
+const map<string, WasmEngineCreateFn> wasm_engine_map {
+  { "binaryen", BinaryenEngine::create },
 #if HERA_WAVM
-  { "wavm", hera_wasm_engine::wavm },
+  { "wavm", []{ return std::unique_ptr<WasmEngine>{}; } },
 #endif
 #if HERA_WABT
-  { "wabt", hera_wasm_engine::wabt },
+  { "wabt", WabtEngine::create },
 #endif
 };
 
@@ -87,23 +83,6 @@ struct hera_instance : evmc_instance {
 
   hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr}) {}
 };
-
-int hera_create_wasm_engine(struct hera_instance *hera, hera_wasm_engine engine)
-{
-  switch (engine) {
-  case hera_wasm_engine::binaryen:
-    hera->engine.reset(new BinaryenEngine);
-    break;
-#if HERA_WABT
-  case hera_wasm_engine::wabt:
-    hera->engine.reset(new WabtEngine);
-    break;
-#endif
-  default:
-    return 0;
-  }
-  return 1;
-}
 
 const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } };
 const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } };
@@ -468,9 +447,10 @@ int hera_set_option(
   }
 
   if (strcmp(name, "engine") == 0) {
-    auto it = wasm_engine_options.find(value);
-    if (it != wasm_engine_options.end()) {
-      return hera_create_wasm_engine(hera, it->second);
+    auto it = wasm_engine_map.find(value);
+    if (it != wasm_engine_map.end()) {
+      hera->engine = it->second();
+      return 1;
     }
   }
 

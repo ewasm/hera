@@ -126,6 +126,10 @@ private:
 
 class WabtEngine : public WasmEngine {
 public:
+
+  /// Factory method to create the WABT Wasm Engine.
+  static std::unique_ptr<WasmEngine> create();
+
   ExecutionResult execute(
     evmc_context* context,
     std::vector<uint8_t> const& code,

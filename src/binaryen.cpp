@@ -479,6 +479,11 @@ void BinaryenEngine::validate_contract(Module & module)
   }
 }
 
+std::unique_ptr<WasmEngine> BinaryenEngine::create()
+{
+  return std::unique_ptr<WasmEngine>{new BinaryenEngine};
+}
+
 // Execute the contract through Binaryen.
 ExecutionResult BinaryenEngine::execute(
   evmc_context* context,

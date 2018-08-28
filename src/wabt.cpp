@@ -46,6 +46,11 @@ using namespace wabt;
 
 namespace hera {
 
+std::unique_ptr<WasmEngine> WabtEngine::create()
+{
+  return std::unique_ptr<WasmEngine>{new WabtEngine};
+}
+
 wabt::Result WabtEthereumInterface::ImportFunc(
   wabt::interp::FuncImport* import,
   wabt::interp::Func* func,
