@@ -88,6 +88,7 @@ struct hera_instance : evmc_instance {
 #error "No engine requested."
 #endif
   };
+  bool fuzzing = false;
   hera_evm1mode evm1mode = hera_evm1mode::reject;
   bool metering = false;
   map<evmc_address, vector<uint8_t>> contract_preload_list;
@@ -335,12 +336,18 @@ evmc_result hera_execute(
   } catch (InternalErrorException const& e) {
     ret.status_code = EVMC_INTERNAL_ERROR;
     HERA_DEBUG << "InternalError: " << e.what() << "\n";
+    if (hera->fuzzing)
+      abort();
   } catch (exception const& e) {
     ret.status_code = EVMC_INTERNAL_ERROR;
     HERA_DEBUG << "Unknown exception: " << e.what() << "\n";
+    if (hera->fuzzing)
+      abort();
   } catch (...) {
     ret.status_code = EVMC_INTERNAL_ERROR;
     HERA_DEBUG << "Totally unknown exception\n";
+    if (hera->fuzzing)
+      abort();
   }
 
   return ret;
@@ -426,6 +433,16 @@ evmc_set_option_result hera_set_option(
     if (hera_parse_sys_option(hera, string(name), string(value)))
       return EVMC_SET_OPTION_SUCCESS;
     return EVMC_SET_OPTION_INVALID_VALUE;
+  }
+
+  if (strcmp(name, "fuzzing") == 0) {
+    if (strcmp(value, "true") == 0)
+      hera->fuzzing = true;
+    else if (strcmp(value, "false") == 0)
+      hera->fuzzing = false;
+    else
+      return EVMC_SET_OPTION_INVALID_VALUE;
+    return EVMC_SET_OPTION_SUCCESS;
   }
 
   return EVMC_SET_OPTION_INVALID_NAME;
