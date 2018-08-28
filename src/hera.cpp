@@ -108,15 +108,6 @@ int hera_create_wasm_engine(struct hera_instance *hera, hera_wasm_engine engine)
 const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } };
 const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } };
 
-// Returns the bytecode to be overridden before execution
-vector<uint8_t> overrideRunCode(string const& path) {
-  HERA_DEBUG << "Attempting to load file " << path << "\n";
-  string ret = loadFileContents(path);
-  HERA_DEBUG << "Successfully loaded file " << path << "\n";
-
-  return vector<uint8_t>(ret.begin(), ret.end());
-}
-
 // Checks if the contract preload list contains the given address.
 vector<uint8_t> resolveSystemContract(const hera_instance *hera, const evmc_address *addr) {
   auto const& list = hera->contract_preload_list;
@@ -431,7 +422,7 @@ pair<bool, evmc_address> resolve_alias_to_address(string const& alias) {
   return make_pair(false, evmc_address{});
 }
 
-pair<bool, evmc_address> parse_hex_addr(string const& addr) {
+pair<bool, evmc_address> parse_hex_address(string const& addr) {
   evmc_address ret = {};
 
   HERA_DEBUG << "Trying to parse address field\n";
@@ -465,35 +456,37 @@ pair<bool, evmc_address> parse_hex_addr(string const& addr) {
   return pair<bool, evmc_address>(true, ret);
 }
 
-pair<bool, evmc_address> parse_preload_addr(const char *name)
+bool hera_parse_sys_option(hera_instance *hera, string const& _name, string const& value)
 {
-  assert(name != nullptr);
+  heraAssert(_name.find("sys:") == 0, "");
+  string name = _name.substr(4, string::npos);
+  evmc_address address;
 
-  pair<bool, evmc_address> ret = { false, {} };
-  string evmc_option_raw = string(name);
-
-  HERA_DEBUG << "Trying to parse EVMC option as preload flag: " << evmc_option_raw << "\n";
-
-  // Check the "sys:" syntax by comparing substring
-  if (evmc_option_raw.find("sys:") != 0) {
-    HERA_DEBUG << "Unsuccessfully parsed preload command, prefix malformed: " << evmc_option_raw.substr(0, 4) << "\n";
-    return ret;
+  if (name.find("0x") == 0) {
+    // hex address
+    bool success = false;
+    tie(success, address) = parse_hex_address(name);
+    if (!success) {
+      HERA_DEBUG << "Failed to parse hex address: " << name << "\n";
+      return 0;
+    }
+  } else {
+    // alias
+    bool success = false;
+    tie(success, address) = resolve_alias_to_address(name);
+    if (!success) {
+      HERA_DEBUG << "Failed to resolve system contract alias: " << name << "\n";
+      return 0;
+    }
   }
 
-  // Parse the address field from the option name and try to determine an address
-  string opt_address_to_load = evmc_option_raw.substr(4, string::npos);
+  string contents = loadFileContents(value);
+  if (contents.size() == 0)
+    return 0;
 
-  // Try to resolve the substring to an alias first
-  HERA_DEBUG << "Attempting to parse option as an alias: " << opt_address_to_load << "\n";
-  ret = resolve_alias_to_address(opt_address_to_load);
+  hera->contract_preload_list.push_back(pair<evmc_address, vector<uint8_t>>(address, vector<uint8_t>(contents.begin(), contents.end())));
 
-  // If alias resolver returns false, try parsing to a hex address
-  if (ret.first == false) {
-    HERA_DEBUG << "Unsuccessfully resolved option to an alias, trying to unmarshal from a hex string\n";
-    ret = parse_hex_addr(opt_address_to_load);
-  }
-
-  return ret;
+  return 1;
 }
 
 int hera_set_option(
@@ -522,10 +515,9 @@ int hera_set_option(
     }
   }
 
-  auto preload_addr = parse_preload_addr(name);
-  if (preload_addr.first == true) {
-    hera->contract_preload_list.push_back(pair<evmc_address, vector<uint8_t>>(preload_addr.second, overrideRunCode(string(value))));
-    return 1;
+  if (strncmp(name, "sys:", 4) == 0) {
+    if (hera_parse_sys_option(hera, string(name), string(value)))
+      return 1;
   }
 
   return 0;
