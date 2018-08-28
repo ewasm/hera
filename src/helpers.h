@@ -22,6 +22,8 @@
 
 namespace hera {
 
+std::string loadFileContents(std::string const& path);
+
 std::string toHex(evmc_uint256be const& value);
 
 // Returns a formatted string (with prefix "0x") representing the bytes of an array.

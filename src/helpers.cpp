@@ -17,6 +17,7 @@
 #include <vector>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
 
 #include <evmc/evmc.h>
 
@@ -25,6 +26,12 @@
 using namespace std;
 
 namespace hera {
+
+string loadFileContents(string const& path)
+{
+  ifstream is(path);
+  return string{(istreambuf_iterator<char>(is)), istreambuf_iterator<char>()};
+}
 
 string toHex(evmc_uint256be const& value) {
   ostringstream os;
