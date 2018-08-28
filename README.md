@@ -2,14 +2,16 @@
 
 Hera is an [ewasm] virtual machine implemented in C++ conforming to [EVMC].
 
-It can be used with [aleth] and perhaps in the future with other implementations through appropriate bindings.
+It is design to leverage various Wasm backends, both interpreters and AOT/JITs.
 
-Currently it uses [Binaryen]'s interpreter for running WebAssembly bytecode and it should be improved to support [wabt] and [WAVM] as backends.
+## Client support
+
+Hera has been tested with [aleth]. It should however work with any client with compliant [EVMC] support.
 
 ## Build options
 
 - `-DHERA_DEBUGGING=ON` will turn on debugging features and messages
-- `-DBUILD_SHARED_LIBS=ON` is a standard CMake option to build libraries as shared. This will build Hera shared library that can be then dynamically loaded by EVMC compatible Clients (e.g. `aleth` from [aleth]).
+- `-DBUILD_SHARED_LIBS=ON` is a standard CMake option to build libraries as shared. This will build Hera shared library that can be then dynamically loaded by EVMC compatible Clients (e.g. `aleth` from [aleth]). **This is the preferred way of compilation.**
 
 ### Binaryen support
 
