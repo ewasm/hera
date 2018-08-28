@@ -15,11 +15,6 @@
  */
 
 #include <vector>
-#include <stdexcept>
-#include <cstdlib>
-#include <unistd.h>
-#include <string.h>
-#include <fstream>
 #include <iostream>
 
 #include "src/binary-reader-interp.h"
