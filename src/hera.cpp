@@ -32,6 +32,9 @@
 #include "eei.h"
 #include "exceptions.h"
 #include "helpers.h"
+#if HERA_WABT
+#include "wabt.h"
+#endif
 
 #include <hera/buildinfo.h>
 
@@ -90,6 +93,11 @@ int hera_create_wasm_engine(struct hera_instance *hera, hera_wasm_engine engine)
   case hera_wasm_engine::binaryen:
     hera->engine.reset(new BinaryenEngine);
     break;
+#if HERA_WABT
+  case hera_wasm_engine::wabt:
+    hera->engine.reset(new WabtEngine);
+    break;
+#endif
   default:
     return 0;
   }
