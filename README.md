@@ -1,6 +1,6 @@
 # Hera ![Status](https://circleci.com/gh/ewasm/hera.svg?style=shield&circle-token=:circle-token)
 
-Hera is an [ewasm] virtual machine implemented in C++ conforming to [EVMC].
+Hera is an [ewasm] (revision 4) virtual machine implemented in C++ conforming to [EVMC] ABIv5.
 
 It is design to leverage various Wasm backends, both interpreters and AOT/JITs.
 
