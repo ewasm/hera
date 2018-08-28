@@ -113,13 +113,10 @@ vector<uint8_t> resolveSystemContract(const hera_instance *hera, const evmc_addr
   auto const& list = hera->contract_preload_list;
 
   for (size_t i = 0; i < list.size(); ++i) {
-    if (memcmp(list[i].first.bytes, addr->bytes, sizeof(evmc_address)) == 0) {
-      HERA_DEBUG << "Successfully resolved address " << bytesAsHexStr(addr->bytes, 20) << "\n";
+    if (memcmp(list[i].first.bytes, addr->bytes, sizeof(evmc_address)) == 0)
       return list[i].second;
-    }
   }
 
-  HERA_DEBUG << "Address does not match " << bytesAsHexStr(addr->bytes, 20) << "\n";
   return vector<uint8_t>{};
 }
 
