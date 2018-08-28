@@ -128,16 +128,10 @@ vector<uint8_t> overrideRunCode(const evmc_address *addr, const hera_instance *h
   const string path = resolvePreloadPath(addr, hera);
 
   HERA_DEBUG << "Attempting to load file " << path << "\n";
-  ifstream fp;
-  fp.open(path.c_str(), ios::in | ios::binary);
-
-  if (!fp.is_open()) throw InternalErrorException(string("Failed to open WASM binary"));
-  
-  istreambuf_iterator<char> fp_start(fp), fp_end;
-  vector<char> bytecode(fp_start, fp_end);
+  string ret = loadFileContents(path);
   HERA_DEBUG << "Successfully loaded file " << path << "\n";
-  // Replace the run code with the loaded bytecode
-  return vector<uint8_t>(bytecode.begin(), bytecode.end());
+
+  return vector<uint8_t>(ret.begin(), ret.end());
 }
 
 // Checks if the contract preload list contains the given address.
@@ -258,9 +252,7 @@ vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
     return vector<uint8_t>();
   }
 
-  ifstream is(fileWASM);
-  string str((istreambuf_iterator<char>(is)),
-                 istreambuf_iterator<char>());
+  string str = loadFileContents(fileWASM);
 
   unlink(fileWASM.data());
 
