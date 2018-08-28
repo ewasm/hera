@@ -41,15 +41,15 @@ Hera has been tested with [aleth]. It should however work with any client with c
 These are to be used via EVMC `set_option`:
 
 - `engine=<engine>` will select the underlying WebAssembly engine, where the only accepted values currently are `binaryen` and `wabt`
-- `metering=true` will enable metering of bytecode at deployment using the [Sentinel system contract](https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract) (set to `false` by default)
+- `metering=true` will enable metering of bytecode at deployment using the [Sentinel system contract] (set to `false` by default)
 - `evm1mode=<evm1mode>` will select how EVM1 bytecode is handled
-- `sys:<alias/address>=file.wasm` will override the code executing at the specified address with code loaded from a filepath at runtime. This option supports aliases for system contracts as well, such that `sys:sentinel=file.wasm` and `sys:evm2wasm=file.wasm` are both valid.
+- `sys:<alias/address>=file.wasm` will override the code executing at the specified address with code loaded from a filepath at runtime. This option supports aliases for system contracts as well, such that `sys:sentinel=file.wasm` and `sys:evm2wasm=file.wasm` are both valid. **This option is intended for debugging purposes.**
 
 ### evm1mode
 
 - `reject` will reject any EVM1 bytecode with an error (the default setting)
 - `fallback` will allow EVM1 bytecode to be passed through to the client for execution
-- `evm2wasm` will enable transformation of bytecode using the [EVM Transcompiler](https://github.com/ewasm/design/blob/master/system_contracts.md#evm-transcompiler)
+- `evm2wasm` will enable transformation of bytecode using the [EVM Transcompiler]
 - `evm2wasm.js` will use a `evm2wasm.js` as an external commandline tool instead of the system contract
 - `evm2wasm.js-trace` will use `evm2wasm.js` with tracing option turned on
 - `evm2wasm.cpp` will use a `evm2wasm` as a compiled-in dependency instead of the system contract
@@ -57,7 +57,7 @@ These are to be used via EVMC `set_option`:
 
 ## Interfaces
 
-Hera implements two interfaces: [EEI](https://github.com/ewasm/design/blob/master/eth_interface.md) and a debugging module.
+Hera implements two interfaces: [EEI] and a debugging module.
 
 ### Debugging module
 
@@ -74,19 +74,9 @@ These are only enabled if Hera is compiled with debugging on.
 
 - `debug::evmTrace(pc: i32, opcode: i32, cost: i32, sp: i32)`
 
-This is useful to trace the transpiled code from [evm2wasm](https://github.com/ewasm/evm2wasm). This is only enabled if Hera is compiled with debugging on.
+This is useful to trace the translated code by [EVM Transcompiler]. This is only enabled if Hera is compiled with debugging on.
 
 **Note:** it is valid to invoke `evmTrace` with a negative value for `sp`.  In this case, no stack values will be printed.
-
-## Caveats
-
-Although Hera enables the execution of ewasm bytecode, there are more elements to ewasm an Ethereum node must be aware of:
-
-- [backwards compatibility](https://github.com/ewasm/design/blob/master/backwards_compatibility.md) provisions
-- injecting metering code to ewasm contracts
-- transcompiling EVM1 contracts to ewasm if desired
-
-All of the above must be implemented outside of Hera.
 
 ## Author(s)
 
@@ -102,3 +92,6 @@ Apache 2.0
 [Binaryen]: https://github.com/webassembly/binaryen
 [wabt]: https://github.com/webassembly/wabt
 [WAVM]: https://github.com/AndrewScheidecker/WAVM
+[Sentinel system contract]: https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract
+[EVM Transcompiler]: https://github.com/ewasm/design/blob/master/system_contracts.md#evm-transcompiler
+[EEI]: https://github.com/ewasm/design/blob/master/eth_interface.md
