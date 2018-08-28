@@ -419,54 +419,25 @@ pair<bool, evmc_address> resolve_alias_to_address(string const& alias) {
   return make_pair(false, evmc_address{});
 }
 
-pair<bool, evmc_address> parse_hex_address(string const& addr) {
-  evmc_address ret = {};
-
-  HERA_DEBUG << "Trying to parse address field\n";
-
-  if (addr.find("0x") != 0) { 
-    heraAssert(false, "Address missing '0x' prefix!");
-  }
-
-  heraAssert(addr.size() <= 42, "Address specified is too long!");
-
-  string addr_raw;
-  // If the number of nibbles is odd, we must prepend a zero for unmarshalling to work correctly.
-  if (addr.size() % 2 > 0) addr_raw.push_back('0');
-  addr_raw.append(addr.substr(2, string::npos));
-
-  size_t hex_length = addr_raw.size();
-
-  HERA_DEBUG << "Got hex string of length " << hex_length << ": " << addr_raw << "\n";
-
-  // Use strtol to parse hex string into binary
-  for (size_t i = hex_length / 2, j = 20; i > 0 && j > 0; i--, j--) {
-    string byte_str = addr_raw.substr(((i - 1) * 2), 2);
-
-    uint8_t byte = uint8_t(strtol(byte_str.c_str(), nullptr, 16));
-
-    ret.bytes[j - 1] = byte;
-  }
-
-  HERA_DEBUG << "Successfully unmarshalled hex string into address struct\n";
-
-  return pair<bool, evmc_address>(true, ret);
-}
-
 bool hera_parse_sys_option(hera_instance *hera, string const& _name, string const& value)
 {
   heraAssert(_name.find("sys:") == 0, "");
   string name = _name.substr(4, string::npos);
-  evmc_address address;
+  evmc_address address{};
 
   if (name.find("0x") == 0) {
     // hex address
-    bool success = false;
-    tie(success, address) = parse_hex_address(name);
-    if (!success) {
+    vector<uint8_t> ret = parseHexString(name.substr(2, string::npos));
+    if (ret.empty()) {
       HERA_DEBUG << "Failed to parse hex address: " << name << "\n";
       return 0;
     }
+    if (ret.size() != 20) {
+      HERA_DEBUG << "Invalid address: " << name << "\n";
+      return 0;
+    }
+
+    copy(ret.begin(), ret.end(), address.bytes);
   } else {
     // alias
     bool success = false;
