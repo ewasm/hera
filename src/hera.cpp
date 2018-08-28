@@ -109,11 +109,11 @@ const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } };
 
 // Checks if the contract preload list contains the given address.
-vector<uint8_t> resolveSystemContract(const hera_instance *hera, const evmc_address *addr) {
+vector<uint8_t> resolveSystemContract(hera_instance const* hera, evmc_address const& addr) {
   auto const& list = hera->contract_preload_list;
 
   for (size_t i = 0; i < list.size(); ++i) {
-    if (memcmp(list[i].first.bytes, addr->bytes, sizeof(evmc_address)) == 0)
+    if (memcmp(list[i].first.bytes, addr.bytes, sizeof(evmc_address)) == 0)
       return list[i].second;
   }
 
@@ -295,7 +295,7 @@ evmc_result hera_execute(
     // the actual executable code - this can be modified (metered or evm2wasm compiled)
     vector<uint8_t> run_code(code, code + code_size);
 
-    vector<uint8_t> override_code = resolveSystemContract(hera, &msg->destination);
+    vector<uint8_t> override_code = resolveSystemContract(hera, msg->destination);
     if (override_code.size() > 0) {
       HERA_DEBUG << "Overriding contract.\n";
       run_code = std::move(override_code);
