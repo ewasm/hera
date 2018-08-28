@@ -31,6 +31,7 @@ These are to be used via EVMC `set_option`:
 - `engine=<engine>` will select the underlying WebAssembly engine, where the only accepted value currently is `binaryen`
 - `metering=true` will enable metering of bytecode at deployment using the [Sentinel system contract](https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract) (set to `false` by default)
 - `evm1mode=<evm1mode>` will select how EVM1 bytecode is handled
+- `sys:<alias/address>=file.wasm` will override the code executing at the specified address with code loaded from a filepath at runtime. This option supports aliases for system contracts as well, such that `sys:sentinel=file.wasm` and `sys:evm2wasm=file.wasm` are both valid.
 
 ### evm1mode
 

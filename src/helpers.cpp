@@ -34,6 +34,15 @@ string toHex(evmc_uint256be const& value) {
   return "0x" + os.str();
 }
 
+string bytesAsHexStr(const uint8_t *bytes, const size_t length) {
+  stringstream ret;
+  ret << hex << "0x";
+  for (size_t i = 0; i < length; ++i) {
+    ret << setw(2) << setfill('0') << static_cast<int>(bytes[i]);
+  }
+  return ret.str();
+}
+
 bool hasWasmPreamble(vector<uint8_t> const& _input) {
   return
     _input.size() >= 8 &&
