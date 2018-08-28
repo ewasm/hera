@@ -395,11 +395,11 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
     vector<uint8_t> ret = parseHexString(name.substr(2, string::npos));
     if (ret.empty()) {
       HERA_DEBUG << "Failed to parse hex address: " << name << "\n";
-      return 0;
+      return false;
     }
     if (ret.size() != 20) {
       HERA_DEBUG << "Invalid address: " << name << "\n";
-      return 0;
+      return false;
     }
 
     copy(ret.begin(), ret.end(), address.bytes);
@@ -410,21 +410,25 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
       { string("evm2wasm"), evm2wasmAddress }
     };
 
-    if (aliases.count(name) != 0) {
+    if (aliases.count(name) == 0) {
       HERA_DEBUG << "Failed to resolve system contract alias: " << name << "\n";
-      return 0;
+      return false;
     }
 
     address = aliases.at(name);
   }
 
   string contents = loadFileContents(value);
-  if (contents.size() == 0)
-    return 0;
+  if (contents.size() == 0) {
+    HERA_DEBUG << "Failed to load contract source (or empty): " << value << "\n";
+    return false;
+  }
+
+  HERA_DEBUG << "Loaded contract for " << name << " from " << value << " (" << contents.size() << " bytes)\n";
 
   hera->contract_preload_list.push_back(pair<evmc_address, vector<uint8_t>>(address, vector<uint8_t>(contents.begin(), contents.end())));
 
-  return 1;
+  return true;
 }
 
 int hera_set_option(
