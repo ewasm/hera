@@ -4,22 +4,32 @@ Hera is an [ewasm](https://github.com/ewasm/design) virtual machine implemented 
 
 It can be used with [aleth] and perhaps in the future with other implementations through appropriate bindings.
 
-Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpreter for running WebAssembly bytecode and it should be improved to support [wabt](https://github.com/webassembly/wabt) and [wavm](https://github.com/AndrewScheidecker/WAVM) as backends.
+Currently it uses [Binaryen]'s interpreter for running WebAssembly bytecode and it should be improved to support [wabt] and [WAVM] as backends.
 
 ## Build options
 
 - `-DHERA_DEBUGGING=ON` will turn on debugging features and messages
 - `-DBUILD_SHARED_LIBS=ON` is a standard CMake option to build libraries as shared. This will build Hera shared library that can be then dynamically loaded by EVMC compatible Clients (e.g. `eth` from [cpp-ethereum]).
 
+### Binaryen support
+
+*Complete support.*
+
+[Binaryen] is always built and needs no build options.
+
 ### wabt support
 
-*Unfinished support, work in progress.*
+*Limited support, work in progress.*
+
+[wabt] support needs to be enabled via the following build option and requested at runtime with `engine=wabt`:
 
 - `-DHERA_WABT=ON` will request the compilation of wabt support
 
 ### WAVM support
 
 *Unfinished support, work in progress.*
+
+[WAVM] support needs to be enabled via the following build option and requested at runtime with `engine=wavm`:
 
 - `-DHERA_WAVM=ON` will request the compilation of WAVM support
 - `-DLLVM_DIR=...` one will need to specify the path to LLVM's CMake file. In most installations this has to be within the `lib/cmake/llvm` directory, such as `/usr/local/Cellar/llvm/6.0.1/lib/cmake/llvm` on Homebrew.
@@ -28,7 +38,7 @@ Currently it uses [Binaryen](https://github.com/webassembly/binaryen)'s interpre
 
 These are to be used via EVMC `set_option`:
 
-- `engine=<engine>` will select the underlying WebAssembly engine, where the only accepted value currently is `binaryen`
+- `engine=<engine>` will select the underlying WebAssembly engine, where the only accepted values currently are `binaryen` and `wabt`
 - `metering=true` will enable metering of bytecode at deployment using the [Sentinel system contract](https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract) (set to `false` by default)
 - `evm1mode=<evm1mode>` will select how EVM1 bytecode is handled
 
@@ -84,3 +94,6 @@ Alex Beregszaszi, Jake Lang
 Apache 2.0
 
 [aleth]: https://github.com/ethereum/cpp-ethereum
+[Binaryen]: https://github.com/webassembly/binaryen
+[wabt]: https://github.com/webassembly/wabt
+[WAVM]: https://github.com/AndrewScheidecker/WAVM
