@@ -405,20 +405,6 @@ evmc_result hera_execute(
   return ret;
 }
 
-// TODO: use C++17 and std::optional
-pair<bool, evmc_address> resolve_alias_to_address(string const& alias) {
-  const map<string, evmc_address> aliases = {
-    { string("sentinel"), sentinelAddress },
-    { string("evm2wasm"), evm2wasmAddress }
-  };
-
-  if (aliases.count(alias) != 0) {
-    return make_pair(true, aliases.at(alias));
-  }
-
-  return make_pair(false, evmc_address{});
-}
-
 bool hera_parse_sys_option(hera_instance *hera, string const& _name, string const& value)
 {
   heraAssert(_name.find("sys:") == 0, "");
@@ -440,12 +426,17 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
     copy(ret.begin(), ret.end(), address.bytes);
   } else {
     // alias
-    bool success = false;
-    tie(success, address) = resolve_alias_to_address(name);
-    if (!success) {
+    const map<string, evmc_address> aliases = {
+      { string("sentinel"), sentinelAddress },
+      { string("evm2wasm"), evm2wasmAddress }
+    };
+
+    if (aliases.count(name) != 0) {
       HERA_DEBUG << "Failed to resolve system contract alias: " << name << "\n";
       return 0;
     }
+
+    address = aliases.at(name);
   }
 
   string contents = loadFileContents(value);
