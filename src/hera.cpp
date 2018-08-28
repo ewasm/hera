@@ -354,8 +354,7 @@ evmc_result hera_execute(
     ret.status_code = EVMC_FAILURE;
     HERA_DEBUG << e.what() << "\n";
   } catch (ArgumentOutOfRange const& e) {
-    // TODO: use specific error code? EVMC_ARGUMENT_OUT_OF_RANGE?
-    ret.status_code = EVMC_FAILURE;
+    ret.status_code = EVMC_ARGUMENT_OUT_OF_RANGE;
     HERA_DEBUG << e.what() << "\n";
   } catch (OutOfGas const& e) {
     ret.status_code = EVMC_OUT_OF_GAS;
