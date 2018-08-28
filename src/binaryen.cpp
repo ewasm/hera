@@ -14,15 +14,7 @@
  * limitations under the License.
  */
 
-#include <hera/hera.h>
-
-#include <array>
 #include <vector>
-#include <stdexcept>
-#include <cstdlib>
-#include <unistd.h>
-#include <string.h>
-#include <fstream>
 
 #include <pass.h>
 #include <wasm.h>
@@ -31,9 +23,6 @@
 #include <wasm-interpreter.h>
 #include <wasm-printing.h>
 #include <wasm-validator.h>
-
-#include <evmc/evmc.h>
-#include <evmc/instructions.h>
 
 #include "binaryen.h"
 #include "debugging.h"
