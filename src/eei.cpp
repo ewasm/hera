@@ -255,47 +255,35 @@ namespace hera {
   {
       HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
 
-      evmc_tx_context tx_context;
-
       takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeAddress(tx_context.block_coinbase, resultOffset);
+      storeAddress(m_tx_context.block_coinbase, resultOffset);
   }
 
   void EthereumInterface::eeiGetBlockDifficulty(uint32_t offset)
   {
       HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
 
-      evmc_tx_context tx_context;
-
       takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeUint256(tx_context.block_difficulty, offset);
+      storeUint256(m_tx_context.block_difficulty, offset);
   }
 
   int64_t EthereumInterface::eeiGetBlockGasLimit()
   {
       HERA_DEBUG << "getBlockGasLimit\n";
 
-      evmc_tx_context tx_context;
-
       takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
 
-      static_assert(is_same<decltype(tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
+      static_assert(is_same<decltype(m_tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
 
-      return tx_context.block_gas_limit;
+      return m_tx_context.block_gas_limit;
   }
 
   void EthereumInterface::eeiGetTxGasPrice(uint32_t valueOffset)
   {
       HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
 
-      evmc_tx_context tx_context;
-
       takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeUint128(tx_context.tx_gas_price, valueOffset);
+      storeUint128(m_tx_context.tx_gas_price, valueOffset);
   }
 
   void EthereumInterface::eeiLog(uint32_t dataOffset, uint32_t length, uint32_t numberOfTopics, uint32_t topic1, uint32_t topic2, uint32_t topic3, uint32_t topic4)
@@ -330,39 +318,30 @@ namespace hera {
   {
       HERA_DEBUG << "getBlockNumber\n";
 
-      evmc_tx_context tx_context;
-
       takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
 
-      static_assert(is_same<decltype(tx_context.block_number), int64_t>::value, "int64_t type expected");
+      static_assert(is_same<decltype(m_tx_context.block_number), int64_t>::value, "int64_t type expected");
 
-      return tx_context.block_number;
+      return m_tx_context.block_number;
   }
 
   int64_t EthereumInterface::eeiGetBlockTimestamp()
   {
       HERA_DEBUG << "getBlockTimestamp\n";
 
-      evmc_tx_context tx_context;
-
       takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
 
-      static_assert(is_same<decltype(tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
+      static_assert(is_same<decltype(m_tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
 
-      return tx_context.block_timestamp;
+      return m_tx_context.block_timestamp;
   }
 
   void EthereumInterface::eeiGetTxOrigin(uint32_t resultOffset)
   {
       HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
 
-      evmc_tx_context tx_context;
-
       takeInterfaceGas(GasSchedule::base);
-      m_context->fn_table->get_tx_context(&tx_context, m_context);
-      storeAddress(tx_context.tx_origin, resultOffset);
+      storeAddress(m_tx_context.tx_origin, resultOffset);
   }
 
   void EthereumInterface::eeiStorageStore(uint32_t pathOffset, uint32_t valueOffset)
