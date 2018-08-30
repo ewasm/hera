@@ -31,6 +31,9 @@
 #include "eei.h"
 #include "exceptions.h"
 #include "helpers.h"
+#if HERA_WAVM
+#include "wavm.h"
+#endif
 #if HERA_WABT
 #include "wabt.h"
 #endif
@@ -66,7 +69,7 @@ using WasmEngineCreateFn = unique_ptr<WasmEngine>(*)();
 const map<string, WasmEngineCreateFn> wasm_engine_map {
   { "binaryen", BinaryenEngine::create },
 #if HERA_WAVM
-  { "wavm", []{ return unique_ptr<WasmEngine>{}; } },
+  { "wavm", WavmEngine::create },
 #endif
 #if HERA_WABT
   { "wabt", WabtEngine::create },

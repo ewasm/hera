@@ -72,7 +72,12 @@ public:
     m_context->fn_table->get_tx_context(&m_tx_context, m_context);
   }
 
+// WAVM host functions access this interface through an instance,
+// which requires public methods.
+// TODO: update upstream WAVM to have a context (user data) passed down.
+#if HERA_WAVM == 0
 protected:
+#endif
   virtual size_t memorySize() const = 0 ;
   virtual void memorySet(size_t offset, uint8_t value) = 0;
   virtual uint8_t memoryGet(size_t offset) = 0;

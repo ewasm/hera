@@ -143,6 +143,15 @@ defaults:
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "getGasLeftUseAllGas" --evmc engine=wabt
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "returnPredefinedData" --evmc engine=wabt
 
+  test-wavm: &test-wavm
+    run:
+      name: "Test shared Hera (wavm)"
+      command: |
+        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
+        testeth --version
+        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "useGas" --evmc engine=wavm
+        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "createFromTransaction" --evmc engine=wavm
+
   evmc-test: &evmc-test
     run:
       name: "Run evmc tests"
@@ -190,6 +199,7 @@ jobs:
       - *fetch-tests
       - *test
       - *test-wabt
+      - *test-wavm
       - *evmc-test
       - *evm2wasm-test
 
