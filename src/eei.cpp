@@ -67,7 +67,7 @@ namespace hera {
       HERA_DEBUG << "): " << dec;
 
       evmc_uint256be result;
-      m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
+      m_context->host->get_storage(&result, m_context, &m_msg.destination, &path);
 
       if (useHex)
       {
@@ -151,7 +151,7 @@ namespace hera {
       evmc_uint256be result;
 
       takeInterfaceGas(GasSchedule::balance);
-      m_context->fn_table->get_balance(&result, m_context, &address);
+      m_context->host->get_balance(&result, m_context, &address);
       storeUint128(result, resultOffset);
   }
 
@@ -162,7 +162,7 @@ namespace hera {
       evmc_uint256be blockhash;
 
       takeInterfaceGas(GasSchedule::blockhash);
-      m_context->fn_table->get_block_hash(&blockhash, m_context, static_cast<int64_t>(number));
+      m_context->host->get_block_hash(&blockhash, m_context, static_cast<int64_t>(number));
 
       if (isZeroUint256(blockhash))
         return 1;
@@ -234,7 +234,7 @@ namespace hera {
       evmc_address address = loadAddress(addressOffset);
       // FIXME: optimise this so no vector needs to be created
       vector<uint8_t> codeBuffer(length);
-      size_t numCopied = m_context->fn_table->copy_code(m_context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
+      size_t numCopied = m_context->host->copy_code(m_context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
       ensureCondition(numCopied == length, InvalidMemoryAccess, "Out of bounds (source) memory copy");
 
       storeMemory(codeBuffer, 0, resultOffset, length);
@@ -246,7 +246,7 @@ namespace hera {
 
       evmc_address address = loadAddress(addressOffset);
       takeInterfaceGas(GasSchedule::extcode);
-      size_t code_size = m_context->fn_table->get_code_size(m_context, &address);
+      size_t code_size = m_context->host->get_code_size(m_context, &address);
 
       return static_cast<uint32_t>(code_size);
   }
@@ -311,7 +311,7 @@ namespace hera {
       // Using uint64_t to force a type issue if the underlying API changes.
       takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * int64_t(length)));
 
-      m_context->fn_table->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
+      m_context->host->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
   }
 
   int64_t EthereumInterface::eeiGetBlockNumber()
@@ -354,7 +354,7 @@ namespace hera {
       evmc_uint256be value = loadBytes32(valueOffset);
       evmc_uint256be current;
 
-      m_context->fn_table->get_storage(&current, m_context, &m_msg.destination, &path);
+      m_context->host->get_storage(&current, m_context, &m_msg.destination, &path);
 
       // We do not need to take care about the delete case (gas refund), the client does it.
       takeInterfaceGas(
@@ -363,7 +363,7 @@ namespace hera {
         GasSchedule::storageStoreChange
       );
 
-      m_context->fn_table->set_storage(m_context, &m_msg.destination, &path, &value);
+      m_context->host->set_storage(m_context, &m_msg.destination, &path, &value);
   }
 
   void EthereumInterface::eeiStorageLoad(uint32_t pathOffset, uint32_t resultOffset)
@@ -374,7 +374,7 @@ namespace hera {
       evmc_uint256be result;
 
       takeInterfaceGas(GasSchedule::storageLoad);
-      m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
+      m_context->host->get_storage(&result, m_context, &m_msg.destination, &path);
 
       storeBytes32(result, resultOffset);
   }
@@ -483,7 +483,7 @@ namespace hera {
       // Only charge callNewAccount gas if the account is new and value is being transferred per EIP161.
       if (!isZeroUint128(call_message.value)) {
         extra_gas += GasSchedule::valuetransfer;
-        if ((kind == EEICallKind::Call) && !m_context->fn_table->account_exists(m_context, &call_message.destination))
+        if ((kind == EEICallKind::Call) && !m_context->host->account_exists(m_context, &call_message.destination))
           extra_gas += GasSchedule::callNewAccount;
       }
 
@@ -510,7 +510,7 @@ namespace hera {
         }
       }
 
-      m_context->fn_table->call(&call_result, m_context, &call_message);
+      m_context->host->call(&call_result, m_context, &call_message);
 
       if (call_result.output_data) {
         m_lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
@@ -576,7 +576,7 @@ namespace hera {
       create_message.gas = gas;
       takeInterfaceGas(gas);
 
-      m_context->fn_table->call(&create_result, m_context, &create_message);
+      m_context->host->call(&create_result, m_context, &create_message);
 
       /* Return unspent gas */
       heraAssert(create_result.gas_left >= 0, "EVMC returned negative gas left");
@@ -612,10 +612,10 @@ namespace hera {
 
       evmc_address address = loadAddress(addressOffset);
 
-      if (!m_context->fn_table->account_exists(m_context, &address))
+      if (!m_context->host->account_exists(m_context, &address))
         takeInterfaceGas(GasSchedule::callNewAccount);
       takeInterfaceGas(GasSchedule::selfdestruct);
-      m_context->fn_table->selfdestruct(m_context, &m_msg.destination, &address);
+      m_context->host->selfdestruct(m_context, &m_msg.destination, &address);
 
       throw EndExecution{};
   }
@@ -801,7 +801,7 @@ namespace hera {
   bool EthereumInterface::enoughSenderBalanceFor(evmc_uint256be const& value) const
   {
     evmc_uint256be balance;
-    m_context->fn_table->get_balance(&balance, m_context, &m_msg.destination);
+    m_context->host->get_balance(&balance, m_context, &m_msg.destination);
     return safeLoadUint128(balance) >= safeLoadUint128(value);
   }
 

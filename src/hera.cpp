@@ -122,7 +122,7 @@ vector<uint8_t> callSystemContract(
   };
 
   evmc_result result;
-  context->fn_table->call(&result, context, &message);
+  context->host->call(&result, context, &message);
 
   vector<uint8_t> ret;
   if (result.status_code == EVMC_SUCCESS && result.output_data)

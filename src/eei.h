@@ -69,7 +69,7 @@ public:
     m_result.isRevert = false;
 
     // cache the transaction context here
-    m_context->fn_table->get_tx_context(&m_tx_context, m_context);
+    m_context->host->get_tx_context(&m_tx_context, m_context);
   }
 
 protected:
