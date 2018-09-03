@@ -162,9 +162,7 @@ namespace hera {
       evmc_uint256be blockhash;
 
       takeInterfaceGas(GasSchedule::blockhash);
-      m_context->host->get_block_hash(&blockhash, m_context, static_cast<int64_t>(number));
-
-      if (isZeroUint256(blockhash))
+      if (m_context->host->get_block_hash(&blockhash, m_context, static_cast<int64_t>(number)) == 0)
         return 1;
 
       storeBytes32(blockhash, resultOffset);
