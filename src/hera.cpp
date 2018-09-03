@@ -108,17 +108,16 @@ vector<uint8_t> callSystemContract(
   vector<uint8_t> const& input
 ) {
   evmc_message message = {
+    .kind = EVMC_CALL,
+    .flags = EVMC_STATIC,
+    .depth = 0,
+    .gas = gas,
     .destination = address,
     .sender = {},
-    .value = {},
     .input_data = input.data(),
     .input_size = input.size(),
-    .code_hash = {},
-    .create2_salt = {},
-    .gas = gas,
-    .depth = 0,
-    .kind = EVMC_CALL,
-    .flags = EVMC_STATIC
+    .value = {},
+    .create2_salt = {}
   };
 
   evmc_result result = context->host->call(context, &message);
