@@ -40,6 +40,11 @@
 using namespace std;
 using namespace hera;
 
+// FIXME: should be part of EVMC
+bool operator==(evmc_address const& lhs, evmc_address const& rhs) {
+  return memcmp(lhs.bytes, rhs.bytes, sizeof(lhs.bytes)) == 0;
+}
+
 namespace {
 
 enum class hera_evm1mode {
@@ -91,7 +96,7 @@ vector<uint8_t> resolveSystemContract(hera_instance const* hera, evmc_address co
   auto const& list = hera->contract_preload_list;
 
   for (size_t i = 0; i < list.size(); ++i) {
-    if (memcmp(list[i].first.bytes, addr.bytes, sizeof(addr.bytes)) == 0)
+    if (list[i].first == addr)
       return list[i].second;
   }
 
