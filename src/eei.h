@@ -67,6 +67,9 @@ public:
     // set sane defaults
     m_result.returnValue = std::vector<uint8_t>{};
     m_result.isRevert = false;
+
+    // cache the transaction context here
+    m_context->fn_table->get_tx_context(&m_tx_context, m_context);
   }
 
 protected:
@@ -163,6 +166,7 @@ private:
   /* Checks if a 256 bit value is all zeroes */
   static bool isZeroUint256(evmc_uint256be const& value);
 
+  evmc_tx_context m_tx_context{};
   evmc_context* m_context = nullptr;
   std::vector<uint8_t> const& m_code;
   evmc_message const& m_msg;
