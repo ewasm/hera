@@ -414,7 +414,6 @@ namespace hera {
       evmc_message call_message;
       call_message.destination = loadAddress(addressOffset);
       call_message.flags = m_msg.flags;
-      call_message.code_hash = {};
       call_message.depth = m_msg.depth + 1;
 
       switch (kind) {
@@ -559,7 +558,6 @@ namespace hera {
         create_message.input_size = 0;
       }
 
-      create_message.code_hash = {};
       create_message.depth = m_msg.depth + 1;
       create_message.kind = EVMC_CREATE;
       create_message.flags = 0;
