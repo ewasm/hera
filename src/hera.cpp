@@ -91,7 +91,7 @@ vector<uint8_t> resolveSystemContract(hera_instance const* hera, evmc_address co
   auto const& list = hera->contract_preload_list;
 
   for (size_t i = 0; i < list.size(); ++i) {
-    if (memcmp(list[i].first.bytes, addr.bytes, sizeof(evmc_address)) == 0)
+    if (memcmp(list[i].first.bytes, addr.bytes, sizeof(addr.bytes)) == 0)
       return list[i].second;
   }
 
