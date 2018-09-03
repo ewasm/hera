@@ -474,8 +474,6 @@ namespace hera {
         call_message.input_size = 0;
       }
 
-      evmc_result call_result;
-
       // Start with base call gas
       int64_t extra_gas = GasSchedule::call;
 
@@ -510,7 +508,7 @@ namespace hera {
         }
       }
 
-      m_context->host->call(&call_result, m_context, &call_message);
+      evmc_result call_result = m_context->host->call(m_context, &call_message);
 
       if (call_result.output_data) {
         m_lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
@@ -568,15 +566,13 @@ namespace hera {
       create_message.kind = EVMC_CREATE;
       create_message.flags = 0;
 
-      evmc_result create_result;
-
       takeInterfaceGas(GasSchedule::create);
 
       int64_t gas = maxCallGas(m_result.gasLeft);
       create_message.gas = gas;
       takeInterfaceGas(gas);
 
-      m_context->host->call(&create_result, m_context, &create_message);
+      evmc_result create_result = m_context->host->call(m_context, &create_message);
 
       /* Return unspent gas */
       heraAssert(create_result.gas_left >= 0, "EVMC returned negative gas left");
