@@ -75,6 +75,36 @@ protected:
     void* user_data
   );
 
+  static wabt::interp::Result wabtGetGasLeft(
+    const wabt::interp::HostFunc* func,
+    const wabt::interp::FuncSignature* sig,
+    wabt::Index num_args,
+    wabt::interp::TypedValue* args,
+    wabt::Index num_results,
+    wabt::interp::TypedValue* out_results,
+    void* user_data
+  );
+
+  static wabt::interp::Result wabtStorageStore(
+    const wabt::interp::HostFunc* func,
+    const wabt::interp::FuncSignature* sig,
+    wabt::Index num_args,
+    wabt::interp::TypedValue* args,
+    wabt::Index num_results,
+    wabt::interp::TypedValue* out_results,
+    void* user_data
+  );
+
+  static wabt::interp::Result wabtStorageLoad(
+    const wabt::interp::HostFunc* func,
+    const wabt::interp::FuncSignature* sig,
+    wabt::Index num_args,
+    wabt::interp::TypedValue* args,
+    wabt::Index num_results,
+    wabt::interp::TypedValue* out_results,
+    void* user_data
+  );
+
   static wabt::interp::Result wabtFinish(
     const wabt::interp::HostFunc* func,
     const wabt::interp::FuncSignature* sig,
@@ -106,6 +136,16 @@ protected:
   );
 
   static wabt::interp::Result wabtCallDataCopy(
+    const wabt::interp::HostFunc* func,
+    const wabt::interp::FuncSignature* sig,
+    wabt::Index num_args,
+    wabt::interp::TypedValue* args,
+    wabt::Index num_results,
+    wabt::interp::TypedValue* out_results,
+    void* user_data
+  );
+
+  static wabt::interp::Result wabtGetCallValue(
     const wabt::interp::HostFunc* func,
     const wabt::interp::FuncSignature* sig,
     wabt::Index num_args,

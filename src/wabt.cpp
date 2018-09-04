@@ -63,6 +63,24 @@ wabt::Result WabtEthereumInterface::ImportFunc(
     hostFunc->callback = wabtUseGas;
     hostFunc->user_data = this;
     return wabt::Result::Ok;
+  } else if (import->field_name == "getGasLeft") {
+    if (func_sig->param_types.size() != 0 || func_sig->result_types.size() != 1)
+      return wabt::Result::Error;
+    hostFunc->callback = wabtGetGasLeft;
+    hostFunc->user_data = this;
+    return wabt::Result::Ok;
+  } else if (import->field_name == "storageStore") {
+    if (func_sig->param_types.size() != 2 || func_sig->result_types.size() != 0)
+      return wabt::Result::Error;
+    hostFunc->callback = wabtStorageStore;
+    hostFunc->user_data = this;
+    return wabt::Result::Ok;
+  } else if (import->field_name == "storageLoad") {
+    if (func_sig->param_types.size() != 2 || func_sig->result_types.size() != 0)
+      return wabt::Result::Error;
+    hostFunc->callback = wabtStorageLoad;
+    hostFunc->user_data = this;
+    return wabt::Result::Ok;
   } else if (import->field_name == "finish") {
     if (func_sig->param_types.size() != 2 || func_sig->result_types.size() != 0)
       return wabt::Result::Error;
@@ -85,6 +103,12 @@ wabt::Result WabtEthereumInterface::ImportFunc(
     if (func_sig->param_types.size() != 3 || func_sig->result_types.size() != 0)
       return wabt::Result::Error;
     hostFunc->callback = wabtCallDataCopy;
+    hostFunc->user_data = this;
+    return wabt::Result::Ok;
+  } else if (import->field_name == "getCallValue") {
+    if (func_sig->param_types.size() != 1 || func_sig->result_types.size() != 0)
+      return wabt::Result::Error;
+    hostFunc->callback = wabtGetCallValue;
     hostFunc->user_data = this;
     return wabt::Result::Ok;
   }
@@ -145,6 +169,78 @@ interp::Result WabtEthereumInterface::wabtUseGas(
 
   // FIXME: handle host trap here
   interface->eeiUseGas(gas);
+
+  return interp::Result::Ok;
+}
+
+interp::Result WabtEthereumInterface::wabtGetGasLeft(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
+  void* user_data
+) {
+  (void)func;
+  (void)num_results;
+  (void)args;
+  (void)num_args;
+
+  WabtEthereumInterface *interface = reinterpret_cast<WabtEthereumInterface*>(user_data);
+
+  out_results[0].type = sig->result_types[0];
+  out_results[0].value.i64 = static_cast<uint64_t>(interface->eeiGetGasLeft());
+
+  return interp::Result::Ok;
+}
+
+interp::Result WabtEthereumInterface::wabtStorageStore(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
+  void* user_data
+) {
+  (void)func;
+  (void)sig;
+  (void)num_args;
+  (void)num_results;
+  (void)out_results;
+
+  WabtEthereumInterface *interface = reinterpret_cast<WabtEthereumInterface*>(user_data);
+
+  uint32_t pathOffset = args[0].value.i32;
+  uint32_t valueOffset = args[1].value.i32;
+  
+  interface->eeiStorageStore(pathOffset, valueOffset);
+
+  return interp::Result::Ok;
+}
+
+interp::Result WabtEthereumInterface::wabtStorageLoad(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
+  void* user_data
+) {
+  (void)func;
+  (void)sig;
+  (void)num_args;
+  (void)num_results;
+  (void)out_results;
+
+  WabtEthereumInterface *interface = reinterpret_cast<WabtEthereumInterface*>(user_data);
+
+  uint32_t pathOffset = args[0].value.i32;
+  uint32_t valueOffset = args[1].value.i32;
+  
+  interface->eeiStorageLoad(pathOffset, valueOffset);
 
   return interp::Result::Ok;
 }
@@ -245,6 +341,30 @@ interp::Result WabtEthereumInterface::wabtCallDataCopy(
   uint32_t length = args[2].value.i32;
 
   interface->eeiCallDataCopy(resultOffset, dataOffset, length);
+
+  return interp::Result::Ok;
+}
+
+interp::Result WabtEthereumInterface::wabtGetCallValue(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
+  void* user_data
+) {
+  (void)func;
+  (void)sig;
+  (void)num_args;
+  (void)num_results;
+  (void)out_results;
+
+  WabtEthereumInterface *interface = reinterpret_cast<WabtEthereumInterface*>(user_data);
+
+  uint32_t resultOffset = args[0].value.i32;
+  
+  interface->eeiGetCallValue(resultOffset);
 
   return interp::Result::Ok;
 }
