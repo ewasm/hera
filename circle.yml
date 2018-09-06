@@ -95,7 +95,7 @@ defaults:
         cd ..
         mkdir -p build && cd build
         cmake ../cpp-ethereum -DCMAKE_BUILD_TYPE=RelWithDebInfo -DHERA=ON
-        make -j8
+        cmake --build . -- -j $BUILD_PARALLEL_JOBS
         echo "build finished."
         echo 'export PATH=~/build/test:$PATH' >> $BASH_ENV
         cd ../cpp-ethereum
