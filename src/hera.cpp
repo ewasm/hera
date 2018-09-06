@@ -45,6 +45,10 @@ bool operator==(evmc_address const& lhs, evmc_address const& rhs) {
   return memcmp(lhs.bytes, rhs.bytes, sizeof(lhs.bytes)) == 0;
 }
 
+bool operator<(evmc_address const& lhs, evmc_address const& rhs) {
+  return memcmp(lhs.bytes, rhs.bytes, sizeof(lhs.bytes)) < 0;
+}
+
 namespace {
 
 enum class hera_evm1mode {
@@ -83,7 +87,7 @@ struct hera_instance : evmc_instance {
   unique_ptr<WasmEngine> engine{new BinaryenEngine};
   hera_evm1mode evm1mode = hera_evm1mode::reject;
   bool metering = false;
-  vector<pair<evmc_address, vector<uint8_t>>> contract_preload_list;
+  map<evmc_address, vector<uint8_t>> contract_preload_list;
 
   hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr}) {}
 };
@@ -92,13 +96,12 @@ const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } };
 
 // Checks if the contract preload list contains the given address.
-vector<uint8_t> resolveSystemContract(hera_instance const* hera, evmc_address const& addr) {
+inline vector<uint8_t> resolveSystemContract(hera_instance const* hera, evmc_address const& addr) {
   auto const& list = hera->contract_preload_list;
 
-  for (size_t i = 0; i < list.size(); ++i) {
-    if (list[i].first == addr)
-      return list[i].second;
-  }
+  auto it = list.find(addr);
+  if (it != list.end())
+    return it->second;
 
   return vector<uint8_t>{};
 }
@@ -429,7 +432,7 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
 
   HERA_DEBUG << "Loaded contract for " << name << " from " << value << " (" << contents.size() << " bytes)\n";
 
-  hera->contract_preload_list.push_back(pair<evmc_address, vector<uint8_t>>(address, vector<uint8_t>(contents.begin(), contents.end())));
+  hera->contract_preload_list[address] = vector<uint8_t>(contents.begin(), contents.end());
 
   return true;
 }
