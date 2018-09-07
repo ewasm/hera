@@ -53,7 +53,6 @@ if (HERA_WAVM)
 endif()
 
 add_subdirectory(evmc)
-add_subdirectory(evm2wasm)
 add_subdirectory(src)
 
 

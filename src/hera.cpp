@@ -23,10 +23,9 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <map>
 
 #include <evmc/evmc.h>
-
-#include <evm2wasm.h>
 
 #include "binaryen.h"
 #include "debugging.h"
@@ -60,10 +59,6 @@ enum class hera_evm1mode {
   reject,
   fallback,
   evm2wasm_contract,
-  evm2wasm_cpp,
-  evm2wasm_cpp_tracing,
-  evm2wasm_js,
-  evm2wasm_js_tracing
 };
 
 using WasmEngineCreateFn = unique_ptr<WasmEngine>(*)();
@@ -82,10 +77,6 @@ const map<string, hera_evm1mode> evm1mode_options {
   { "reject", hera_evm1mode::reject },
   { "fallback", hera_evm1mode::fallback },
   { "evm2wasm", hera_evm1mode::evm2wasm_contract },
-  { "evm2wasm.cpp", hera_evm1mode::evm2wasm_cpp },
-  { "evm2wasm.cpp-trace", hera_evm1mode::evm2wasm_cpp_tracing },
-  { "evm2wasm.js", hera_evm1mode::evm2wasm_js },
-  { "evm2wasm.js-trace", hera_evm1mode::evm2wasm_js_tracing },
 };
 
 struct hera_instance : evmc_instance {
@@ -165,72 +156,6 @@ vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
   return ret;
 }
 
-// NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
-string mktemp_string(string pattern) {
-  const unsigned long len = pattern.size();
-  char tmp[len + 1];
-  strcpy(tmp, pattern.data());
-  if (!mktemp(tmp) || (tmp[0] == 0))
-     return string();
-  return string(tmp, strlen(tmp));
-}
-
-// Calls evm2wasm (as a Javascript CLI) with input data @input.
-// @returns the compiled output or empty output otherwise.
-vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
-  HERA_DEBUG << "Calling evm2wasm.js (input " << input.size() << " bytes)...\n";
-
-  string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXX");
-  string fileWASM = mktemp_string("/tmp/hera.evm2wasm.wasm.XXXXXX");
-
-  if (fileEVM.size() == 0 || fileWASM.size() == 0)
-    return vector<uint8_t>();
-
-  ofstream os;
-  os.open(fileEVM);
-  // print as a hex string
-  os << hex;
-  for (uint8_t byte: input)
-    os << setfill('0') << setw(2) << static_cast<int>(byte);
-  os.close();
-
-  string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM + " --charge-per-op";
-  if (evmTrace)
-    cmd += " --trace";
-
-  HERA_DEBUG << "(Calling evm2wasm.js with command: " << cmd << ")\n";
-
-  int ret = system(cmd.data());
-  unlink(fileEVM.data());
-
-  if (ret != 0) {
-    HERA_DEBUG << "evm2wasm.js failed\n";
-
-    unlink(fileWASM.data());
-    return vector<uint8_t>();
-  }
-
-  string str = loadFileContents(fileWASM);
-
-  unlink(fileWASM.data());
-
-  HERA_DEBUG << "evm2wasm.js done (output " << str.length() << " bytes)\n";
-
-  return vector<uint8_t>(str.begin(), str.end());
-}
-
-// Calls evm2wasm (through the built-in C++ interface) with input data @input.
-// @returns the compiled output or empty output otherwise.
-vector<uint8_t> evm2wasm_cpp(vector<uint8_t> const& input, bool evmTrace) {
-  HERA_DEBUG << "Calling evm2wasm.cpp (input " << input.size() << " bytes)...\n";
-
-  string str = evm2wasm::evm2wasm(input, evmTrace);
-
-  HERA_DEBUG << "evm2wasm.cpp done (output " << str.length() << " bytes)\n";
-
-  return vector<uint8_t>(str.begin(), str.end());
-}
-
 // Calls the evm2wasm contract with input data @input.
 // @returns the compiled output or empty output otherwise.
 vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
@@ -300,20 +225,6 @@ evmc_result hera_execute(
       case hera_evm1mode::evm2wasm_contract:
         run_code = evm2wasm(context, run_code);
         ensureCondition(run_code.size() > 8, ContractValidationFailure, "Transcompiling via evm2wasm failed");
-        // TODO: enable this once evm2wasm does metering of interfaces
-        // meterInterfaceGas = false;
-        break;
-      case hera_evm1mode::evm2wasm_cpp:
-      case hera_evm1mode::evm2wasm_cpp_tracing:
-        run_code = evm2wasm_cpp(run_code, hera->evm1mode == hera_evm1mode::evm2wasm_cpp_tracing);
-        ensureCondition(run_code.size() > 8, ContractValidationFailure, "Transcompiling via evm2wasm.cpp failed");
-        // TODO: enable this once evm2wasm does metering of interfaces
-        // meterInterfaceGas = false;
-        break;
-      case hera_evm1mode::evm2wasm_js:
-      case hera_evm1mode::evm2wasm_js_tracing:
-        run_code = evm2wasm_js(run_code, hera->evm1mode == hera_evm1mode::evm2wasm_js_tracing);
-        ensureCondition(run_code.size() > 8, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;

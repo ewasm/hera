@@ -1,9 +1,6 @@
 [submodule "evmc"]
 	path = evmc
 	url = https://github.com/ethereum/evmc
-[submodule "evm2wasm"]
-	path = evm2wasm
-	url = https://github.com/ewasm/evm2wasm
 [submodule "cable"]
 	path = cmake/cable
 	url = https://github.com/ethereum/cable

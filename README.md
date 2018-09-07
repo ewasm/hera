@@ -72,10 +72,6 @@ These are to be used via EVMC `set_option`:
 - `reject` will reject any EVM1 bytecode with an error (the default setting)
 - `fallback` will allow EVM1 bytecode to be passed through to the client for execution
 - `evm2wasm` will enable transformation of bytecode using the [EVM Transcompiler]
-- `evm2wasm.js` will use a `evm2wasm.js` as an external commandline tool instead of the system contract
-- `evm2wasm.js-trace` will use `evm2wasm.js` with tracing option turned on
-- `evm2wasm.cpp` will use a `evm2wasm` as a compiled-in dependency instead of the system contract
-- `evm2wasm.cpp-trace` will turn use `evm2wasm` with tracing option turned on
 
 ## Interfaces
 
