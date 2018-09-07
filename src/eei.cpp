@@ -492,7 +492,7 @@ namespace hera {
 
       // This is the gas we are forwarding to the callee.
       // Retain one 64th of it as per EIP150
-      gas = std::min(gas, maxCallGas(m_result.gasLeft));
+      gas = min(gas, maxCallGas(m_result.gasLeft));
 
       takeInterfaceGas(gas);
 
