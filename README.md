@@ -8,6 +8,21 @@ It is design to leverage various Wasm backends, both interpreters and AOT/JITs.
 
 Hera has been tested with [aleth]. It should however work with any client with compliant [EVMC] support.
 
+## Building Hera
+
+The preferred way is building Hera as a shared library:
+
+```bash
+$ mkdir build
+$ cd build
+$ cmake -DBUILD_SHARED_LIBS=ON ..
+$ cmake --build .
+```
+
+In this case the built library will be placed at `build/src/libhera/libhera.so` on Linux or `build/src/libhera/libhera.dylib` on MacOS.
+
+Please also check the build options listed in the following section.
+
 ## Build options
 
 - `-DHERA_DEBUGGING=ON` will turn on debugging features and messages
