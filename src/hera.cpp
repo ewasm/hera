@@ -427,7 +427,7 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
   return true;
 }
 
-int hera_set_option(
+enum evmc_set_option_result hera_set_option(
   evmc_instance *instance,
   char const *name,
   char const *value
@@ -437,29 +437,32 @@ int hera_set_option(
   if (strcmp(name, "evm1mode") == 0) {
     if (evm1mode_options.count(value)) {
       hera->evm1mode = evm1mode_options.at(value);
-      return 1;
+      return EVMC_SET_OPTION_SUCCESS;
     }
+    return EVMC_SET_OPTION_INVALID_VALUE;
   }
 
   if (strcmp(name, "metering") == 0) {
     hera->metering = strcmp(value, "true") == 0;
-    return 1;
+    return EVMC_SET_OPTION_SUCCESS;
   }
 
   if (strcmp(name, "engine") == 0) {
     auto it = wasm_engine_map.find(value);
     if (it != wasm_engine_map.end()) {
       hera->engine = it->second();
-      return 1;
+      return EVMC_SET_OPTION_SUCCESS;
     }
+    return EVMC_SET_OPTION_INVALID_VALUE;
   }
 
   if (strncmp(name, "sys:", 4) == 0) {
     if (hera_parse_sys_option(hera, string(name), string(value)))
-      return 1;
+      return EVMC_SET_OPTION_SUCCESS;
+    return EVMC_SET_OPTION_INVALID_VALUE;
   }
 
-  return 0;
+  return EVMC_SET_OPTION_INVALID_NAME;
 }
 
 void hera_destroy(evmc_instance* instance) noexcept
