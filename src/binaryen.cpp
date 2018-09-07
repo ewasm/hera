@@ -34,7 +34,7 @@ using namespace wasm;
 
 namespace hera {
 
-  void BinaryenEthereumInterface::importGlobals(std::map<Name, Literal>& globals, Module& wasm) {
+  void BinaryenEthereumInterface::importGlobals(map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
     (void)wasm;
     HERA_DEBUG << "importGlobals\n";
@@ -468,9 +468,9 @@ void BinaryenEngine::validate_contract(Module & module)
   }
 }
 
-std::unique_ptr<WasmEngine> BinaryenEngine::create()
+unique_ptr<WasmEngine> BinaryenEngine::create()
 {
-  return std::unique_ptr<WasmEngine>{new BinaryenEngine};
+  return unique_ptr<WasmEngine>{new BinaryenEngine};
 }
 
 // Execute the contract through Binaryen.

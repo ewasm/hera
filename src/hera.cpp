@@ -52,12 +52,12 @@ enum class hera_evm1mode {
   evm2wasm_js_tracing
 };
 
-using WasmEngineCreateFn = std::unique_ptr<WasmEngine>(*)();
+using WasmEngineCreateFn = unique_ptr<WasmEngine>(*)();
 
 const map<string, WasmEngineCreateFn> wasm_engine_map {
   { "binaryen", BinaryenEngine::create },
 #if HERA_WAVM
-  { "wavm", []{ return std::unique_ptr<WasmEngine>{}; } },
+  { "wavm", []{ return unique_ptr<WasmEngine>{}; } },
 #endif
 #if HERA_WABT
   { "wabt", WabtEngine::create },
@@ -75,7 +75,7 @@ const map<string, hera_evm1mode> evm1mode_options {
 };
 
 struct hera_instance : evmc_instance {
-  std::unique_ptr<WasmEngine> engine{new BinaryenEngine};
+  unique_ptr<WasmEngine> engine{new BinaryenEngine};
   hera_evm1mode evm1mode = hera_evm1mode::reject;
   bool metering = false;
   vector<pair<evmc_address, vector<uint8_t>>> contract_preload_list;
@@ -276,7 +276,7 @@ evmc_result hera_execute(
     vector<uint8_t> override_code = resolveSystemContract(hera, msg->destination);
     if (override_code.size() > 0) {
       HERA_DEBUG << "Overriding contract.\n";
-      run_code = std::move(override_code);
+      run_code = move(override_code);
     }
 
     // ensure we can only handle WebAssembly version 1

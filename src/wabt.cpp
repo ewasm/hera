@@ -41,9 +41,9 @@ using namespace wabt;
 
 namespace hera {
 
-std::unique_ptr<WasmEngine> WabtEngine::create()
+unique_ptr<WasmEngine> WabtEngine::create()
 {
-  return std::unique_ptr<WasmEngine>{new WabtEngine};
+  return unique_ptr<WasmEngine>{new WabtEngine};
 }
 
 wabt::Result WabtEthereumInterface::ImportFunc(
@@ -391,7 +391,7 @@ ExecutionResult WabtEngine::execute(
   // The lifecycle of this pointer is handled by `env`.
   wabt::interp::HostModule* hostModule = env.AppendHostModule("ethereum");
   heraAssert(hostModule, "Failed to create host module.");
-  hostModule->import_delegate = std::unique_ptr<WabtEthereumInterface>(interface);
+  hostModule->import_delegate = unique_ptr<WabtEthereumInterface>(interface);
 
   wabt::ReadBinaryOptions options(
     wabt::Features{},
