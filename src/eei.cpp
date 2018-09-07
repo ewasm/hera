@@ -56,7 +56,7 @@ namespace hera {
 
   void EthereumInterface::debugPrintStorage(bool useHex, uint32_t pathOffset)
   {
-      evmc_uint256be path = loadBytes32(pathOffset);
+      evmc_bytes32 path = loadBytes32(pathOffset);
 
       HERA_DEBUG << "DEBUG printStorage" << (useHex ? "Hex" : "") << "(0x" << hex;
 
@@ -66,7 +66,7 @@ namespace hera {
 
       HERA_DEBUG << "): " << dec;
 
-      evmc_uint256be result;
+      evmc_bytes32 result;
       m_context->host->get_storage(&result, m_context, &m_msg.destination, &path);
 
       if (useHex)
@@ -159,7 +159,7 @@ namespace hera {
   {
       HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
 
-      evmc_uint256be blockhash;
+      evmc_bytes32 blockhash;
 
       takeInterfaceGas(GasSchedule::blockhash);
       if (m_context->host->get_block_hash(&blockhash, m_context, static_cast<int64_t>(number)) == 0)
@@ -294,11 +294,11 @@ namespace hera {
       ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
 
       // FIXME: should this assert that unused topic offsets must be 0?
-      array<evmc_uint256be, 4> topics;
-      topics[0] = (numberOfTopics >= 1) ? loadBytes32(topic1) : evmc_uint256be{};
-      topics[1] = (numberOfTopics >= 2) ? loadBytes32(topic2) : evmc_uint256be{};
-      topics[2] = (numberOfTopics >= 3) ? loadBytes32(topic3) : evmc_uint256be{};
-      topics[3] = (numberOfTopics == 4) ? loadBytes32(topic4) : evmc_uint256be{};
+      array<evmc_bytes32, 4> topics;
+      topics[0] = (numberOfTopics >= 1) ? loadBytes32(topic1) : evmc_bytes32{};
+      topics[1] = (numberOfTopics >= 2) ? loadBytes32(topic2) : evmc_bytes32{};
+      topics[2] = (numberOfTopics >= 3) ? loadBytes32(topic3) : evmc_bytes32{};
+      topics[3] = (numberOfTopics == 4) ? loadBytes32(topic4) : evmc_bytes32{};
 
       ensureSourceMemoryBounds(dataOffset, length);
       vector<uint8_t> data(length);
@@ -349,15 +349,15 @@ namespace hera {
 
       ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
 
-      evmc_uint256be path = loadBytes32(pathOffset);
-      evmc_uint256be value = loadBytes32(valueOffset);
-      evmc_uint256be current;
+      evmc_bytes32 path = loadBytes32(pathOffset);
+      evmc_bytes32 value = loadBytes32(valueOffset);
+      evmc_bytes32 current;
 
       m_context->host->get_storage(&current, m_context, &m_msg.destination, &path);
 
       // We do not need to take care about the delete case (gas refund), the client does it.
       takeInterfaceGas(
-        (isZeroUint256(current) && !isZeroUint256(value)) ?
+        (isZeroBytes32(current) && !isZeroBytes32(value)) ?
         GasSchedule::storageStoreCreate :
         GasSchedule::storageStoreChange
       );
@@ -369,8 +369,8 @@ namespace hera {
   {
       HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
 
-      evmc_uint256be path = loadBytes32(pathOffset);
-      evmc_uint256be result;
+      evmc_bytes32 path = loadBytes32(pathOffset);
+      evmc_bytes32 result;
 
       takeInterfaceGas(GasSchedule::storageLoad);
       m_context->host->get_storage(&result, m_context, &m_msg.destination, &path);
@@ -725,14 +725,14 @@ namespace hera {
    * Memory Op Wrapper Functions
    */
 
-  evmc_uint256be EthereumInterface::loadBytes32(uint32_t srcOffset)
+  evmc_bytes32 EthereumInterface::loadBytes32(uint32_t srcOffset)
   {
-    evmc_uint256be dst = {};
+    evmc_bytes32 dst = {};
     loadMemory(srcOffset, dst.bytes, 32);
     return dst;
   }
 
-  void EthereumInterface::storeBytes32(evmc_uint256be const& src, uint32_t dstOffset)
+  void EthereumInterface::storeBytes32(evmc_bytes32 const& src, uint32_t dstOffset)
   {
     storeMemory(src.bytes, dstOffset, 32);
   }
@@ -827,7 +827,7 @@ namespace hera {
     return true;
   }
 
-  bool EthereumInterface::isZeroUint256(evmc_uint256be const& value)
+  bool EthereumInterface::isZeroBytes32(evmc_uint256be const& value)
   {
     for (unsigned i = 0; i < 32; i++) {
       if (value.bytes[i] != 0)

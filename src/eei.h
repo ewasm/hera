@@ -139,8 +139,8 @@ private:
   void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length);
   void storeMemory(std::vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length);
 
-  evmc_uint256be loadBytes32(uint32_t srcOffset);
-  void storeBytes32(evmc_uint256be const& src, uint32_t dstOffset);
+  evmc_bytes32 loadBytes32(uint32_t srcOffset);
+  void storeBytes32(evmc_bytes32 const& src, uint32_t dstOffset);
   evmc_uint256be loadUint256(uint32_t srcOffset);
   void storeUint256(evmc_uint256be const& src, uint32_t dstOffset);
   evmc_address loadAddress(uint32_t srcOffset);
@@ -164,7 +164,7 @@ private:
   static bool isZeroUint128(evmc_uint256be const& value);
 
   /* Checks if a 256 bit value is all zeroes */
-  static bool isZeroUint256(evmc_uint256be const& value);
+  static bool isZeroBytes32(evmc_bytes32 const& value);
 
   evmc_tx_context m_tx_context{};
   evmc_context* m_context = nullptr;
