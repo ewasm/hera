@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 
+if (NOT EXISTS ${CMAKE_SOURCE_DIR}/evmc/.git OR NOT EXISTS ${CMAKE_SOURCE_DIR}/cmake/cable/.git)
+    message(FATAL_ERROR "Git submodules not initialized, execute:\n  git submodule update --init")
+endif()
+
 include(cmake/cable/bootstrap.cmake)
 include(CableBuildInfo)
 include(CableBuildType)
