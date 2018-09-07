@@ -56,58 +56,58 @@ defaults:
       name: "Restore dependencies cache"
       key: *deps-cache-key
 
-  save-eth-cache: &save-eth-cache
+  save-aleth-cache: &save-aleth-cache
     save_cache:
-      key: &eth-cache-key cpp-prebuilt-cache-{{arch}}-{{checksum "toolchain"}}-v1.4.0rc5
+      key: &aleth-cache-key aleth-prebuilt-cache-{{arch}}-{{checksum "toolchain"}}-v1.4.0rc6
       paths:
         - ~/build
         - ~/.hunter
 
-  restore-eth-cache: &restore-eth-cache
+  restore-aleth-cache: &restore-aleth-cache
     restore_cache:
-      key: *eth-cache-key
+      key: *aleth-cache-key
 
-  checkout-cpp-eth: &checkout-cpp-eth
+  checkout-aleth: &checkout-aleth
     run:
-      name: "Checkout cpp-ethereum repo"
+      name: "Checkout aleth repo"
       working_directory: ~/
       command: |
-        git clone https://github.com/ethereum/cpp-ethereum --branch v1.4.0rc5 --single-branch --recurse-submodules --depth 1
+        git clone https://github.com/ethereum/aleth --branch v1.4.0rc6 --single-branch --recurse-submodules --depth 1
 
   link-hera: &link-hera
     run:
-      name: "Link hera to prebuilt cpp-eth"
+      name: "Link hera to prebuilt aleth"
       working_directory: ~/project
       # TODO: run cmake in hera dir with config flags -DHERA_DEBUGGING=ON
       command: |
         cd ..
         echo "pwd: $(pwd)"
         echo "listing files: $(ls -al)"
-        rm -rf ~/cpp-ethereum/hera
-        ln -s ~/project ~/cpp-ethereum/hera
+        rm -rf ~/aleth/hera
+        ln -s ~/project ~/aleth/hera
 
-  build-cpp-eth: &build-cpp-eth
+  build-aleth: &build-aleth
     run:
-      name: "Build cpp-ethereum with linked Hera"
+      name: "Build aleth with linked Hera"
       working_directory: ~/project
       # export PATH is an alternative to `make install`
       command: |
         cd ..
         mkdir -p build && cd build
-        cmake ../cpp-ethereum -DCMAKE_BUILD_TYPE=RelWithDebInfo -DHERA=ON
+        cmake ../aleth -DCMAKE_BUILD_TYPE=RelWithDebInfo -DHERA=ON
         cmake --build . -- -j $BUILD_PARALLEL_JOBS
         echo "build finished."
         echo 'export PATH=~/build/test:$PATH' >> $BASH_ENV
-        cd ../cpp-ethereum
-        echo "cpp-ethereum branch: $(git rev-parse --abbrev-ref HEAD)  commit: $(git rev-parse HEAD)"
+        cd ../aleth
+        echo "aleth branch: $(git rev-parse --abbrev-ref HEAD)  commit: $(git rev-parse HEAD)"
         cd hera
         echo "hera branch: $(git rev-parse --abbrev-ref HEAD)  commit: $(git rev-parse HEAD)"
 
-  install-cpp-ethereum: &install-cpp-ethereum
+  install-aleth: &install-aleth
     run:
-      name: "Install cpp-ethereum"
+      name: "Install aleth"
       command: |
-        URL=https://github.com/ethereum/cpp-ethereum/releases/download/v1.4.0rc5/aleth-1.4.0rc5-linux-x86_64.tar.gz
+        URL=https://github.com/ethereum/aleth/releases/download/v1.4.0rc6/aleth-1.4.0rc6-linux-x86_64.tar.gz
         curl -L $URL | sudo tar xz -C /usr/local
 
   fetch-tests: &fetch-tests
@@ -177,7 +177,7 @@ jobs:
       - *configure
       - *build
       - *save-deps-cache
-      - *install-cpp-ethereum
+      - *install-aleth
       - *store-hera
       - *fetch-tests
       - *test
@@ -204,7 +204,7 @@ jobs:
       - *configure
       - *build
       - *save-deps-cache
-      - *install-cpp-ethereum
+      - *install-aleth
       - *store-hera
       - *fetch-tests
       - *test
