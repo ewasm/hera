@@ -244,7 +244,8 @@ namespace hera {
 
       evmc_address address = loadAddress(addressOffset);
       takeInterfaceGas(GasSchedule::extcode);
-      size_t code_size = m_context->host->get_code_size(m_context, &address);
+      size_t code_size;
+      m_context->host->get_code_size(&code_size, m_context, &address);
 
       return static_cast<uint32_t>(code_size);
   }
