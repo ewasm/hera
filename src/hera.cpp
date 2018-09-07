@@ -95,17 +95,6 @@ struct hera_instance : evmc_instance {
 const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } };
 const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } };
 
-// Checks if the contract preload list contains the given address.
-inline vector<uint8_t> resolveSystemContract(hera_instance const* hera, evmc_address const& addr) {
-  auto const& list = hera->contract_preload_list;
-
-  auto it = list.find(addr);
-  if (it != list.end())
-    return it->second;
-
-  return vector<uint8_t>{};
-}
-
 // Calls a system contract at @address with input data @input.
 // It is a "staticcall" with sender 000...000 and no value.
 // @returns output data from the contract and update the @gas variable with the gas left.
@@ -281,10 +270,11 @@ evmc_result hera_execute(
     // the actual executable code - this can be modified (metered or evm2wasm compiled)
     vector<uint8_t> run_code(code, code + code_size);
 
-    vector<uint8_t> override_code = resolveSystemContract(hera, msg->destination);
-    if (override_code.size() > 0) {
+    // replace executable code if replacement is supplied
+    auto preload = hera->contract_preload_list.find(msg->destination);
+    if (preload != hera->contract_preload_list.end()) {
       HERA_DEBUG << "Overriding contract.\n";
-      run_code = move(override_code);
+      run_code = preload->second;
     }
 
     // ensure we can only handle WebAssembly version 1
