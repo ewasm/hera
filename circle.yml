@@ -17,13 +17,6 @@ defaults:
         $CXX --version >> toolchain
         echo $GENERATOR >> toolchain
 
-  install-system-deps: &install-system-deps
-    run:
-      name: "Install system dependencies"
-      command: |
-        sudo apt -q update
-        sudo apt -qy install python
-
   configure: &configure
     run:
       name: "Configure"
@@ -177,7 +170,6 @@ jobs:
     docker:
       - image: ethereum/cpp-build-env:5
     steps:
-      - *install-system-deps
       - checkout
       - *update-submodules
       - *environment-info
@@ -215,9 +207,8 @@ jobs:
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DCOVERAGE=ON -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON
     docker:
-      - image: ethereum/cpp-build-env
+      - image: ethereum/cpp-build-env:5
     steps:
-      - *install-system-deps
       - checkout
       - *update-submodules
       - *environment-info
@@ -240,9 +231,8 @@ jobs:
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON -DHERA_WAVM=ON -DHERA_WABT=ON
     docker:
-      - image: ethereum/cpp-build-env
+      - image: ethereum/cpp-build-env:5
     steps:
-      - *install-system-deps
       - checkout
       - *update-submodules
       - *environment-info
