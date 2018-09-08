@@ -26,7 +26,7 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/evm2wasm/cmake/HunterGate.cmake)
 endif()
 
 project(hera)
-set(PROJECT_VERSION 0.1.0)
+set(PROJECT_VERSION 0.1.0-dev)
 
 cable_set_build_type(DEFAULT RelWithDebInfo CONFIGURATION_TYPES Debug;Release;RelWithDebInfo)
 
