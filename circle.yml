@@ -17,13 +17,6 @@ defaults:
         $CXX --version >> toolchain
         echo $GENERATOR >> toolchain
 
-  install-system-deps: &install-system-deps
-    run:
-      name: "Install system dependencies"
-      command: |
-        sudo apt -q update
-        sudo apt -qy install python
-
   configure: &configure
     run:
       name: "Configure"
@@ -120,6 +113,7 @@ defaults:
     run:
       name: "Test shared Hera"
       command: |
+        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc engine=binaryen
 
@@ -127,6 +121,7 @@ defaults:
     run:
       name: "Test shared Hera (wabt)"
       command: |
+        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "useGas" --evmc engine=wabt
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "createFromTransaction" --evmc engine=wabt
@@ -150,6 +145,7 @@ defaults:
     run:
       name: "Run evm2wasm state tests"
       command: |
+        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
         testeth -t GeneralStateTests/stExample -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "add11" --evmc evm1mode=evm2wasm.cpp
         testeth -t GeneralStateTests/stStackTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc evm1mode=evm2wasm.cpp
@@ -163,18 +159,17 @@ defaults:
 
 version: 2
 jobs:
-  linux-clang-shared-release:
+  linux-clang-shared-release: &linux-clang-shared
     environment:
-      - BUILD_TYPE: Release
-      - CXX: clang++
-      - CC:  clang
-      - GENERATOR: Ninja
-      - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON
+      BUILD_TYPE: Release
+      CXX: clang++
+      CC:  clang
+      GENERATOR: Ninja
+      BUILD_PARALLEL_JOBS: 4
+      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON
     docker:
-      - image: ethereum/cpp-build-env:3
+      - image: ethereum/cpp-build-env:5
     steps:
-      - *install-system-deps
       - checkout
       - *update-submodules
       - *environment-info
@@ -190,6 +185,19 @@ jobs:
       - *evmc-test
       - *evm2wasm-test
 
+  linux-clang-shared-asan:
+    <<: *linux-clang-shared
+    environment:
+      BUILD_TYPE: Release
+      CXX: clang++
+      CC:  clang
+      GENERATOR: Ninja
+      BUILD_PARALLEL_JOBS: 4
+      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON -DSANITIZE=address
+      # The ASan must the first loaded shared library. Force preloading it with this flag.
+      PRELOAD_ASAN: true
+      ASAN_OPTIONS: detect_leaks=0
+
   linux-gcc-shared-coverage:
     environment:
       - BUILD_TYPE: Debug
@@ -199,9 +207,8 @@ jobs:
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DCOVERAGE=ON -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON
     docker:
-      - image: ethereum/cpp-build-env
+      - image: ethereum/cpp-build-env:5
     steps:
-      - *install-system-deps
       - checkout
       - *update-submodules
       - *environment-info
@@ -224,9 +231,8 @@ jobs:
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON -DHERA_WAVM=ON -DHERA_WABT=ON
     docker:
-      - image: ethereum/cpp-build-env
+      - image: ethereum/cpp-build-env:5
     steps:
-      - *install-system-deps
       - checkout
       - *update-submodules
       - *environment-info
@@ -240,5 +246,6 @@ workflows:
   hera:
     jobs:
       - linux-clang-shared-release
+      - linux-clang-shared-asan
       - linux-gcc-shared-coverage
       - linux-gcc-debug
