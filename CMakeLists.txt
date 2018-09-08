@@ -31,8 +31,10 @@ set(PROJECT_VERSION 0.1.0)
 cable_set_build_type(DEFAULT RelWithDebInfo CONFIGURATION_TYPES Debug;Release;RelWithDebInfo)
 
 cable_configure_compiler()
-# TODO: fix the warnings instead
-add_compile_options(-Wno-pedantic)
+if(CABLE_COMPILER_GNULIKE)
+    # TODO: fix the warnings instead
+    add_compile_options(-Wno-pedantic)
+endif()
 
 include(ProjectBinaryen)
 
