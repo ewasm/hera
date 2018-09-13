@@ -26,6 +26,14 @@ defaults:
       command: |
         cmake ../project -G "$GENERATOR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE $CMAKE_OPTIONS -DEVM2WASM_TOOLS=OFF
 
+  codespell: &codespell
+    run:
+      name: "Run codespell"
+      command: |
+        sudo pip3 install --upgrade pip setuptools
+        sudo pip3 install codespell
+        codespell --skip=".git"
+
   build: &build
     run:
       name: "Build"
@@ -241,10 +249,18 @@ jobs:
       - *build
       - *save-deps-cache
 
+  lint:
+    docker:
+      - image: ethereum/cpp-build-env:5
+    steps:
+      - checkout
+      - *codespell
+
 workflows:
   version: 2
   hera:
     jobs:
+      - lint
       - linux-clang-shared-release
       - linux-clang-shared-asan
       - linux-gcc-shared-coverage
