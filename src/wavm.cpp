@@ -172,9 +172,18 @@ ExecutionResult WavmEngine::execute(
 
   // first parse module
   IR::Module moduleAST;
-  // NOTE: this expects U8, which is a typedef over uint8_t
-  bool loadedSuccess = loadBinaryModule(code.data(), code.size(), moduleAST);
-  heraAssert(loadedSuccess, "wavm couldn't parse module into syntax tree");
+  try {
+    // NOTE: this expects U8, which is a typedef over uint8_t
+    Serialization::MemoryInputStream input(code.data(), code.size());
+    WASM::serialize(input, moduleAST);
+  } catch (Serialization::FatalSerializationException const& e) {
+    ensureCondition(false, ContractValidationFailure, "Failed to deserialise contract: " + e.message);
+  } catch (IR::ValidationException const& e) {
+    ensureCondition(false, ContractValidationFailure, "Failed to validate contract: " + e.message);
+  } catch (std::bad_alloc const&) {
+    // Catching this here because apparently wavm doesn't necessarily checks bounds before allocation
+    ensureCondition(false, ContractValidationFailure, "Bug in wavm: didn't check bounds before allocation");
+  }
 
   // next set up the host module.
   // Note: in ewasm, we create a new VM for each call to a module, so we must instantiate a new host module for each of these VMs, this is inefficient, but OK for prototyping.
