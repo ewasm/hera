@@ -72,9 +72,21 @@ namespace wavm_host_module {
   }
 
 
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getGasLeft", U64, getGasLeft)
+  {
+    return static_cast<U64>(interface.top()->eeiGetGasLeft());
+  }
+
+
   DEFINE_INTRINSIC_FUNCTION(ethereum, "storageStore", void, storageStore, U32 pathOffset, U32 valueOffset)
   {
     interface.top()->eeiStorageStore(pathOffset, valueOffset);
+  }
+
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "storageLoad", void, storageLoad, U32 pathOffset, U32 valueOffset)
+  {
+    interface.top()->eeiStorageLoad(pathOffset, valueOffset);
   }
 
 
