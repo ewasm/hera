@@ -185,30 +185,30 @@ ExecutionResult WavmEngine::execute(
   // instantiate host Module
   HashMap<string, Runtime::Object*> extraEthereumExports; //empty for current ewasm stuff
   Runtime::GCPointer<Runtime::ModuleInstance> ethereumHostModule = Intrinsics::instantiateModule(compartment, wavm_host_module::INTRINSIC_MODULE_REF(ethereum), "ethereum", extraEthereumExports);
-  heraAssert(ethereumHostModule, "wavm couldn't instantiate host module");
+  heraAssert(ethereumHostModule, "Failed to create host module.");
   // prepare contract module to resolve links against host module
   wavm_host_module::HeraWavmResolver resolver(compartment);
   resolver.moduleNameToInstanceMap.set("ethereum", ethereumHostModule);
   Runtime::LinkResult linkResult = Runtime::linkModule(moduleAST, resolver);
-  heraAssert(linkResult.success, "wavm couldn't link contract against host module");
+  heraAssert(linkResult.success, "Couldn't link contract against host module.");
 
   // instantiate contract module
   Runtime::GCPointer<Runtime::ModuleInstance> moduleInstance = Runtime::instantiateModule(compartment, moduleAST, move(linkResult.resolvedImports), "<ewasmcontract>");
-  heraAssert(moduleInstance, "wavm couldn't instantiate contract module");
+  heraAssert(moduleInstance, "Couldn't instantiate contact module.");
 
   // get memory for easy access in host functions
   wavm_host_module::interface.top()->setWasmMemory(asMemory(Runtime::getInstanceExport(moduleInstance, "memory")));
 
   // invoke the main function
-  Runtime::GCPointer<Runtime::FunctionInstance> functionInstance = asFunctionNullable(Runtime::getInstanceExport(moduleInstance, "main"));
-  heraAssert(functionInstance, "wavm couldn't find main function");
+  Runtime::GCPointer<Runtime::FunctionInstance> mainFunction = asFunctionNullable(Runtime::getInstanceExport(moduleInstance, "main"));
+  ensureCondition(mainFunction, ContractValidationFailure, "\"main\" not found");
 
   // this is how WAVM's try/catch for exceptions
   Runtime::catchRuntimeExceptions(
     [&] {
       try {
         vector<IR::Value> invokeArgs;
-        Runtime::invokeFunctionChecked(wavm_context, functionInstance, invokeArgs);
+        Runtime::invokeFunctionChecked(wavm_context, mainFunction, invokeArgs);
       } catch (EndExecution const&) {
         // This exception is ignored here because we consider it to be a success.
         // It is only a clutch for POSIX style exit()
