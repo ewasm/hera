@@ -172,9 +172,18 @@ ExecutionResult WavmEngine::execute(
 
   // first parse module
   IR::Module moduleAST;
-  // NOTE: this expects U8, which is a typedef over uint8_t
-  bool loadedSuccess = loadBinaryModule(code.data(), code.size(), moduleAST);
-  heraAssert(loadedSuccess, "wavm couldn't parse module into syntax tree");
+  try {
+    // NOTE: this expects U8, which is a typedef over uint8_t
+    Serialization::MemoryInputStream input(code.data(), code.size());
+    WASM::serialize(input, moduleAST);
+  } catch (Serialization::FatalSerializationException const& e) {
+    ensureCondition(false, ContractValidationFailure, "Failed to deserialise contract: " + e.message);
+  } catch (IR::ValidationException const& e) {
+    ensureCondition(false, ContractValidationFailure, "Failed to validate contract: " + e.message);
+  } catch (std::bad_alloc const&) {
+    // Catching this here because apparently wavm doesn't necessarily checks bounds before allocation
+    ensureCondition(false, ContractValidationFailure, "Bug in wavm: didn't check bounds before allocation");
+  }
 
   // next set up the host module.
   // Note: in ewasm, we create a new VM for each call to a module, so we must instantiate a new host module for each of these VMs, this is inefficient, but OK for prototyping.
@@ -185,39 +194,38 @@ ExecutionResult WavmEngine::execute(
   // instantiate host Module
   HashMap<string, Runtime::Object*> extraEthereumExports; //empty for current ewasm stuff
   Runtime::GCPointer<Runtime::ModuleInstance> ethereumHostModule = Intrinsics::instantiateModule(compartment, wavm_host_module::INTRINSIC_MODULE_REF(ethereum), "ethereum", extraEthereumExports);
-  heraAssert(ethereumHostModule, "wavm couldn't instantiate host module");
+  heraAssert(ethereumHostModule, "Failed to create host module.");
   // prepare contract module to resolve links against host module
   wavm_host_module::HeraWavmResolver resolver(compartment);
   resolver.moduleNameToInstanceMap.set("ethereum", ethereumHostModule);
   Runtime::LinkResult linkResult = Runtime::linkModule(moduleAST, resolver);
-  heraAssert(linkResult.success, "wavm couldn't link contract against host module");
+  heraAssert(linkResult.success, "Couldn't link contract against host module.");
 
   // instantiate contract module
   Runtime::GCPointer<Runtime::ModuleInstance> moduleInstance = Runtime::instantiateModule(compartment, moduleAST, move(linkResult.resolvedImports), "<ewasmcontract>");
-  heraAssert(moduleInstance, "wavm couldn't instantiate contract module");
+  heraAssert(moduleInstance, "Couldn't instantiate contact module.");
 
   // get memory for easy access in host functions
   wavm_host_module::interface.top()->setWasmMemory(asMemory(Runtime::getInstanceExport(moduleInstance, "memory")));
 
   // invoke the main function
-  Runtime::GCPointer<Runtime::FunctionInstance> functionInstance = asFunctionNullable(Runtime::getInstanceExport(moduleInstance, "main"));
-  heraAssert(functionInstance, "wavm couldn't find main function");
+  Runtime::GCPointer<Runtime::FunctionInstance> mainFunction = asFunctionNullable(Runtime::getInstanceExport(moduleInstance, "main"));
+  ensureCondition(mainFunction, ContractValidationFailure, "\"main\" not found");
 
   // this is how WAVM's try/catch for exceptions
   Runtime::catchRuntimeExceptions(
     [&] {
       try {
         vector<IR::Value> invokeArgs;
-        Runtime::invokeFunctionChecked(wavm_context, functionInstance, invokeArgs);
+        Runtime::invokeFunctionChecked(wavm_context, mainFunction, invokeArgs);
       } catch (EndExecution const&) {
-        HERA_DEBUG << "Caught EndToEnd exception\n";
         // This exception is ignored here because we consider it to be a success.
         // It is only a clutch for POSIX style exit()
       }
     },
     [&](Runtime::Exception&& exception) {
-      HERA_DEBUG << "Caught WAVM runtime exception\n";
-      // Perhaps this exception is ignored too, or maybe call revert
+      // FIXME: decide if each of the exception fit into VMTrap/InternalError
+      ensureCondition(false, VMTrap, Runtime::describeException(exception));
     }
   );
 

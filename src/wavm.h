@@ -22,10 +22,13 @@
 #include <stack>
 
 #define DLL_IMPORT // Needed by wavm on some platforms
-#include "Inline/CLI.h"
+#include "Inline/Serialization.h"
+#include "IR/Module.h"
+#include "IR/Validate.h"
 #include "Runtime/Intrinsics.h"
 #include "Runtime/Linker.h"
 #include "Runtime/Runtime.h"
+#include "WASM/WASM.h"
 
 #include "eei.h"
 
