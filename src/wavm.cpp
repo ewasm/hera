@@ -171,9 +171,9 @@ ExecutionResult WavmEngine::execute(
   wavm_host_module::interface.push(&interface);
 
   // first parse module
-  vector<U8> codeBytes = static_cast<vector<U8>>(code);
-  IR::Module moduleAST; 
-  bool loadedSuccess = loadBinaryModule(codeBytes.data(), codeBytes.size(), moduleAST);
+  IR::Module moduleAST;
+  // NOTE: this expects U8, which is a typedef over uint8_t
+  bool loadedSuccess = loadBinaryModule(code.data(), code.size(), moduleAST);
   heraAssert(loadedSuccess, "wavm couldn't parse module into syntax tree");
 
   // next set up the host module.
