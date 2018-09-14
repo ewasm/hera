@@ -29,8 +29,8 @@ ExternalProject_Add(wavm
     DOWNLOAD_DIR ${prefix}/downloads
     SOURCE_DIR ${source_dir}
     BINARY_DIR ${binary_dir}
-    URL https://github.com/AndrewScheidecker/WAVM/archive/a0baaec170b55cc60cfe6bcc6b36add953a065d8.tar.gz
-    URL_HASH SHA256=da184e2c077e257dea82c13b2e5ae1fc03d1dc306a1c9a6f84838cff7390b75a
+    URL https://github.com/AndrewScheidecker/WAVM/archive/2c77c8a2e49bd291833d79fe6c68801b44ae634c.tar.gz
+    URL_HASH SHA256=044b09afb6b62e0b1ad16dde3ef773f72dd077d7c54c88d6716162caa9eca2e7
     PATCH_COMMAND sh ${CMAKE_CURRENT_LIST_DIR}/patch_wavm.sh
     CMAKE_ARGS
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
