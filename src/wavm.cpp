@@ -142,6 +142,15 @@ ExecutionResult WavmEngine::execute(
 ) {
   HERA_DEBUG << "Executing with wavm...\n";
 
+  // Collect garbage left by previous runs.
+  //
+  // GCPointer<> marks objects to be deleted upon moving out of scope, however
+  // since all the objects are part of this call, `collectGarbage` at the end
+  // won't actually clean anything.
+  //
+  // Here we try to clean up after previous runs.
+  Runtime::collectGarbage();
+
   // set up a new ethereum interface just for this contract invocation
   ExecutionResult result;
   WavmEthereumInterface interface{context, state_code, msg, result, meterInterfaceGas};
@@ -200,7 +209,8 @@ ExecutionResult WavmEngine::execute(
 
   // clean up
   wavm_host_module::interface.pop();
-  // TODO: does this actually clean up all GCPointers above?
+
+  // This likely won't clear any memory, but we can be hopeful.
   Runtime::collectGarbage();
 
   return result;
