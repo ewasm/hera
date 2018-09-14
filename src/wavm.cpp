@@ -214,11 +214,11 @@ ExecutionResult WavmEngine::internalExecute(
   wavm_host_module::interface.push(&interface);
 
   // first parse module
-  IR::Module moduleAST;
+  IR::Module irmodule;
   try {
     // NOTE: this expects U8, which is a typedef over uint8_t
     Serialization::MemoryInputStream input(code.data(), code.size());
-    WASM::serialize(input, moduleAST);
+    WASM::serialize(input, irmodule);
   } catch (Serialization::FatalSerializationException const& e) {
     ensureCondition(false, ContractValidationFailure, "Failed to deserialise contract: " + e.message);
   } catch (IR::ValidationException const& e) {
@@ -228,24 +228,29 @@ ExecutionResult WavmEngine::internalExecute(
     ensureCondition(false, ContractValidationFailure, "Bug in wavm: didn't check bounds before allocation");
   }
 
-  // next set up the host module.
-  // Note: in ewasm, we create a new VM for each call to a module, so we must instantiate a new host module for each of these VMs, this is inefficient, but OK for prototyping.
+  // compile the module (not sure what this does)
+  Runtime::Module* module = Runtime::compileModule(irmodule);
+
+  // set up the VM
   // compartment is like the Wasm store, represents the VM, has lists of globals, memories, tables, and also has wavm's runtime stuff
   Runtime::GCPointer<Runtime::Compartment> compartment = Runtime::createCompartment();
   // context stores the compartment and some other stuff
   Runtime::GCPointer<Runtime::Context> wavm_context = Runtime::createContext(compartment);
-  // instantiate host Module
+
+  // set up the host Module
+  // Note: in ewasm, we create a new VM for each call to a module, so we must instantiate a new host module for each of these VMs, this is inefficient, but OK for prototyping.
   HashMap<string, Runtime::Object*> extraEthereumExports; //empty for current ewasm stuff
+  // instantiate host Module
   Runtime::GCPointer<Runtime::ModuleInstance> ethereumHostModule = Intrinsics::instantiateModule(compartment, wavm_host_module::INTRINSIC_MODULE_REF(ethereum), "ethereum", extraEthereumExports);
   heraAssert(ethereumHostModule, "Failed to create host module.");
   // prepare contract module to resolve links against host module
   wavm_host_module::HeraWavmResolver resolver(compartment);
   resolver.moduleNameToInstanceMap.set("ethereum", ethereumHostModule);
-  Runtime::LinkResult linkResult = Runtime::linkModule(moduleAST, resolver);
+  Runtime::LinkResult linkResult = Runtime::linkModule(irmodule, resolver);
   heraAssert(linkResult.success, "Couldn't link contract against host module.");
 
   // instantiate contract module
-  Runtime::GCPointer<Runtime::ModuleInstance> moduleInstance = Runtime::instantiateModule(compartment, moduleAST, move(linkResult.resolvedImports), "<ewasmcontract>");
+  Runtime::GCPointer<Runtime::ModuleInstance> moduleInstance = Runtime::instantiateModule(compartment, module, move(linkResult.resolvedImports), "<ewasmcontract>");
   heraAssert(moduleInstance, "Couldn't instantiate contact module.");
 
   // get memory for easy access in host functions
