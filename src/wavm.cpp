@@ -126,9 +126,11 @@ namespace wavm_host_module {
       IR::ObjectType type,
       Runtime::Object*& outObject) override
     {
+      outObject = nullptr;
       auto namedInstance = moduleNameToInstanceMap.get(moduleName);
-      outObject = Runtime::getInstanceExport(*namedInstance, exportName);
-      return true;
+      if (namedInstance)
+          outObject = Runtime::getInstanceExport(*namedInstance, exportName);
+      return outObject != nullptr;
     }
   };
 } // namespace wavm_host_module
