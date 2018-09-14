@@ -228,8 +228,8 @@ ExecutionResult WavmEngine::internalExecute(
     ensureCondition(false, ContractValidationFailure, "Bug in wavm: didn't check bounds before allocation");
   }
 
-  // compile the module (not sure what this does)
-  Runtime::Module* module = Runtime::compileModule(irmodule);
+  // compile the module from AST of the WASM to llvm bitcode
+  Runtime::GCPointer<Runtime::Module> module = Runtime::compileModule(irmodule);
 
   // set up the VM
   // compartment is like the Wasm store, represents the VM, has lists of globals, memories, tables, and also has wavm's runtime stuff
