@@ -210,14 +210,13 @@ ExecutionResult WavmEngine::execute(
         vector<IR::Value> invokeArgs;
         Runtime::invokeFunctionChecked(wavm_context, functionInstance, invokeArgs);
       } catch (EndExecution const&) {
-        HERA_DEBUG << "Caught EndToEnd exception\n";
         // This exception is ignored here because we consider it to be a success.
         // It is only a clutch for POSIX style exit()
       }
     },
     [&](Runtime::Exception&& exception) {
-      HERA_DEBUG << "Caught WAVM runtime exception\n";
-      // Perhaps this exception is ignored too, or maybe call revert
+      // FIXME: decide if each of the exception fit into VMTrap/InternalError
+      ensureCondition(false, VMTrap, Runtime::describeException(exception));
     }
   );
 
