@@ -40,6 +40,8 @@ include(ProjectBinaryen)
 
 cable_add_buildinfo_library(PROJECT_NAME hera)
 
+option(BUILD_SHARED_LIBS "Build libraries as shared" ON)
+
 option(HERA_WABT "Build with wabt" OFF)
 if (HERA_WABT)
     include(ProjectWabt)
