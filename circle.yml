@@ -248,14 +248,14 @@ jobs:
       - *test
       - *upload-coverage-data
 
-  linux-gcc-debug:
+  linux-gcc-static-debug:
     environment:
       - BUILD_TYPE: Debug
       - CXX: g++
       - CC:  gcc
       - GENERATOR: Unix Makefiles
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON -DHERA_WAVM=ON -DHERA_WABT=ON
+      - CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -DHERA_DEBUGGING=ON -DHERA_WAVM=ON -DHERA_WABT=ON
     docker:
       - image: ethereum/cpp-build-env:5
     steps:
@@ -282,4 +282,4 @@ workflows:
       - linux-clang-shared-release
       - linux-clang-shared-asan
       - linux-gcc-shared-coverage
-      - linux-gcc-debug
+      - linux-gcc-static-debug
