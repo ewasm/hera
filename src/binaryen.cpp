@@ -32,7 +32,6 @@
 #include "shell-interface.h"
 
 using namespace std;
-using namespace wasm;
 
 namespace hera {
 
@@ -67,58 +66,58 @@ private:
   uint8_t memoryGet(size_t offset) override { return memory.get<uint8_t>(offset); }
 };
 
-  void BinaryenEthereumInterface::importGlobals(map<Name, Literal>& globals, Module& wasm) {
+  void BinaryenEthereumInterface::importGlobals(map<wasm::Name, wasm::Literal>& globals, wasm::Module& wasm) {
     (void)globals;
     (void)wasm;
     HERA_DEBUG << "importGlobals\n";
   }
 
 #if HERA_DEBUGGING
-  Literal BinaryenEthereumInterface::callDebugImport(Import *import, LiteralList& arguments) {
-    heraAssert(import->module == Name("debug"), "Import namespace error.");
+  wasm::Literal BinaryenEthereumInterface::callDebugImport(wasm::Import *import, wasm::LiteralList& arguments) {
+    heraAssert(import->module == wasm::Name("debug"), "Import namespace error.");
 
-    if (import->base == Name("print32")) {
+    if (import->base == wasm::Name("print32")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t value = static_cast<uint32_t>(arguments[0].geti32());
 
       cerr << "DEBUG print32: " << value << " " << hex << "0x" << value << dec << endl;
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("print64")) {
+    if (import->base == wasm::Name("print64")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint64_t value = static_cast<uint64_t>(arguments[0].geti64());
 
       cerr << "DEBUG print64: " << value << " " << hex << "0x" << value << dec << endl;
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("printMem") || import->base == Name("printMemHex")) {
+    if (import->base == wasm::Name("printMem") || import->base == wasm::Name("printMemHex")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
       uint32_t length = static_cast<uint32_t>(arguments[1].geti32());
 
-      debugPrintMem(import->base == Name("printMemHex"), offset, length);
+      debugPrintMem(import->base == wasm::Name("printMemHex"), offset, length);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("printStorage") || import->base == Name("printStorageHex")) {
+    if (import->base == wasm::Name("printStorage") || import->base == wasm::Name("printStorageHex")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      debugPrintStorage(import->base == Name("printStorageHex"), pathOffset);
+      debugPrintStorage(import->base == wasm::Name("printStorageHex"), pathOffset);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("evmTrace")) {
+    if (import->base == wasm::Name("evmTrace")) {
       heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t pc = static_cast<uint32_t>(arguments[0].geti32());
@@ -128,49 +127,49 @@ private:
 
       debugEvmTrace(pc, opcode, cost, sp);
 
-      return Literal();
+      return wasm::Literal();
     }
 
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + " arguments)");
   }
 #endif
 
-  Literal BinaryenEthereumInterface::callImport(Import *import, LiteralList& arguments) {
+  wasm::Literal BinaryenEthereumInterface::callImport(wasm::Import *import, wasm::LiteralList& arguments) {
 #if HERA_DEBUGGING
-    if (import->module == Name("debug"))
+    if (import->module == wasm::Name("debug"))
       // Reroute to debug namespace
       return callDebugImport(import, arguments);
 #endif
 
-    heraAssert(import->module == Name("ethereum"), "Only imports from the 'ethereum' namespace are allowed.");
+    heraAssert(import->module == wasm::Name("ethereum"), "Only imports from the 'ethereum' namespace are allowed.");
 
-    if (import->base == Name("useGas")) {
+    if (import->base == wasm::Name("useGas")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       int64_t gas = arguments[0].geti64();
 
       eeiUseGas(gas);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("getGasLeft")) {
+    if (import->base == wasm::Name("getGasLeft")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      return Literal(eeiGetGasLeft());
+      return wasm::Literal(eeiGetGasLeft());
     }
 
-    if (import->base == Name("getAddress")) {
+    if (import->base == wasm::Name("getAddress")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       eeiGetAddress(resultOffset);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("getExternalBalance")) {
+    if (import->base == wasm::Name("getExternalBalance")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
@@ -178,25 +177,25 @@ private:
 
       eeiGetExternalBalance(addressOffset, resultOffset);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("getBlockHash")) {
+    if (import->base == wasm::Name("getBlockHash")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
       uint64_t number = static_cast<uint64_t>(arguments[0].geti64());
       uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
 
-      return Literal(eeiGetBlockHash(number, resultOffset));
+      return wasm::Literal(eeiGetBlockHash(number, resultOffset));
     }
 
-    if (import->base == Name("getCallDataSize")) {
+    if (import->base == wasm::Name("getCallDataSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      return Literal(eeiGetCallDataSize());
+      return wasm::Literal(eeiGetCallDataSize());
     }
 
-    if (import->base == Name("callDataCopy")) {
+    if (import->base == wasm::Name("callDataCopy")) {
       heraAssert(arguments.size() == 3, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
@@ -205,30 +204,30 @@ private:
 
       eeiCallDataCopy(resultOffset, dataOffset, length);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("getCaller")) {
+    if (import->base == wasm::Name("getCaller")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       eeiGetCaller(resultOffset);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("getCallValue")) {
+    if (import->base == wasm::Name("getCallValue")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       eeiGetCallValue(resultOffset);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("codeCopy")) {
+    if (import->base == wasm::Name("codeCopy")) {
       heraAssert(arguments.size() == 3, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
@@ -237,16 +236,16 @@ private:
 
       eeiCodeCopy(resultOffset, codeOffset, length);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("getCodeSize")) {
+    if (import->base == wasm::Name("getCodeSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      return Literal(eeiGetCodeSize());
+      return wasm::Literal(eeiGetCodeSize());
     }
 
-    if (import->base == Name("externalCodeCopy")) {
+    if (import->base == wasm::Name("externalCodeCopy")) {
       heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
@@ -256,54 +255,54 @@ private:
 
       eeiExternalCodeCopy(addressOffset, resultOffset, codeOffset, length);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("getExternalCodeSize")) {
+    if (import->base == wasm::Name("getExternalCodeSize")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
 
-      return Literal(eeiGetExternalCodeSize(addressOffset));
+      return wasm::Literal(eeiGetExternalCodeSize(addressOffset));
     }
 
-    if (import->base == Name("getBlockCoinbase")) {
+    if (import->base == wasm::Name("getBlockCoinbase")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       eeiGetBlockCoinbase(resultOffset);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("getBlockDifficulty")) {
+    if (import->base == wasm::Name("getBlockDifficulty")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
 
       eeiGetBlockDifficulty(offset);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("getBlockGasLimit")) {
+    if (import->base == wasm::Name("getBlockGasLimit")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      return Literal(eeiGetBlockGasLimit());
+      return wasm::Literal(eeiGetBlockGasLimit());
     }
 
-    if (import->base == Name("getTxGasPrice")) {
+    if (import->base == wasm::Name("getTxGasPrice")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t valueOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       eeiGetTxGasPrice(valueOffset);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("log")) {
+    if (import->base == wasm::Name("log")) {
       heraAssert(arguments.size() == 7, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t dataOffset = static_cast<uint32_t>(arguments[0].geti32());
@@ -316,32 +315,32 @@ private:
 
       eeiLog(dataOffset, length, numberOfTopics, topic1, topic2, topic3, topic4);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("getBlockNumber")) {
+    if (import->base == wasm::Name("getBlockNumber")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      return Literal(eeiGetBlockNumber());
+      return wasm::Literal(eeiGetBlockNumber());
     }
 
-    if (import->base == Name("getBlockTimestamp")) {
+    if (import->base == wasm::Name("getBlockTimestamp")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      return Literal(eeiGetBlockTimestamp());
+      return wasm::Literal(eeiGetBlockTimestamp());
     }
 
-    if (import->base == Name("getTxOrigin")) {
+    if (import->base == wasm::Name("getTxOrigin")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
 
       eeiGetTxOrigin(resultOffset);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("storageStore")) {
+    if (import->base == wasm::Name("storageStore")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
@@ -349,10 +348,10 @@ private:
 
       eeiStorageStore(pathOffset, valueOffset);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("storageLoad")) {
+    if (import->base == wasm::Name("storageLoad")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
@@ -360,10 +359,10 @@ private:
 
       eeiStorageLoad(pathOffset, resultOffset);
 
-      return Literal();
+      return wasm::Literal();
     }
 
-    if (import->base == Name("finish")) {
+    if (import->base == wasm::Name("finish")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
@@ -373,7 +372,7 @@ private:
       eeiFinish(offset, size);
     }
 
-    if (import->base == Name("revert")) {
+    if (import->base == wasm::Name("revert")) {
       heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
@@ -383,13 +382,13 @@ private:
       eeiRevert(offset, size);
     }
 
-    if (import->base == Name("getReturnDataSize")) {
+    if (import->base == wasm::Name("getReturnDataSize")) {
       heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-      return Literal(eeiGetReturnDataSize());
+      return wasm::Literal(eeiGetReturnDataSize());
     }
 
-    if (import->base == Name("returnDataCopy")) {
+    if (import->base == wasm::Name("returnDataCopy")) {
       heraAssert(arguments.size() == 3, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t dataOffset = static_cast<uint32_t>(arguments[0].geti32());
@@ -398,23 +397,23 @@ private:
 
       eeiReturnDataCopy(dataOffset, offset, size);
 
-      return Literal();
+      return wasm::Literal();
     }
 
     if (
-      import->base == Name("call") ||
-      import->base == Name("callCode") ||
-      import->base == Name("callDelegate") ||
-      import->base == Name("callStatic")
+      import->base == wasm::Name("call") ||
+      import->base == wasm::Name("callCode") ||
+      import->base == wasm::Name("callDelegate") ||
+      import->base == wasm::Name("callStatic")
     ) {
       EEICallKind kind;
-      if (import->base == Name("call"))
+      if (import->base == wasm::Name("call"))
         kind = EEICallKind::Call;
-      else if (import->base == Name("callCode"))
+      else if (import->base == wasm::Name("callCode"))
         kind = EEICallKind::CallCode;
-      else if (import->base == Name("callDelegate"))
+      else if (import->base == wasm::Name("callDelegate"))
         kind = EEICallKind::CallDelegate;
-      else if (import->base == Name("callStatic"))
+      else if (import->base == wasm::Name("callStatic"))
         kind = EEICallKind::CallStatic;
       else
         heraAssert(false, "");
@@ -441,10 +440,10 @@ private:
         dataLength = static_cast<uint32_t>(arguments[3].geti32());
       }
 
-      return Literal(eeiCall(kind, gas, addressOffset, valueOffset, dataOffset, dataLength));
+      return wasm::Literal(eeiCall(kind, gas, addressOffset, valueOffset, dataOffset, dataLength));
     }
 
-    if (import->base == Name("create")) {
+    if (import->base == wasm::Name("create")) {
       heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t valueOffset = static_cast<uint32_t>(arguments[0].geti32());
@@ -452,10 +451,10 @@ private:
       uint32_t length = static_cast<uint32_t>(arguments[2].geti32());
       uint32_t resultOffset = static_cast<uint32_t>(arguments[3].geti32());
 
-      return Literal(eeiCreate(valueOffset, dataOffset, length, resultOffset));
+      return wasm::Literal(eeiCreate(valueOffset, dataOffset, length, resultOffset));
     }
 
-    if (import->base == Name("selfDestruct")) {
+    if (import->base == wasm::Name("selfDestruct")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
       uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
@@ -480,13 +479,13 @@ ExecutionResult BinaryenEngine::execute(
   evmc_message const& msg,
   bool meterInterfaceGas
 ) {
-  Module module;
+  wasm::Module module;
 
   // Load module
   try {
-    WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(code), false);
+    wasm::WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(code), false);
     parser.read();
-  } catch (ParseException const& e) {
+  } catch (wasm::ParseException const& e) {
     string msg = "Error in parsing WASM binary: '" + e.text + "'";
     if (e.line != size_t(-1))
       msg += " (at " + to_string(e.line) + ":" + to_string(e.col) + ")";
@@ -498,20 +497,20 @@ ExecutionResult BinaryenEngine::execute(
 
   // Validate
   ensureCondition(
-    WasmValidator().validate(module),
+    wasm::WasmValidator().validate(module),
     ContractValidationFailure,
     "Module is not valid."
   );
 
   // NOTE: Most of this should be caught during deployment time by the Sentinel.
   ensureCondition(
-    module.getExportOrNull(Name("main")) != nullptr,
+    module.getExportOrNull(wasm::Name("main")) != nullptr,
     ContractValidationFailure,
     "Contract entry point (\"main\") missing."
   );
 
   ensureCondition(
-    module.getExportOrNull(Name("memory")) != nullptr,
+    module.getExportOrNull(wasm::Name("memory")) != nullptr,
     ContractValidationFailure,
     "Contract export (\"memory\") missing."
   );
@@ -524,9 +523,9 @@ ExecutionResult BinaryenEngine::execute(
 
   for (auto const& import: module.imports) {
     ensureCondition(
-      import->module == Name("ethereum")
+      import->module == wasm::Name("ethereum")
 #if HERA_DEBUGGING
-      || import->module == Name("debug")
+      || import->module == wasm::Name("debug")
 #endif
       ,
       ContractValidationFailure,
@@ -539,11 +538,11 @@ ExecutionResult BinaryenEngine::execute(
   // Interpret
   ExecutionResult result;
   BinaryenEthereumInterface interface(context, state_code, msg, result, meterInterfaceGas);
-  ModuleInstance instance(module, &interface);
+  wasm::ModuleInstance instance(module, &interface);
 
   try {
-    Name main = Name("main");
-    LiteralList args;
+    wasm::Name main = wasm::Name("main");
+    wasm::LiteralList args;
     instance.callExport(main, args);
   } catch (EndExecution const&) {
     // This exception is ignored here because we consider it to be a success.
