@@ -37,7 +37,6 @@
 #include "exceptions.h"
 
 using namespace std;
-using namespace wabt;
 
 namespace hera {
 
@@ -290,13 +289,13 @@ wabt::Result WabtEthereumInterface::ImportTable(
   return wabt::Result::Error;
 }
 
-interp::Result WabtEthereumInterface::wabtUseGas(
-  const interp::HostFunc* func,
-  const interp::FuncSignature* sig,
-  Index num_args,
-  interp::TypedValue* args,
-  Index num_results,
-  interp::TypedValue* out_results,
+wabt::interp::Result WabtEthereumInterface::wabtUseGas(
+  const wabt::interp::HostFunc* func,
+  const wabt::interp::FuncSignature* sig,
+  wabt::Index num_args,
+  wabt::interp::TypedValue* args,
+  wabt::Index num_results,
+  wabt::interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -312,16 +311,16 @@ interp::Result WabtEthereumInterface::wabtUseGas(
   // FIXME: handle host trap here
   interface->eeiUseGas(gas);
 
-  return interp::Result::Ok;
+  return wabt::interp::Result::Ok;
 }
 
-interp::Result WabtEthereumInterface::wabtGetGasLeft(
-  const interp::HostFunc* func,
-  const interp::FuncSignature* sig,
-  Index num_args,
-  interp::TypedValue* args,
-  Index num_results,
-  interp::TypedValue* out_results,
+wabt::interp::Result WabtEthereumInterface::wabtGetGasLeft(
+  const wabt::interp::HostFunc* func,
+  const wabt::interp::FuncSignature* sig,
+  wabt::Index num_args,
+  wabt::interp::TypedValue* args,
+  wabt::Index num_results,
+  wabt::interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -334,16 +333,16 @@ interp::Result WabtEthereumInterface::wabtGetGasLeft(
   out_results[0].type = sig->result_types[0];
   out_results[0].value.i64 = static_cast<uint64_t>(interface->eeiGetGasLeft());
 
-  return interp::Result::Ok;
+  return wabt::interp::Result::Ok;
 }
 
-interp::Result WabtEthereumInterface::wabtStorageStore(
-  const interp::HostFunc* func,
-  const interp::FuncSignature* sig,
-  Index num_args,
-  interp::TypedValue* args,
-  Index num_results,
-  interp::TypedValue* out_results,
+wabt::interp::Result WabtEthereumInterface::wabtStorageStore(
+  const wabt::interp::HostFunc* func,
+  const wabt::interp::FuncSignature* sig,
+  wabt::Index num_args,
+  wabt::interp::TypedValue* args,
+  wabt::Index num_results,
+  wabt::interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -359,16 +358,16 @@ interp::Result WabtEthereumInterface::wabtStorageStore(
   
   interface->eeiStorageStore(pathOffset, valueOffset);
 
-  return interp::Result::Ok;
+  return wabt::interp::Result::Ok;
 }
 
-interp::Result WabtEthereumInterface::wabtStorageLoad(
-  const interp::HostFunc* func,
-  const interp::FuncSignature* sig,
-  Index num_args,
-  interp::TypedValue* args,
-  Index num_results,
-  interp::TypedValue* out_results,
+wabt::interp::Result WabtEthereumInterface::wabtStorageLoad(
+  const wabt::interp::HostFunc* func,
+  const wabt::interp::FuncSignature* sig,
+  wabt::Index num_args,
+  wabt::interp::TypedValue* args,
+  wabt::Index num_results,
+  wabt::interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -384,16 +383,16 @@ interp::Result WabtEthereumInterface::wabtStorageLoad(
   
   interface->eeiStorageLoad(pathOffset, valueOffset);
 
-  return interp::Result::Ok;
+  return wabt::interp::Result::Ok;
 }
 
-interp::Result WabtEthereumInterface::wabtFinish(
-  const interp::HostFunc* func,
-  const interp::FuncSignature* sig,
-  Index num_args,
-  interp::TypedValue* args,
-  Index num_results,
-  interp::TypedValue* out_results,
+wabt::interp::Result WabtEthereumInterface::wabtFinish(
+  const wabt::interp::HostFunc* func,
+  const wabt::interp::FuncSignature* sig,
+  wabt::Index num_args,
+  wabt::interp::TypedValue* args,
+  wabt::Index num_results,
+  wabt::interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -410,16 +409,16 @@ interp::Result WabtEthereumInterface::wabtFinish(
   // FIXME: handle host trap here
   interface->eeiFinish(offset, length);
 
-  return interp::Result::Ok;
+  return wabt::interp::Result::Ok;
 }
 
-interp::Result WabtEthereumInterface::wabtRevert(
-  const interp::HostFunc* func,
-  const interp::FuncSignature* sig,
-  Index num_args,
-  interp::TypedValue* args,
-  Index num_results,
-  interp::TypedValue* out_results,
+wabt::interp::Result WabtEthereumInterface::wabtRevert(
+  const wabt::interp::HostFunc* func,
+  const wabt::interp::FuncSignature* sig,
+  wabt::Index num_args,
+  wabt::interp::TypedValue* args,
+  wabt::Index num_results,
+  wabt::interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -436,16 +435,16 @@ interp::Result WabtEthereumInterface::wabtRevert(
   // FIXME: handle host trap here
   interface->eeiRevert(offset, length);
 
-  return interp::Result::Ok;
+  return wabt::interp::Result::Ok;
 }
 
-interp::Result WabtEthereumInterface::wabtGetCallDataSize(
-  const interp::HostFunc* func,
-  const interp::FuncSignature* sig,
-  Index num_args,
-  interp::TypedValue* args,
-  Index num_results,
-  interp::TypedValue* out_results,
+wabt::interp::Result WabtEthereumInterface::wabtGetCallDataSize(
+  const wabt::interp::HostFunc* func,
+  const wabt::interp::FuncSignature* sig,
+  wabt::Index num_args,
+  wabt::interp::TypedValue* args,
+  wabt::Index num_results,
+  wabt::interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -458,16 +457,16 @@ interp::Result WabtEthereumInterface::wabtGetCallDataSize(
   out_results[0].type = sig->result_types[0];
   out_results[0].value.i32 = interface->eeiGetCallDataSize();
 
-  return interp::Result::Ok;
+  return wabt::interp::Result::Ok;
 }
 
-interp::Result WabtEthereumInterface::wabtCallDataCopy(
-  const interp::HostFunc* func,
-  const interp::FuncSignature* sig,
-  Index num_args,
-  interp::TypedValue* args,
-  Index num_results,
-  interp::TypedValue* out_results,
+wabt::interp::Result WabtEthereumInterface::wabtCallDataCopy(
+  const wabt::interp::HostFunc* func,
+  const wabt::interp::FuncSignature* sig,
+  wabt::Index num_args,
+  wabt::interp::TypedValue* args,
+  wabt::Index num_results,
+  wabt::interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -484,16 +483,16 @@ interp::Result WabtEthereumInterface::wabtCallDataCopy(
 
   interface->eeiCallDataCopy(resultOffset, dataOffset, length);
 
-  return interp::Result::Ok;
+  return wabt::interp::Result::Ok;
 }
 
-interp::Result WabtEthereumInterface::wabtGetCallValue(
-  const interp::HostFunc* func,
-  const interp::FuncSignature* sig,
-  Index num_args,
-  interp::TypedValue* args,
-  Index num_results,
-  interp::TypedValue* out_results,
+wabt::interp::Result WabtEthereumInterface::wabtGetCallValue(
+  const wabt::interp::HostFunc* func,
+  const wabt::interp::FuncSignature* sig,
+  wabt::Index num_args,
+  wabt::interp::TypedValue* args,
+  wabt::Index num_results,
+  wabt::interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -508,7 +507,7 @@ interp::Result WabtEthereumInterface::wabtGetCallValue(
   
   interface->eeiGetCallValue(resultOffset);
 
-  return interp::Result::Ok;
+  return wabt::interp::Result::Ok;
 }
 
 ExecutionResult WabtEngine::execute(
