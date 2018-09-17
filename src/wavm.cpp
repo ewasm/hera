@@ -53,7 +53,7 @@ public:
     EthereumInterface(_context, _code, _msg, _result, _meterGas)
   {}
 
-  void setWasmMemory(Runtime::MemoryInstance* _wasmMemory) {
+  void setWasmMemory(Runtime::GCPointer<Runtime::MemoryInstance> _wasmMemory) {
     m_wasmMemory = _wasmMemory;
   }
 
@@ -63,7 +63,7 @@ private:
   void memorySet(size_t offset, uint8_t value) override { (Runtime::memoryArrayPtr<U8>(m_wasmMemory, offset, 1))[0] = value; }
   uint8_t memoryGet(size_t offset) override { return (Runtime::memoryArrayPtr<U8>(m_wasmMemory, offset, 1))[0]; }
 
-  Runtime::MemoryInstance* m_wasmMemory;
+  Runtime::GCPointer<Runtime::MemoryInstance> m_wasmMemory;
 };
 
 unique_ptr<WasmEngine> WavmEngine::create()
