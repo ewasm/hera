@@ -71,7 +71,21 @@ public:
     std::vector<uint8_t> const& state_code,
     evmc_message const& msg,
     bool meterInterfaceGas
-  ) override;
+  ) override {
+    ExecutionResult result = internalExecute(context, code, state_code, msg, meterInterfaceGas);
+    // And clean up mess left by this run.
+    Runtime::collectGarbage();
+    return result;
+  }
+
+private:
+  ExecutionResult internalExecute(
+    evmc_context* context,
+    std::vector<uint8_t> const& code,
+    std::vector<uint8_t> const& state_code,
+    evmc_message const& msg,
+    bool meterInterfaceGas
+  );
 };
 
 } // namespace hera
