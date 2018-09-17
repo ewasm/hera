@@ -467,44 +467,6 @@ private:
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
   }
 
-namespace {
-
-// NOTE: This should be caught during deployment time by the Sentinel.
-void validate_contract(Module & module)
-{
-  ensureCondition(
-    module.getExportOrNull(Name("main")) != nullptr,
-    ContractValidationFailure,
-    "Contract entry point (\"main\") missing."
-  );
-
-  ensureCondition(
-    module.getExportOrNull(Name("memory")) != nullptr,
-    ContractValidationFailure,
-    "Contract export (\"memory\") missing."
-  );
-
-  ensureCondition(
-    module.exports.size() == 2,
-    ContractValidationFailure,
-    "Contract exports more than (\"main\") and (\"memory\")."
-  );
-
-  for (auto const& import: module.imports) {
-    ensureCondition(
-      import->module == Name("ethereum")
-#if HERA_DEBUGGING
-      || import->module == Name("debug")
-#endif
-      ,
-      ContractValidationFailure,
-      "Import from invalid namespace."
-    );
-  }
-}
-
-}
-
 unique_ptr<WasmEngine> BinaryenEngine::create()
 {
   return unique_ptr<WasmEngine>{new BinaryenEngine};
@@ -541,8 +503,36 @@ ExecutionResult BinaryenEngine::execute(
     "Module is not valid."
   );
 
-  // NOTE: This should be caught during deployment time by the Sentinel.
-  validate_contract(module);
+  // NOTE: Most of this should be caught during deployment time by the Sentinel.
+  ensureCondition(
+    module.getExportOrNull(Name("main")) != nullptr,
+    ContractValidationFailure,
+    "Contract entry point (\"main\") missing."
+  );
+
+  ensureCondition(
+    module.getExportOrNull(Name("memory")) != nullptr,
+    ContractValidationFailure,
+    "Contract export (\"memory\") missing."
+  );
+
+  ensureCondition(
+    module.exports.size() == 2,
+    ContractValidationFailure,
+    "Contract exports more than (\"main\") and (\"memory\")."
+  );
+
+  for (auto const& import: module.imports) {
+    ensureCondition(
+      import->module == Name("ethereum")
+#if HERA_DEBUGGING
+      || import->module == Name("debug")
+#endif
+      ,
+      ContractValidationFailure,
+      "Import from invalid namespace."
+    );
+  }
 
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
