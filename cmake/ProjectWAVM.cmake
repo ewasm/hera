@@ -31,14 +31,15 @@ ExternalProject_Add(wavm
     DOWNLOAD_DIR ${prefix}/downloads
     SOURCE_DIR ${source_dir}
     BINARY_DIR ${binary_dir}
-    URL https://github.com/AndrewScheidecker/WAVM/archive/b15e29f2ee361379742957d764aca655ef2a9e48.tar.gz
-    URL_HASH SHA256=fd6aa9261cf6bc21098e0c86ed68383a281dc6720455c75afdcdceeddbbc2dee
+    URL https://github.com/AndrewScheidecker/WAVM/archive/fa5434e03efbc2154ecf4aafede169da76a4da40.tar.gz
+    URL_HASH SHA256=1a380461ca6570b39d548dcedfacb3c105769d5d5957e85674253250f585c07d
     PATCH_COMMAND sh ${CMAKE_CURRENT_LIST_DIR}/patch_wavm.sh
     CMAKE_ARGS
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-    -DCMAKE_BUILD_TYPE=Release
+    #-DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo
     -DLLVM_DIR=${LLVM_DIR}
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
     -DCMAKE_CXX_FLAGS=-Wno-error
