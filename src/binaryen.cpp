@@ -29,10 +29,43 @@
 #include "eei.h"
 #include "exceptions.h"
 
+#include "shell-interface.h"
+
 using namespace std;
 using namespace wasm;
 
 namespace hera {
+
+class BinaryenEthereumInterface : public wasm::ShellExternalInterface, EthereumInterface {
+public:
+  explicit BinaryenEthereumInterface(
+    evmc_context* _context,
+    vector<uint8_t> const& _code,
+    evmc_message const& _msg,
+    ExecutionResult & _result,
+    bool _meterGas
+  ):
+    ShellExternalInterface(),
+    EthereumInterface(_context, _code, _msg, _result, _meterGas)
+  { }
+
+protected:
+  wasm::Literal callImport(wasm::Import *import, wasm::LiteralList& arguments) override;
+#if HERA_DEBUGGING
+  wasm::Literal callDebugImport(wasm::Import *import, wasm::LiteralList& arguments);
+#endif
+
+  void importGlobals(map<wasm::Name, wasm::Literal>& globals, wasm::Module& wasm) override;
+
+  void trap(const char* why) override {
+    ensureCondition(false, VMTrap, why);
+  }
+
+private:
+  size_t memorySize() const override { return memory.size(); }
+  void memorySet(size_t offset, uint8_t value) override { memory.set<uint8_t>(offset, value); }
+  uint8_t memoryGet(size_t offset) override { return memory.get<uint8_t>(offset); }
+};
 
   void BinaryenEthereumInterface::importGlobals(map<Name, Literal>& globals, Module& wasm) {
     (void)globals;
@@ -434,40 +467,6 @@ namespace hera {
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
   }
 
-// NOTE: This should be caught during deployment time by the Sentinel.
-void BinaryenEngine::validate_contract(Module & module)
-{
-  ensureCondition(
-    module.getExportOrNull(Name("main")) != nullptr,
-    ContractValidationFailure,
-    "Contract entry point (\"main\") missing."
-  );
-
-  ensureCondition(
-    module.getExportOrNull(Name("memory")) != nullptr,
-    ContractValidationFailure,
-    "Contract export (\"memory\") missing."
-  );
-
-  ensureCondition(
-    module.exports.size() == 2,
-    ContractValidationFailure,
-    "Contract exports more than (\"main\") and (\"memory\")."
-  );
-
-  for (auto const& import: module.imports) {
-    ensureCondition(
-      import->module == Name("ethereum")
-#if HERA_DEBUGGING
-      || import->module == Name("debug")
-#endif
-      ,
-      ContractValidationFailure,
-      "Import from invalid namespace."
-    );
-  }
-}
-
 unique_ptr<WasmEngine> BinaryenEngine::create()
 {
   return unique_ptr<WasmEngine>{new BinaryenEngine};
@@ -504,8 +503,36 @@ ExecutionResult BinaryenEngine::execute(
     "Module is not valid."
   );
 
-  // NOTE: This should be caught during deployment time by the Sentinel.
-  validate_contract(module);
+  // NOTE: Most of this should be caught during deployment time by the Sentinel.
+  ensureCondition(
+    module.getExportOrNull(Name("main")) != nullptr,
+    ContractValidationFailure,
+    "Contract entry point (\"main\") missing."
+  );
+
+  ensureCondition(
+    module.getExportOrNull(Name("memory")) != nullptr,
+    ContractValidationFailure,
+    "Contract export (\"memory\") missing."
+  );
+
+  ensureCondition(
+    module.exports.size() == 2,
+    ContractValidationFailure,
+    "Contract exports more than (\"main\") and (\"memory\")."
+  );
+
+  for (auto const& import: module.imports) {
+    ensureCondition(
+      import->module == Name("ethereum")
+#if HERA_DEBUGGING
+      || import->module == Name("debug")
+#endif
+      ,
+      ContractValidationFailure,
+      "Import from invalid namespace."
+    );
+  }
 
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 

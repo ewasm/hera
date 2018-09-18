@@ -15,7 +15,21 @@
  * limitations under the License.
  */
 
+#include <iostream>
+#include <memory>
+#include <stack>
+
 #include "wavm.h"
+
+#define DLL_IMPORT // Needed by wavm on some platforms
+#include "Inline/Serialization.h"
+#include "IR/Module.h"
+#include "IR/Validate.h"
+#include "Runtime/Intrinsics.h"
+#include "Runtime/Linker.h"
+#include "Runtime/Runtime.h"
+#include "WASM/WASM.h"
+
 #include "debugging.h"
 #include "eei.h"
 #include "exceptions.h"
@@ -26,6 +40,31 @@
 using namespace std;
 
 namespace hera {
+
+class WavmEthereumInterface : public EthereumInterface {
+public:
+  explicit WavmEthereumInterface(
+    evmc_context* _context,
+    vector<uint8_t> const& _code,
+    evmc_message const& _msg,
+    ExecutionResult & _result,
+    bool _meterGas
+  ):
+    EthereumInterface(_context, _code, _msg, _result, _meterGas)
+  {}
+
+  void setWasmMemory(Runtime::MemoryInstance* _wasmMemory) {
+    m_wasmMemory = _wasmMemory;
+  }
+
+private:
+  // These assume that m_wasmMemory was set prior to execution.
+  size_t memorySize() const override { return Runtime::getMemoryNumPages(m_wasmMemory) * 65536; }
+  void memorySet(size_t offset, uint8_t value) override { (Runtime::memoryArrayPtr<U8>(m_wasmMemory, offset, 1))[0] = value; }
+  uint8_t memoryGet(size_t offset) override { return (Runtime::memoryArrayPtr<U8>(m_wasmMemory, offset, 1))[0]; }
+
+  Runtime::MemoryInstance* m_wasmMemory;
+};
 
 unique_ptr<WasmEngine> WavmEngine::create()
 {
@@ -146,6 +185,19 @@ namespace wavm_host_module {
     }
   };
 } // namespace wavm_host_module
+
+ExecutionResult WavmEngine::execute(
+  evmc_context* context,
+  vector<uint8_t> const& code,
+  vector<uint8_t> const& state_code,
+  evmc_message const& msg,
+  bool meterInterfaceGas
+) {
+  ExecutionResult result = internalExecute(context, code, state_code, msg, meterInterfaceGas);
+  // And clean up mess left by this run.
+  Runtime::collectGarbage();
+  return result;
+}
 
 ExecutionResult WavmEngine::internalExecute(
   evmc_context* context,

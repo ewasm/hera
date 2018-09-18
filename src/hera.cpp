@@ -16,6 +16,8 @@
 
 #include <hera/hera.h>
 
+#include <limits>
+#include <cstring>
 #include <vector>
 #include <unistd.h>
 #include <iostream>
