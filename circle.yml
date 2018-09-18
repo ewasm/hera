@@ -59,7 +59,7 @@ defaults:
 
   save-aleth-cache: &save-aleth-cache
     save_cache:
-      key: &aleth-cache-key aleth-prebuilt-cache-{{arch}}-{{checksum "toolchain"}}-v1.4.0rc6
+      key: &aleth-cache-key aleth-prebuilt-cache-{{arch}}-{{checksum "toolchain"}}-v1.4.0rc7
       paths:
         - ~/build
         - ~/.hunter
@@ -73,7 +73,7 @@ defaults:
       name: "Checkout aleth repo"
       working_directory: ~/
       command: |
-        git clone https://github.com/ethereum/aleth --branch v1.4.0rc6 --single-branch --recurse-submodules --depth 1
+        git clone https://github.com/ethereum/aleth --branch v1.4.0rc7 --single-branch --recurse-submodules --depth 1
 
   link-hera: &link-hera
     run:
@@ -108,7 +108,7 @@ defaults:
     run:
       name: "Install aleth"
       command: |
-        URL=https://github.com/ethereum/aleth/releases/download/v1.4.0rc6/aleth-1.4.0rc6-linux-x86_64.tar.gz
+        URL=https://github.com/ethereum/aleth/releases/download/v1.4.0rc7/aleth-1.4.0rc7-linux-x86_64.tar.gz
         curl -L $URL | sudo tar xz -C /usr/local
 
   fetch-tests: &fetch-tests
