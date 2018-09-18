@@ -268,7 +268,7 @@ ExecutionResult WavmEngine::internalExecute(
     },
     [&](Runtime::Exception&& exception) {
       // FIXME: decide if each of the exception fit into VMTrap/InternalError
-      ensureCondition(false, VMTrap, Runtime::describeException(exception));
+      // ensureCondition(false, VMTrap, Runtime::describeException(exception));
     }
   );
 
