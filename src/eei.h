@@ -136,6 +136,9 @@ private:
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
 
   // Helpers methods
+  inline std::string depthToString() const {
+    return "[" + std::to_string(m_msg.depth) + "]";
+  }
 
   void takeGas(int64_t gas);
   void takeInterfaceGas(int64_t gas);
