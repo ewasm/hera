@@ -161,7 +161,7 @@ namespace wavm_host_module {
 
   DEFINE_INTRINSIC_FUNCTION(ethereum, "returnDataCopy", void, returnDataCopy, U32 resultOffset, U32 dataOffset, U32 length)
   {
-    return interface.top()->eeiReturnDataCopy(resultOffset, dataOffset, length);
+    interface.top()->eeiReturnDataCopy(resultOffset, dataOffset, length);
   }
 
 
