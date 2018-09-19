@@ -4,6 +4,8 @@ Hera is an [ewasm] (revision 4) virtual machine implemented in C++ conforming to
 
 It is design to leverage various Wasm backends, both interpreters and AOT/JITs.
 
+Ping
+
 ## Client support
 
 Hera has been tested with [aleth]. It should however work with any client with compliant [EVMC] support.
