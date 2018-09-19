@@ -503,7 +503,12 @@ namespace hera {
       call_message.gas = gas;
 
       if ((kind == EEICallKind::Call) || (kind == EEICallKind::CallCode)) {
-        if ((m_msg.depth >= 1024) || !enoughSenderBalanceFor(call_message.value)) {
+        if (m_msg.depth >= 1024) {
+          // Refund the deducted gas to be forwarded as it hasn't been used.
+          m_result.gasLeft += gas;
+          return 1;
+        }
+        if (!enoughSenderBalanceFor(call_message.value)) {
           // Refund the deducted gas to be forwarded as it hasn't been used.
           m_result.gasLeft += gas;
           return 1;
@@ -547,7 +552,9 @@ namespace hera {
       create_message.sender = m_msg.destination;
       create_message.value = loadUint128(valueOffset);
 
-      if ((m_msg.depth >= 1024) || !enoughSenderBalanceFor(create_message.value))
+      if (m_msg.depth >= 1024)
+        return 1;
+      if (!enoughSenderBalanceFor(create_message.value))
         return 1;
 
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
