@@ -476,6 +476,14 @@ namespace hera {
         dataLength << dec << "\n";
 #endif
 
+      if (m_msg.depth >= 1024)
+        return 1;
+
+      if ((kind == EEICallKind::Call) || (kind == EEICallKind::CallCode)) {
+        if (!enoughSenderBalanceFor(call_message.value))
+          return 1;
+      }
+
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
       vector<uint8_t> input_data;
       if (dataLength) {
@@ -516,20 +524,6 @@ namespace hera {
         gas += GasSchedule::valueStipend;
 
       call_message.gas = gas;
-
-      if (m_msg.depth >= 1024) {
-        // Refund the deducted gas to be forwarded as it hasn't been used.
-        m_result.gasLeft += gas;
-        return 1;
-      }
-
-      if ((kind == EEICallKind::Call) || (kind == EEICallKind::CallCode)) {
-        if (!enoughSenderBalanceFor(call_message.value)) {
-          // Refund the deducted gas to be forwarded as it hasn't been used.
-          m_result.gasLeft += gas;
-          return 1;
-        }
-      }
 
       m_context->fn_table->call(&call_result, m_context, &call_message);
 
