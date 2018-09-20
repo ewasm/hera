@@ -10,6 +10,13 @@ Hera has been tested with [aleth]. It should however work with any client with c
 
 ## Building Hera
 
+First clone this repository and make sure the submodules are checked out:
+```bash
+$ git clone https://github.com/ewasm/hera
+$ cd hera
+$ git submodule update --init
+```
+
 The preferred way is building Hera as a shared library:
 
 ```bash
