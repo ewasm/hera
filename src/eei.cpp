@@ -502,12 +502,13 @@ namespace hera {
 
       call_message.gas = gas;
 
+      if (m_msg.depth >= 1024) {
+        // Refund the deducted gas to be forwarded as it hasn't been used.
+        m_result.gasLeft += gas;
+        return 1;
+      }
+
       if ((kind == EEICallKind::Call) || (kind == EEICallKind::CallCode)) {
-        if (m_msg.depth >= 1024) {
-          // Refund the deducted gas to be forwarded as it hasn't been used.
-          m_result.gasLeft += gas;
-          return 1;
-        }
         if (!enoughSenderBalanceFor(call_message.value)) {
           // Refund the deducted gas to be forwarded as it hasn't been used.
           m_result.gasLeft += gas;
