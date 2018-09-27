@@ -62,6 +62,8 @@ public:
     m_result(_result),
     m_meterGas(_meterGas)
   {
+    heraAssert((m_msg.flags & ~uint32_t(EVMC_STATIC)) == 0, "Unknown flags not supported.");
+
     // set starting gas
     m_result.gasLeft = m_msg.gas;
     // set sane defaults

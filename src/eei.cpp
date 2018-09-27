@@ -411,11 +411,10 @@ namespace hera {
   uint32_t EthereumInterface::eeiCall(EEICallKind kind, int64_t gas, uint32_t addressOffset, uint32_t valueOffset, uint32_t dataOffset, uint32_t dataLength)
   {
       ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
-      heraAssert((m_msg.flags & ~uint32_t(EVMC_STATIC)) == 0, "Unknown flags not supported.");
 
       evmc_message call_message;
       call_message.destination = loadAddress(addressOffset);
-      call_message.flags = m_msg.flags;
+      call_message.flags = m_msg.flags & EVMC_STATIC;
       call_message.code_hash = {};
       call_message.depth = m_msg.depth + 1;
 
