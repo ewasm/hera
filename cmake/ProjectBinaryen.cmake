@@ -4,7 +4,6 @@ endif()
 set(ProjectBinaryenIncluded TRUE)
 
 include(ExternalProject)
-include(GNUInstallDirs)
 
 if(MSVC)
     # Overwrite build and install commands to force Release build on MSVC.
@@ -24,7 +23,7 @@ set(source_dir ${prefix}/src/binaryen)
 set(binary_dir ${prefix}/src/binaryen-build)
 # Use source dir because binaryen only installs single header with C API.
 set(binaryen_include_dir ${source_dir}/src)
-set(binaryen_library ${prefix}/${CMAKE_INSTALL_LIBDIR}/${CMAKE_STATIC_LIBRARY_PREFIX}binaryen${CMAKE_STATIC_LIBRARY_SUFFIX})
+set(binaryen_library ${prefix}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}binaryen${CMAKE_STATIC_LIBRARY_SUFFIX})
 # Include also other static libs needed:
 set(binaryen_other_libraries
     ${binary_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}wasm${CMAKE_STATIC_LIBRARY_SUFFIX}
@@ -46,6 +45,7 @@ ExternalProject_Add(binaryen
     URL_HASH SHA256=19439e41dc576446eaae0c4a8e07d4cd4c40aea7dfb0a6475b925686852f8006
     CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    -DCMAKE_INSTALL_LIBDIR=lib
     -DCMAKE_BUILD_TYPE=Release
     -DBUILD_STATIC_LIB=ON
     ${build_command}
