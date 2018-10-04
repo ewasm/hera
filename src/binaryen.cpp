@@ -504,6 +504,12 @@ ExecutionResult BinaryenEngine::execute(
 
   // NOTE: Most of this should be caught during deployment time by the Sentinel.
   ensureCondition(
+    module.start.isNull(),
+    ContractValidationFailure,
+    "Contract contains start function."
+  );
+
+  ensureCondition(
     module.getExportOrNull(wasm::Name("main")) != nullptr,
     ContractValidationFailure,
     "Contract entry point (\"main\") missing."
