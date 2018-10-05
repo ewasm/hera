@@ -18,6 +18,10 @@
 
 #include "eei.h"
 
+namespace wasm {
+class Module;
+}
+
 namespace hera {
 
 class BinaryenEngine : public WasmEngine {
@@ -32,6 +36,9 @@ public:
     evmc_message const& msg,
     bool meterInterfaceGas
   ) override;
+
+private:
+  void verifyContract(wasm::Module & module);
 };
 
 }

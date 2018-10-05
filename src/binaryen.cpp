@@ -496,6 +496,29 @@ ExecutionResult BinaryenEngine::execute(
   // WasmPrinter::printModule(module);
 
   // Validate
+  verifyContract(module);
+
+  // NOTE: DO NOT use the optimiser here, it will conflict with metering
+
+  // Interpret
+  ExecutionResult result;
+  BinaryenEthereumInterface interface(context, state_code, msg, result, meterInterfaceGas);
+  wasm::ModuleInstance instance(module, &interface);
+
+  try {
+    wasm::Name main = wasm::Name("main");
+    wasm::LiteralList args;
+    instance.callExport(main, args);
+  } catch (EndExecution const&) {
+    // This exception is ignored here because we consider it to be a success.
+    // It is only a clutch for POSIX style exit()
+  }
+
+  return result;
+}
+
+void BinaryenEngine::verifyContract(wasm::Module & module)
+{
   ensureCondition(
     wasm::WasmValidator().validate(module),
     ContractValidationFailure,
@@ -532,24 +555,6 @@ ExecutionResult BinaryenEngine::execute(
       "Import from invalid namespace."
     );
   }
-
-  // NOTE: DO NOT use the optimiser here, it will conflict with metering
-
-  // Interpret
-  ExecutionResult result;
-  BinaryenEthereumInterface interface(context, state_code, msg, result, meterInterfaceGas);
-  wasm::ModuleInstance instance(module, &interface);
-
-  try {
-    wasm::Name main = wasm::Name("main");
-    wasm::LiteralList args;
-    instance.callExport(main, args);
-  } catch (EndExecution const&) {
-    // This exception is ignored here because we consider it to be a success.
-    // It is only a clutch for POSIX style exit()
-  }
-
-  return result;
 }
 
 }
