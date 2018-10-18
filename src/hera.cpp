@@ -94,7 +94,7 @@ struct hera_instance : evmc_instance {
   bool metering = false;
   map<evmc_address, vector<uint8_t>> contract_preload_list;
 
-  hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr}) {}
+  hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr, nullptr}) {}
 };
 
 const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } };
@@ -110,21 +110,19 @@ pair<evmc_status_code, vector<uint8_t>> callSystemContract(
   vector<uint8_t> const& input
 ) {
   evmc_message message = {
+    .kind = EVMC_CALL,
+    .flags = EVMC_STATIC,
+    .depth = 0,
+    .gas = gas,
     .destination = address,
     .sender = {},
-    .value = {},
     .input_data = input.data(),
     .input_size = input.size(),
-    .code_hash = {},
+    .value = {},
     .create2_salt = {},
-    .gas = gas,
-    .depth = 0,
-    .kind = EVMC_CALL,
-    .flags = EVMC_STATIC
   };
 
-  evmc_result result;
-  context->fn_table->call(&result, context, &message);
+  evmc_result result = context->host->call(context, &message);
 
   vector<uint8_t> ret;
   if (result.status_code == EVMC_SUCCESS && result.output_data)
@@ -471,7 +469,7 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
   return true;
 }
 
-int hera_set_option(
+evmc_set_option_result hera_set_option(
   evmc_instance *instance,
   char const *name,
   char const *value
@@ -481,29 +479,32 @@ int hera_set_option(
   if (strcmp(name, "evm1mode") == 0) {
     if (evm1mode_options.count(value)) {
       hera->evm1mode = evm1mode_options.at(value);
-      return 1;
+      return EVMC_SET_OPTION_SUCCESS;
     }
+    return EVMC_SET_OPTION_INVALID_VALUE;
   }
 
   if (strcmp(name, "metering") == 0) {
     hera->metering = strcmp(value, "true") == 0;
-    return 1;
+    return EVMC_SET_OPTION_SUCCESS;
   }
 
   if (strcmp(name, "engine") == 0) {
     auto it = wasm_engine_map.find(value);
     if (it != wasm_engine_map.end()) {
       hera->engine = it->second();
-      return 1;
+      return EVMC_SET_OPTION_SUCCESS;
     }
+    return EVMC_SET_OPTION_INVALID_VALUE;
   }
 
   if (strncmp(name, "sys:", 4) == 0) {
     if (hera_parse_sys_option(hera, string(name), string(value)))
-      return 1;
+      return EVMC_SET_OPTION_SUCCESS;
+    return EVMC_SET_OPTION_INVALID_VALUE;
   }
 
-  return 0;
+  return EVMC_SET_OPTION_INVALID_NAME;
 }
 
 void hera_destroy(evmc_instance* instance) noexcept
