@@ -513,6 +513,14 @@ void hera_destroy(evmc_instance* instance) noexcept
   delete hera;
 }
 
+evmc_capabilities_flagset hera_get_capabilities(evmc_instance* instance)
+{
+  evmc_capabilities_flagset caps = EVMC_CAPABILITY_EWASM;
+  if (static_cast<hera_instance*>(instance)->evm1mode != hera_evm1mode::reject)
+    caps |= EVMC_CAPABILITY_EVM1;
+  return caps;
+}
+
 } // anonymous namespace
 
 extern "C" {
@@ -522,6 +530,7 @@ evmc_instance* evmc_create_hera() noexcept
   hera_instance* instance = new hera_instance;
   instance->destroy = hera_destroy;
   instance->execute = hera_execute;
+  instance->get_capabilities = hera_get_capabilities;
   instance->set_option = hera_set_option;
   return instance;
 }
