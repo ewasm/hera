@@ -38,12 +38,22 @@ defaults:
     run:
       name: "Build"
       working_directory: ~/build
-      command: cmake --build . -- -j $BUILD_PARALLEL_JOBS
+      command: |
+        cmake --build . --target package -- -j $BUILD_PARALLEL_JOBS
+        mkdir -p ~/package
+        . hera/buildinfo.sh
+        mv hera.tar.gz ~/package/$PROJECT_NAME-$PROJECT_VERSION-$SYSTEM_NAME-$SYSTEM_PROCESSOR.tar.gz
 
-  store-hera: &store-hera
+  store-package: &store-package
     store_artifacts:
-      path: ~/build/src/libhera.so
-      destination: libhera.so
+      path: ~/package
+      destination: package
+
+  add-package-to-workspace: &add-package-to-workspace
+      persist_to_workspace:
+        root: ~/package
+        paths:
+          - "*"
 
   save-deps-cache: &save-deps-cache
     cache-save:
@@ -201,9 +211,10 @@ jobs:
       - *restore-deps-cache
       - *configure
       - *build
+      - *store-package
       - *save-deps-cache
       - *install-aleth
-      - *store-hera
+      - *add-package-to-workspace
       - *fetch-tests
       - *test
       - *test-wabt
@@ -212,7 +223,6 @@ jobs:
       - *evm2wasm-test
 
   linux-clang-shared-asan:
-    <<: *linux-clang-shared
     environment:
       BUILD_TYPE: Release
       CXX: clang++
@@ -223,6 +233,24 @@ jobs:
       # The ASan must the first loaded shared library. Force preloading it with this flag.
       PRELOAD_ASAN: true
       ASAN_OPTIONS: detect_leaks=0
+    docker:
+      - image: ethereum/cpp-build-env:5
+    steps:
+      - checkout
+      - *update-submodules
+      - *environment-info
+      - *restore-deps-cache
+      - *configure
+      - *build
+      - *store-package
+      - *save-deps-cache
+      - *install-aleth
+      - *fetch-tests
+      - *test
+      - *test-wabt
+      - *test-wavm
+      - *evmc-test
+      - *evm2wasm-test
 
   linux-gcc-shared-coverage:
     environment:
@@ -241,9 +269,9 @@ jobs:
       - *restore-deps-cache
       - *configure
       - *build
+      - *store-package
       - *save-deps-cache
       - *install-aleth
-      - *store-hera
       - *fetch-tests
       - *test
       - *upload-coverage-data
@@ -265,6 +293,7 @@ jobs:
       - *restore-deps-cache
       - *configure
       - *build
+      - *store-package
       - *save-deps-cache
 
   lint:
