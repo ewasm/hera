@@ -38,12 +38,22 @@ defaults:
     run:
       name: "Build"
       working_directory: ~/build
-      command: cmake --build . -- -j $BUILD_PARALLEL_JOBS
+      command: |
+        cmake --build . --target package -- -j $BUILD_PARALLEL_JOBS
+        mkdir -p ~/package
+        . hera/buildinfo.sh
+        mv hera.tar.gz ~/package/$PROJECT_NAME-$PROJECT_VERSION-$SYSTEM_NAME-$SYSTEM_PROCESSOR.tar.gz
 
-  store-hera: &store-hera
+  store-package: &store-package
     store_artifacts:
-      path: ~/build/src/libhera.so
-      destination: libhera.so
+      path: ~/package
+      destination: package
+
+  add-package-to-workspace: &add-package-to-workspace
+      persist_to_workspace:
+        root: ~/package
+        paths:
+          - "*"
 
   save-deps-cache: &save-deps-cache
     cache-save:
@@ -201,9 +211,10 @@ jobs:
       - *restore-deps-cache
       - *configure
       - *build
+      - *store-package
       - *save-deps-cache
       - *install-aleth
-      - *store-hera
+      - *add-package-to-workspace
       - *fetch-tests
       - *test
       - *test-wabt
@@ -212,7 +223,6 @@ jobs:
       - *evm2wasm-test
 
   linux-clang-shared-asan:
-    <<: *linux-clang-shared
     environment:
       BUILD_TYPE: Release
       CXX: clang++
@@ -223,6 +233,24 @@ jobs:
       # The ASan must the first loaded shared library. Force preloading it with this flag.
       PRELOAD_ASAN: true
       ASAN_OPTIONS: detect_leaks=0
+    docker:
+      - image: ethereum/cpp-build-env:5
+    steps:
+      - checkout
+      - *update-submodules
+      - *environment-info
+      - *restore-deps-cache
+      - *configure
+      - *build
+      - *store-package
+      - *save-deps-cache
+      - *install-aleth
+      - *fetch-tests
+      - *test
+      - *test-wabt
+      - *test-wavm
+      - *evmc-test
+      - *evm2wasm-test
 
   linux-gcc-shared-coverage:
     environment:
@@ -241,9 +269,9 @@ jobs:
       - *restore-deps-cache
       - *configure
       - *build
+      - *store-package
       - *save-deps-cache
       - *install-aleth
-      - *store-hera
       - *fetch-tests
       - *test
       - *upload-coverage-data
@@ -265,6 +293,7 @@ jobs:
       - *restore-deps-cache
       - *configure
       - *build
+      - *store-package
       - *save-deps-cache
 
   lint:
@@ -274,12 +303,45 @@ jobs:
       - checkout
       - *codespell
 
+  # The job collects built packages (available in the workspace) and
+  # uploads them to the GitHub release matching the git tag.
+  deploy:
+    docker:
+      - image: circleci/golang
+    steps:
+      - run:
+          name: "Install ghr"
+          command: |
+            go get -u github.com/kardianos/govendor
+            govendor get github.com/tcnksm/ghr@=v0.12.0
+      - attach_workspace:
+          at: ~/package
+      - run:
+          name: "Create GitHub release"
+          command: |
+            ls -l ~/package
+            prerelease_flag=$([[ $CIRCLE_TAG =~ ^v[0-9\.]+$ ]] || echo '-prerelease')
+            name="Hera ${CIRCLE_TAG:1}"
+            echo $name
+            ghr -u ewasm -r hera -n "$name" $prerelease_flag $CIRCLE_TAG ~/package
+
 workflows:
   version: 2
   hera:
     jobs:
       - lint
-      - linux-clang-shared-release
       - linux-clang-shared-asan
       - linux-gcc-shared-coverage
       - linux-gcc-static-debug
+      - linux-clang-shared-release:
+          filters:
+            tags:
+              only: /.*/
+      - deploy:
+          requires:
+            - linux-clang-shared-release
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9].*/
