@@ -138,19 +138,19 @@ namespace hera {
   {
       HERA_DEBUG << "getAddress " << hex << resultOffset << dec << "\n";
 
-      storeAddress(m_msg.destination, resultOffset);
-
       takeInterfaceGas(GasSchedule::base);
+
+      storeAddress(m_msg.destination, resultOffset);
   }
 
   void EthereumInterface::eeiGetExternalBalance(uint32_t addressOffset, uint32_t resultOffset)
   {
       HERA_DEBUG << "getExternalBalance " << hex << addressOffset << " " << resultOffset << dec << "\n";
 
+      takeInterfaceGas(GasSchedule::balance);
+
       evmc_address address = loadAddress(addressOffset);
       evmc_uint256be result;
-
-      takeInterfaceGas(GasSchedule::balance);
       m_context->fn_table->get_balance(&result, m_context, &address);
       storeUint128(result, resultOffset);
   }
@@ -159,9 +159,9 @@ namespace hera {
   {
       HERA_DEBUG << "getBlockHash " << hex << number << " " << resultOffset << dec << "\n";
 
-      evmc_uint256be blockhash;
-
       takeInterfaceGas(GasSchedule::blockhash);
+
+      evmc_uint256be blockhash;
       m_context->fn_table->get_block_hash(&blockhash, m_context, static_cast<int64_t>(number));
 
       if (isZeroUint256(blockhash))
@@ -196,6 +196,7 @@ namespace hera {
       HERA_DEBUG << "getCaller " << hex << resultOffset << dec << "\n";
 
       takeInterfaceGas(GasSchedule::base);
+
       storeAddress(m_msg.sender, resultOffset);
   }
 
@@ -204,6 +205,7 @@ namespace hera {
       HERA_DEBUG << "getCallValue " << hex << resultOffset << dec << "\n";
 
       takeInterfaceGas(GasSchedule::base);
+
       storeUint128(m_msg.value, resultOffset);
   }
 
@@ -244,8 +246,9 @@ namespace hera {
   {
       HERA_DEBUG << "getExternalCodeSize " << hex << addressOffset << dec << "\n";
 
-      evmc_address address = loadAddress(addressOffset);
       takeInterfaceGas(GasSchedule::extcode);
+
+      evmc_address address = loadAddress(addressOffset);
       size_t code_size = m_context->fn_table->get_code_size(m_context, &address);
 
       return static_cast<uint32_t>(code_size);
@@ -256,6 +259,7 @@ namespace hera {
       HERA_DEBUG << "getBlockCoinbase " << hex << resultOffset << dec << "\n";
 
       takeInterfaceGas(GasSchedule::base);
+
       storeAddress(m_tx_context.block_coinbase, resultOffset);
   }
 
@@ -264,6 +268,7 @@ namespace hera {
       HERA_DEBUG << "getBlockDifficulty " << hex << offset << dec << "\n";
 
       takeInterfaceGas(GasSchedule::base);
+
       storeUint256(m_tx_context.block_difficulty, offset);
   }
 
@@ -283,12 +288,19 @@ namespace hera {
       HERA_DEBUG << "getTxGasPrice " << hex << valueOffset << dec << "\n";
 
       takeInterfaceGas(GasSchedule::base);
+
       storeUint128(m_tx_context.tx_gas_price, valueOffset);
   }
 
   void EthereumInterface::eeiLog(uint32_t dataOffset, uint32_t length, uint32_t numberOfTopics, uint32_t topic1, uint32_t topic2, uint32_t topic3, uint32_t topic4)
   {
       HERA_DEBUG << "log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
+
+      static_assert(GasSchedule::log <= 65536, "Gas cost of log could lead to overflow");
+      static_assert(GasSchedule::logTopic <= 65536, "Gas cost of logTopic could lead to overflow");
+      static_assert(GasSchedule::logData <= 65536, "Gas cost of logData could lead to overflow");
+      // Using uint64_t to force a type issue if the underlying API changes.
+      takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * int64_t(length)));
 
       ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "log");
 
@@ -304,12 +316,6 @@ namespace hera {
       ensureSourceMemoryBounds(dataOffset, length);
       vector<uint8_t> data(length);
       loadMemory(dataOffset, data, length);
-
-      static_assert(GasSchedule::log <= 65536, "Gas cost of log could lead to overflow");
-      static_assert(GasSchedule::logTopic <= 65536, "Gas cost of logTopic could lead to overflow");
-      static_assert(GasSchedule::logData <= 65536, "Gas cost of logData could lead to overflow");
-      // Using uint64_t to force a type issue if the underlying API changes.
-      takeInterfaceGas(GasSchedule::log + (GasSchedule::logTopic * numberOfTopics) + (GasSchedule::logData * int64_t(length)));
 
       m_context->fn_table->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
   }
@@ -341,6 +347,7 @@ namespace hera {
       HERA_DEBUG << "getTxOrigin " << hex << resultOffset << dec << "\n";
 
       takeInterfaceGas(GasSchedule::base);
+
       storeAddress(m_tx_context.tx_origin, resultOffset);
   }
 
@@ -370,10 +377,10 @@ namespace hera {
   {
       HERA_DEBUG << "storageLoad " << hex << pathOffset << " " << resultOffset << dec << "\n";
 
+      takeInterfaceGas(GasSchedule::storageLoad);
+
       evmc_uint256be path = loadBytes32(pathOffset);
       evmc_uint256be result;
-
-      takeInterfaceGas(GasSchedule::storageLoad);
       m_context->fn_table->get_storage(&result, m_context, &m_msg.destination, &path);
 
       storeBytes32(result, resultOffset);
@@ -397,6 +404,7 @@ namespace hera {
       HERA_DEBUG << "getReturnDataSize\n";
 
       takeInterfaceGas(GasSchedule::base);
+
       return static_cast<uint32_t>(m_lastReturnData.size());
   }
 
@@ -405,6 +413,7 @@ namespace hera {
       HERA_DEBUG << "returnDataCopy " << hex << dataOffset << " " << offset << " " << size << dec << "\n";
 
       safeChargeDataCopy(size, GasSchedule::verylow);
+
       storeMemory(m_lastReturnData, offset, dataOffset, size);
   }
 
@@ -544,6 +553,8 @@ namespace hera {
   {
       HERA_DEBUG << "create " << hex << valueOffset << " " << dataOffset << " " << length << dec << " " << resultOffset << dec << "\n";
 
+      takeInterfaceGas(GasSchedule::create);
+
       ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "create");
 
       evmc_message create_message;
@@ -576,8 +587,6 @@ namespace hera {
       create_message.flags = 0;
 
       evmc_result create_result;
-
-      takeInterfaceGas(GasSchedule::create);
 
       int64_t gas = maxCallGas(m_result.gasLeft);
       create_message.gas = gas;
@@ -615,13 +624,14 @@ namespace hera {
   {
       HERA_DEBUG << "selfDestruct " << hex << addressOffset << dec << "\n";
 
+      takeInterfaceGas(GasSchedule::selfdestruct);
+
       ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "selfDestruct");
 
       evmc_address address = loadAddress(addressOffset);
 
       if (!m_context->fn_table->account_exists(m_context, &address))
         takeInterfaceGas(GasSchedule::callNewAccount);
-      takeInterfaceGas(GasSchedule::selfdestruct);
       m_context->fn_table->selfdestruct(m_context, &m_msg.destination, &address);
 
       throw EndExecution{};
