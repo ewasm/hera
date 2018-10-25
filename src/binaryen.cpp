@@ -584,6 +584,8 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
     "Contract is invalid. \"main\" has an invalid signature."
   );
 
+  static const map<wasm::Name, wasm::FunctionType> eei_signatures;
+
   for (auto const& import: module.imports) {
     ensureCondition(
       import->module == wasm::Name("ethereum")
@@ -593,6 +595,32 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
       ,
       ContractValidationFailure,
       "Import from invalid namespace."
+    );
+
+#if HERA_DEBUGGING
+    if (import->module == wasm::Name("debug"))
+      continue;
+#endif
+
+    ensureCondition(
+      eei_signatures.count(import->base),
+      ContractValidationFailure,
+      "Importing invalid EEI method."
+    );
+
+    wasm::FunctionType* function_type = module.getFunctionTypeOrNull(import->functionType);
+    ensureCondition(
+      function_type,
+      ContractValidationFailure,
+      "Imported function type is missing."
+    );
+
+    wasm::FunctionType eei_function_type = eei_signatures.at(import->base);
+
+    ensureCondition(
+      function_type->structuralComparison(eei_function_type),
+      ContractValidationFailure,
+      "Imported function type mismatch."
     );
   }
 }
