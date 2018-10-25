@@ -567,6 +567,23 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
     "Contract exports more than (\"main\") and (\"memory\")."
   );
 
+  // The existence of this is ensured above.
+  wasm::Export* main_export = module.getExport(wasm::Name("main"));
+
+  wasm::Function* main_function = module.getFunctionOrNull(main_export->value);
+  ensureCondition(
+    main_function,
+    ContractValidationFailure,
+    "Contract is invalid. \"main\" is not a function."
+  );
+
+  ensureCondition(
+    (main_function->getNumParams() == 0) &&
+    (main_function->result == wasm::Type::none),
+    ContractValidationFailure,
+    "Contract is invalid. \"main\" has an invalid signature."
+  );
+
   for (auto const& import: module.imports) {
     ensureCondition(
       import->module == wasm::Name("ethereum")
