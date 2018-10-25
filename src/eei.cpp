@@ -355,6 +355,14 @@ namespace hera {
   {
       HERA_DEBUG << "storageStore " << hex << pathOffset << " " << valueOffset << dec << "\n";
 
+      static_assert(
+        GasSchedule::storageStoreCreate >= GasSchedule::storageStoreChange,
+        "storageStoreChange costs more than storageStoreCreate"
+      );
+
+      // Charge this here as it is the minimum cost.
+      takeInterfaceGas(GasSchedule::storageStoreChange);
+
       ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
 
       evmc_uint256be path = loadBytes32(pathOffset);
@@ -363,12 +371,11 @@ namespace hera {
 
       m_context->fn_table->get_storage(&current, m_context, &m_msg.destination, &path);
 
+      // Charge the right amount in case of the create case.
+      if (isZeroUint256(current) && !isZeroUint256(value))
+        takeInterfaceGas(GasSchedule::storageStoreCreate - GasSchedule::storageStoreChange);
+
       // We do not need to take care about the delete case (gas refund), the client does it.
-      takeInterfaceGas(
-        (isZeroUint256(current) && !isZeroUint256(value)) ?
-        GasSchedule::storageStoreCreate :
-        GasSchedule::storageStoreChange
-      );
 
       m_context->fn_table->set_storage(m_context, &m_msg.destination, &path, &value);
   }
