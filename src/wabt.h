@@ -32,6 +32,10 @@ public:
     evmc_message const& msg,
     bool meterInterfaceGas
   ) override;
+
+  void verifyContract(std::vector<uint8_t> const&) override {
+    // TODO: implement
+  }
 };
 
 }

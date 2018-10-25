@@ -335,6 +335,8 @@ evmc_result hera_execute(
         // Meter the deployed code if it is WebAssembly
         returnValue = hera->metering ? sentinel(context, result.returnValue) : move(result.returnValue);
         ensureCondition(returnValue.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
+        // FIXME: this should be done by the sentinel
+        engine.verifyContract(returnValue);
       } else {
         returnValue = move(result.returnValue);
       }

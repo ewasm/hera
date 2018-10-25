@@ -37,6 +37,8 @@ public:
     bool meterInterfaceGas
   ) override;
 
+  void verifyContract(std::vector<uint8_t> const& code) override;
+
 private:
   void verifyContract(wasm::Module & module);
 };

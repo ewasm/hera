@@ -45,6 +45,8 @@ public:
     evmc_message const& msg,
     bool meterInterfaceGas
   ) = 0;
+
+  virtual void verifyContract(std::vector<uint8_t> const& code) = 0;
 };
 
 class EthereumInterface {

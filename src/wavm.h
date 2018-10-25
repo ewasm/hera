@@ -34,6 +34,10 @@ public:
     bool meterInterfaceGas
   ) override;
 
+  void verifyContract(std::vector<uint8_t> const&) override {
+    // TODO: implement
+  }
+
 private:
   ExecutionResult internalExecute(
     evmc_context* context,
