@@ -92,8 +92,13 @@ bool hasWasmPreamble(vector<uint8_t> const& _input) {
     _input[0] == 0 &&
     _input[1] == 'a' &&
     _input[2] == 's' &&
-    _input[3] == 'm' &&
-    _input[4] == 1 &&
+    _input[3] == 'm';
+}
+
+bool hasWasmVersion(vector<uint8_t> const& _input, uint8_t _version) {
+  return
+    _input.size() >= 8 &&
+    _input[4] == _version &&
     _input[5] == 0 &&
     _input[6] == 0 &&
     _input[7] == 0;

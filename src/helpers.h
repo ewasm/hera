@@ -33,4 +33,6 @@ std::vector<uint8_t> parseHexString(std::string const& input);
 
 bool hasWasmPreamble(std::vector<uint8_t> const& _input);
 
+bool hasWasmVersion(std::vector<uint8_t> const& _input, uint8_t _version);
+
 }
