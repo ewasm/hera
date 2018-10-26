@@ -329,7 +329,11 @@ evmc_result hera_execute(
       // Meter the deployment (constructor) code if it is WebAssembly
       if (hera->metering)
         run_code = sentinel(context, run_code);
-      ensureCondition(run_code.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
+      ensureCondition(
+        hasWasmPreamble(run_code) && hasWasmVersion(run_code, 1),
+        ContractValidationFailure,
+        "Invalid contract or metering failed."
+      );
     }
 
     heraAssert(hera->engine, "Wasm engine not set.");
@@ -351,7 +355,11 @@ evmc_result hera_execute(
 
         // Meter the deployed code if it is WebAssembly
         returnValue = hera->metering ? sentinel(context, result.returnValue) : move(result.returnValue);
-        ensureCondition(returnValue.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
+        ensureCondition(
+          hasWasmPreamble(returnValue) && hasWasmVersion(returnValue, 1),
+          ContractValidationFailure,
+          "Invalid contract or metering failed."
+        );
         // FIXME: this should be done by the sentinel
         engine.verifyContract(returnValue);
       } else {
