@@ -287,21 +287,21 @@ evmc_result hera_execute(
       switch (hera->evm1mode) {
       case hera_evm1mode::evm2wasm_contract:
         run_code = evm2wasm(context, run_code);
-        ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm failed");
+        ensureCondition(run_code.size() > 8, ContractValidationFailure, "Transcompiling via evm2wasm failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
       case hera_evm1mode::evm2wasm_cpp:
       case hera_evm1mode::evm2wasm_cpp_tracing:
         run_code = evm2wasm_cpp(run_code, hera->evm1mode == hera_evm1mode::evm2wasm_cpp_tracing);
-        ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.cpp failed");
+        ensureCondition(run_code.size() > 8, ContractValidationFailure, "Transcompiling via evm2wasm.cpp failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
       case hera_evm1mode::evm2wasm_js:
       case hera_evm1mode::evm2wasm_js_tracing:
         run_code = evm2wasm_js(run_code, hera->evm1mode == hera_evm1mode::evm2wasm_js_tracing);
-        ensureCondition(run_code.size() > 5, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
+        ensureCondition(run_code.size() > 8, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
