@@ -103,7 +103,7 @@ const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 // Calls a system contract at @address with input data @input.
 // It is a "staticcall" with sender 000...000 and no value.
 // @returns output data from the contract and update the @gas variable with the gas left.
-vector<uint8_t> callSystemContract(
+pair<evmc_status_code, vector<uint8_t>> callSystemContract(
   evmc_context* context,
   evmc_address const& address,
   int64_t & gas,
@@ -135,7 +135,7 @@ vector<uint8_t> callSystemContract(
   if (result.release)
     result.release(&result);
 
-  return ret;
+  return make_pair(result.status_code, ret);
 }
 
 // Calls the Sentinel contract with input data @input.
@@ -146,14 +146,17 @@ vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
 
   int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
   int64_t gas = startgas;
-  vector<uint8_t> ret = callSystemContract(
+  evmc_status_code status;
+  vector<uint8_t> ret;
+
+  tie(status, ret) = callSystemContract(
     context,
     sentinelAddress,
     gas,
     input
   );
 
-  HERA_DEBUG << "Metering done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)\n";
+  HERA_DEBUG << "Metering done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas) with code=" << status << "\n";
 
   return ret;
 }
@@ -231,14 +234,17 @@ vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
 
   int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
   int64_t gas = startgas;
-  vector<uint8_t> ret = callSystemContract(
+  evmc_status_code status;
+  vector<uint8_t> ret;
+
+  tie(status, ret) = callSystemContract(
     context,
     evm2wasmAddress,
     gas,
     input
   );
 
-  HERA_DEBUG << "evm2wasm done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas)\n";
+  HERA_DEBUG << "evm2wasm done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas) with status=" << status << "\n";
 
   return ret;
 }
