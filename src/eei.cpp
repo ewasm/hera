@@ -497,9 +497,9 @@ namespace hera {
       // These checks are in EIP150 but not in the YellowPaper
       // Charge valuetransfer gas if value is being transferred.
       // Only charge callNewAccount gas if the account is new and value is being transferred per EIP161.
-      if (!isZeroUint128(call_message.value)) {
+      if ((kind == EEICallKind::Call || kind == EEICallKind::CallCode) && !isZeroUint128(call_message.value)) {
         takeInterfaceGas(GasSchedule::valuetransfer);
-        if ((kind == EEICallKind::Call) && !m_context->fn_table->account_exists(m_context, &call_message.destination))
+        if (!m_context->fn_table->account_exists(m_context, &call_message.destination))
           takeInterfaceGas(GasSchedule::callNewAccount);
       }
 
