@@ -482,15 +482,7 @@ ExecutionResult BinaryenEngine::execute(
   wasm::Module module;
 
   // Load module
-  try {
-    wasm::WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(code), false);
-    parser.read();
-  } catch (wasm::ParseException const& e) {
-    string msg = "Error in parsing WASM binary: '" + e.text + "'";
-    if (e.line != size_t(-1))
-      msg += " (at " + to_string(e.line) + ":" + to_string(e.col) + ")";
-    ensureCondition(false, ContractValidationFailure, msg);
-  }
+  loadModule(code, module);
 
   // Print
   // WasmPrinter::printModule(module);
@@ -517,10 +509,8 @@ ExecutionResult BinaryenEngine::execute(
   return result;
 }
 
-void BinaryenEngine::verifyContract(vector<uint8_t> const& code)
+void BinaryenEngine::loadModule(vector<uint8_t> const& code, wasm::Module & module)
 {
-  wasm::Module module;
-
   try {
     wasm::WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(code), false);
     parser.read();
@@ -530,7 +520,12 @@ void BinaryenEngine::verifyContract(vector<uint8_t> const& code)
       msg += " (at " + to_string(e.line) + ":" + to_string(e.col) + ")";
     ensureCondition(false, ContractValidationFailure, msg);
   }
+}
 
+void BinaryenEngine::verifyContract(vector<uint8_t> const& code)
+{
+  wasm::Module module;
+  loadModule(code, module);
   verifyContract(module);
 }
 
