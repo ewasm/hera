@@ -283,7 +283,9 @@ evmc_result hera_execute(
     }
 
     // ensure we can only handle WebAssembly version 1
-    if (!hasWasmPreamble(run_code)) {
+    bool isWasm = hasWasmPreamble(run_code);
+
+    if (!isWasm) {
       switch (hera->evm1mode) {
       case hera_evm1mode::evm2wasm_contract:
         run_code = evm2wasm(context, run_code);
@@ -314,7 +316,16 @@ evmc_result hera_execute(
         ret.status_code = EVMC_FAILURE;
         return ret;
       }
-    } else if (msg->kind == EVMC_CREATE) {
+    }
+
+    ensureCondition(
+      hasWasmVersion(run_code, 1),
+      ContractValidationFailure,
+      "Contract has an invalid WebAssembly version."
+    );
+
+    // Avoid this in case of evm2wasm translated code
+    if (msg->kind == EVMC_CREATE && isWasm) {
       // Meter the deployment (constructor) code if it is WebAssembly
       if (hera->metering)
         run_code = sentinel(context, run_code);
@@ -332,6 +343,12 @@ evmc_result hera_execute(
       vector<uint8_t> returnValue;
 
       if (msg->kind == EVMC_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
+        ensureCondition(
+          hasWasmVersion(result.returnValue, 1),
+          ContractValidationFailure,
+          "Contract has an invalid WebAssembly version."
+        );
+
         // Meter the deployed code if it is WebAssembly
         returnValue = hera->metering ? sentinel(context, result.returnValue) : move(result.returnValue);
         ensureCondition(returnValue.size() > 5, ContractValidationFailure, "Invalid contract or metering failed.");
