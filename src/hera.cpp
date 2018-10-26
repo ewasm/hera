@@ -312,7 +312,7 @@ evmc_result hera_execute(
         ret.status_code = EVMC_REJECTED;
         return ret;
       case hera_evm1mode::reject:
-        HERA_DEBUG << "Non-WebAssembly input, failure.n\n";
+        HERA_DEBUG << "Non-WebAssembly input, failure.\n";
         ret.status_code = EVMC_FAILURE;
         return ret;
       }
