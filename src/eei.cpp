@@ -476,14 +476,6 @@ namespace hera {
         dataLength << dec << "\n";
 #endif
 
-      if (m_msg.depth >= 1024)
-        return 1;
-
-      if ((kind == EEICallKind::Call) || (kind == EEICallKind::CallCode)) {
-        if (!enoughSenderBalanceFor(call_message.value))
-          return 1;
-      }
-
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
       vector<uint8_t> input_data;
       if (dataLength) {
@@ -500,18 +492,24 @@ namespace hera {
       evmc_result call_result;
 
       // Start with base call gas
-      int64_t extra_gas = GasSchedule::call;
+      takeInterfaceGas(GasSchedule::call);
 
+      // These checks are in EIP150 but not in the YellowPaper
       // Charge valuetransfer gas if value is being transferred.
       // Only charge callNewAccount gas if the account is new and value is being transferred per EIP161.
       if (!isZeroUint128(call_message.value)) {
-        extra_gas += GasSchedule::valuetransfer;
+        takeInterfaceGas(GasSchedule::valuetransfer);
         if ((kind == EEICallKind::Call) && !m_context->fn_table->account_exists(m_context, &call_message.destination))
-          extra_gas += GasSchedule::callNewAccount;
+          takeInterfaceGas(GasSchedule::callNewAccount);
       }
 
-      // This check is in EIP150 but not in the YellowPaper
-      takeInterfaceGas(extra_gas);
+      if (m_msg.depth >= 1024)
+        return 1;
+
+      if ((kind == EEICallKind::Call) || (kind == EEICallKind::CallCode)) {
+        if (!enoughSenderBalanceFor(call_message.value))
+          return 1;
+      }
 
       // This is the gas we are forwarding to the callee.
       // Retain one 64th of it as per EIP150
