@@ -158,6 +158,12 @@ vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
 
   HERA_DEBUG << "Metering done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas) with code=" << status << "\n";
 
+  ensureCondition(
+    status == EVMC_SUCCESS,
+    ContractValidationFailure,
+    "Sentinel has failed on contract. It is invalid."
+  );
+
   return ret;
 }
 
