@@ -594,7 +594,7 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
   );
 
   static const map<wasm::Name, wasm::FunctionType> eei_signatures{
-    { wasm::Name("useGas"), createFunctionType({ wasm::Type::i64 }, wasm::Type::none) },
+    { wasm::Name("useGas"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
     { wasm::Name("getGasLeft"), createFunctionType({}, wasm::Type::i64) },
     { wasm::Name("getAddress"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
     { wasm::Name("getExternalBalance"), createFunctionType({ wasm::Type::i32,wasm::Type::i32}, wasm::Type::none) },
