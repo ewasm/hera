@@ -660,6 +660,8 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
 
     wasm::FunctionType eei_function_type = eei_signatures.at(import->base);
 
+    cerr << "binaryen.cpp checking eei type against imported function: " << import->base << endl;
+
     ensureCondition(
       function_type->structuralComparison(eei_function_type),
       ContractValidationFailure,
