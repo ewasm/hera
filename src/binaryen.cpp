@@ -662,11 +662,16 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
 
     cerr << "binaryen.cpp checking eei type against imported function: " << import->base << endl;
 
-    ensureCondition(
-      function_type->structuralComparison(eei_function_type),
-      ContractValidationFailure,
-      "Imported function type mismatch."
-    );
+    if (import->base == wasm::Name("useGas")) {
+      // skip useGas type check
+    } else {
+      ensureCondition(
+        function_type->structuralComparison(eei_function_type),
+        ContractValidationFailure,
+        "Imported function type mismatch."
+      );
+    }
+
   }
 }
 
