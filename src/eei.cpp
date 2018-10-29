@@ -494,22 +494,20 @@ namespace hera {
       // Start with base call gas
       takeInterfaceGas(GasSchedule::call);
 
+      if (m_msg.depth >= 1024)
+        return 1;
+
       // These checks are in EIP150 but not in the YellowPaper
       // Charge valuetransfer gas if value is being transferred.
       if ((kind == EEICallKind::Call || kind == EEICallKind::CallCode) && !isZeroUint128(call_message.value)) {
         takeInterfaceGas(GasSchedule::valuetransfer);
 
-        // Only charge callNewAccount gas if the account is new and value is being transferred per EIP161.
-        if ((kind == EEICallKind::Call) && !m_context->fn_table->account_exists(m_context, &call_message.destination))
-          takeInterfaceGas(GasSchedule::callNewAccount);
-      }
-
-      if (m_msg.depth >= 1024)
-        return 1;
-
-      if ((kind == EEICallKind::Call) || (kind == EEICallKind::CallCode)) {
         if (!enoughSenderBalanceFor(call_message.value))
           return 1;
+
+        // Only charge callNewAccount gas if the account is new and non-zero value is being transferred per EIP161.
+        if ((kind == EEICallKind::Call) && !m_context->fn_table->account_exists(m_context, &call_message.destination))
+          takeInterfaceGas(GasSchedule::callNewAccount);
       }
 
       // This is the gas we are forwarding to the callee.
