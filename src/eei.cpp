@@ -492,18 +492,23 @@ namespace hera {
       evmc_result call_result;
 
       // Start with base call gas
-      int64_t extra_gas = GasSchedule::call;
+      takeInterfaceGas(GasSchedule::call);
 
+      if (m_msg.depth >= 1024)
+        return 1;
+
+      // These checks are in EIP150 but not in the YellowPaper
       // Charge valuetransfer gas if value is being transferred.
-      // Only charge callNewAccount gas if the account is new and value is being transferred per EIP161.
-      if (!isZeroUint128(call_message.value)) {
-        extra_gas += GasSchedule::valuetransfer;
-        if ((kind == EEICallKind::Call) && !m_context->fn_table->account_exists(m_context, &call_message.destination))
-          extra_gas += GasSchedule::callNewAccount;
-      }
+      if ((kind == EEICallKind::Call || kind == EEICallKind::CallCode) && !isZeroUint128(call_message.value)) {
+        takeInterfaceGas(GasSchedule::valuetransfer);
 
-      // This check is in EIP150 but not in the YellowPaper
-      takeInterfaceGas(extra_gas);
+        if (!enoughSenderBalanceFor(call_message.value))
+          return 1;
+
+        // Only charge callNewAccount gas if the account is new and non-zero value is being transferred per EIP161.
+        if ((kind == EEICallKind::Call) && !m_context->fn_table->account_exists(m_context, &call_message.destination))
+          takeInterfaceGas(GasSchedule::callNewAccount);
+      }
 
       // This is the gas we are forwarding to the callee.
       // Retain one 64th of it as per EIP150
@@ -516,20 +521,6 @@ namespace hera {
         gas += GasSchedule::valueStipend;
 
       call_message.gas = gas;
-
-      if (m_msg.depth >= 1024) {
-        // Refund the deducted gas to be forwarded as it hasn't been used.
-        m_result.gasLeft += gas;
-        return 1;
-      }
-
-      if ((kind == EEICallKind::Call) || (kind == EEICallKind::CallCode)) {
-        if (!enoughSenderBalanceFor(call_message.value)) {
-          // Refund the deducted gas to be forwarded as it hasn't been used.
-          m_result.gasLeft += gas;
-          return 1;
-        }
-      }
 
       m_context->fn_table->call(&call_result, m_context, &call_message);
 
