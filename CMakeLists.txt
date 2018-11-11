@@ -15,15 +15,6 @@ include(GNUInstallDirs)
 cable_configure_toolchain(DEFAULT cxx11-pic)
 
 set(CMAKE_DEBUG_POSTFIX "")
-set(HUNTER_CONFIGURATION_TYPES Release CACHE STRING "Build type of the 3rd party packages")
-
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/evm2wasm/cmake/HunterGate.cmake)
-    include(evm2wasm/cmake/HunterGate.cmake)
-    HunterGate(
-        URL "https://github.com/ruslo/hunter/archive/v0.21.19.tar.gz"
-        SHA1 "5ead1e069b437930d0de8a21824b20fb52b37b50"
-    )
-endif()
 
 project(hera)
 set(PROJECT_VERSION 0.2.0)
