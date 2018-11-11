@@ -1,12 +1,12 @@
 # Hera ![Status](https://circleci.com/gh/ewasm/hera.svg?style=shield&circle-token=:circle-token)
 
-Hera is an [ewasm] (revision 4) virtual machine implemented in C++ conforming to [EVMC] ABIv5.
+Hera is an [ewasm] (revision 4) virtual machine implemented in C++ conforming to [EVMC] ABIv6.
 
-It is design to leverage various Wasm backends, both interpreters and AOT/JITs.
+It is designed to leverage various Wasm backends, both interpreters and AOT/JITs.
 
 ## Client support
 
-Hera has been tested with [aleth]. It should however work with any client with compliant [EVMC] support.
+Hera has been tested with [aleth] and [geth]. It should however work with any client with compliant [EVMC] support.
 
 ## Building Hera
 
@@ -102,7 +102,8 @@ This is useful to trace the translated code by [EVM Transcompiler]. This is only
 
 ## Author(s)
 
-Alex Beregszaszi, Jake Lang
+* Alex Beregszaszi
+* Jake Lang
 
 ## License
 
@@ -111,6 +112,7 @@ Apache 2.0
 [ewasm]: https://github.com/ewasm/design
 [EVMC]: https://github.com/ethereum/evmc
 [aleth]: https://github.com/ethereum/aleth
+[geth]: https://github.com/ethereum/go-ethereum
 [Binaryen]: https://github.com/webassembly/binaryen
 [wabt]: https://github.com/webassembly/wabt
 [WAVM]: https://github.com/AndrewScheidecker/WAVM
