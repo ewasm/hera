@@ -58,7 +58,7 @@ defaults:
   save-deps-cache: &save-deps-cache
     cache-save:
       name: "Save dependencies cache"
-      key: &deps-cache-key deps-4-{{arch}}-{{checksum "toolchain"}}-{{checksum "cmake/ProjectBinaryen.cmake"}}
+      key: &deps-cache-key deps-5-{{arch}}-{{checksum "toolchain"}}-{{checksum "cmake/ProjectBinaryen.cmake"}}
       paths:
         - ~/build/deps
 
