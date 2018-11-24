@@ -176,14 +176,14 @@ defaults:
       command: |
         ~/build/evmc/test/evmc-vmtester ~/build/src/libhera.so
 
-  evm2wasm-test: &evm2wasm-test
-    run:
-      name: "Run evm2wasm state tests"
-      command: |
-        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
-        testeth --version
-        testeth -t GeneralStateTests/stExample -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "add11" --evmc evm1mode=evm2wasm.cpp
-        testeth -t GeneralStateTests/stStackTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc evm1mode=evm2wasm.cpp
+#  evm2wasm-test: &evm2wasm-test
+#    run:
+#      name: "Run evm2wasm state tests"
+#      command: |
+#        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
+#        testeth --version
+#        testeth -t GeneralStateTests/stExample -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "add11" --evmc evm1mode=evm2wasm.cpp
+#        testeth -t GeneralStateTests/stStackTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc evm1mode=evm2wasm.cpp
 
   upload-coverage-data: &upload-coverage-data
     run:
@@ -220,7 +220,7 @@ jobs:
       - *test-wabt
       - *test-wavm
       - *evmc-test
-      - *evm2wasm-test
+#      - *evm2wasm-test
 
   linux-clang-shared-asan:
     environment:
@@ -250,7 +250,7 @@ jobs:
       - *test-wabt
       - *test-wavm
       - *evmc-test
-      - *evm2wasm-test
+#      - *evm2wasm-test
 
   linux-gcc-shared-coverage:
     environment:
