@@ -555,6 +555,8 @@ ExecutionResult WabtEngine::execute(
   ensureCondition(module, ContractValidationFailure, "Module failed to load.");
   ensureCondition(env.GetMemoryCount() == 1, ContractValidationFailure, "Multiple memory sections exported.");
 
+  ensureCondition(module->start_func_index == wabt::kInvalidIndex, ContractValidationFailure, "Contract contains start function.");
+
   wabt::interp::Export* mainFunction = module->GetExport("main");
   ensureCondition(mainFunction, ContractValidationFailure, "\"main\" not found");
   ensureCondition(mainFunction->kind == wabt::ExternalKind::Func, ContractValidationFailure,  "\"main\" is not a function");
