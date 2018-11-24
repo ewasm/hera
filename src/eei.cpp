@@ -781,7 +781,7 @@ namespace hera {
 
   void EthereumInterface::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
   {
-    heraAssert(!exceedsUint128(src), "Account balance (or transaction value) exceeds 128 bits.");
+    ensureCondition(!exceedsUint128(src), ArgumentOutOfRange, "Account balance (or transaction value) exceeds 128 bits.");
     storeMemoryReverse(src.bytes + 16, dstOffset, 16);
   }
 
@@ -810,7 +810,7 @@ namespace hera {
 
   unsigned __int128 EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
   {
-    heraAssert(!exceedsUint128(value), "Account balance (or transaction value) exceeds 128 bits.");
+    ensureCondition(!exceedsUint128(value), ArgumentOutOfRange, "Account balance (or transaction value) exceeds 128 bits.");
     unsigned __int128 ret = 0;
     for (unsigned i = 16; i < 32; i++) {
       ret <<= 8;
