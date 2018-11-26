@@ -12,18 +12,16 @@ include(CableToolchains)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
+option(EVMC_TESTING "Build EVMC tests and test tools" OFF)
+if(EVMC_TESTING)
+    # If Hunter is needed it must be initialized before project(hera).
+    include(evmc/cmake/cable/HunterGate.cmake)
+    include(evmc/cmake/HunterConfig.cmake)
+endif()
+
 cable_configure_toolchain(DEFAULT cxx11-pic)
 
 set(CMAKE_DEBUG_POSTFIX "")
-set(HUNTER_CONFIGURATION_TYPES Release CACHE STRING "Build type of the 3rd party packages")
-
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/evm2wasm/cmake/HunterGate.cmake)
-    include(evm2wasm/cmake/HunterGate.cmake)
-    HunterGate(
-        URL "https://github.com/ruslo/hunter/archive/v0.21.19.tar.gz"
-        SHA1 "5ead1e069b437930d0de8a21824b20fb52b37b50"
-    )
-endif()
 
 project(hera)
 set(PROJECT_VERSION 0.2.0)
@@ -53,7 +51,6 @@ if (HERA_WAVM)
 endif()
 
 add_subdirectory(evmc)
-add_subdirectory(evm2wasm)
 add_subdirectory(src)
 
 
