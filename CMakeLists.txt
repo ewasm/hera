@@ -12,6 +12,13 @@ include(CableToolchains)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
+option(EVMC_TESTING "Build EVMC tests and test tools" OFF)
+if(EVMC_TESTING)
+    # If Hunter is needed it must be initialized before project(hera).
+    include(evmc/cmake/cable/HunterGate.cmake)
+    include(evmc/cmake/HunterConfig.cmake)
+endif()
+
 cable_configure_toolchain(DEFAULT cxx11-pic)
 
 set(CMAKE_DEBUG_POSTFIX "")
