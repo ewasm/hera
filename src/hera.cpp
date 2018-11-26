@@ -175,6 +175,12 @@ vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
 
   HERA_DEBUG << "evm2wasm done (output " << ret.size() << " bytes, used " << (startgas - gas) << " gas) with status=" << status << "\n";
 
+  ensureCondition(
+    status == EVMC_SUCCESS,
+    ContractValidationFailure,
+    "evm2wasm has failed."
+  );
+
   return ret;
 }
 
