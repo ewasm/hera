@@ -26,6 +26,7 @@
 #include <map>
 
 #include <evmc/evmc.h>
+#include <evmc/helpers.hpp>
 
 #include "binaryen.h"
 #include "debugging.h"
@@ -43,15 +44,6 @@
 
 using namespace std;
 using namespace hera;
-
-// FIXME: should be part of EVMC
-bool operator==(evmc_address const& lhs, evmc_address const& rhs) {
-  return memcmp(lhs.bytes, rhs.bytes, sizeof(lhs.bytes)) == 0;
-}
-
-bool operator<(evmc_address const& lhs, evmc_address const& rhs) {
-  return memcmp(lhs.bytes, rhs.bytes, sizeof(lhs.bytes)) < 0;
-}
 
 namespace {
 
