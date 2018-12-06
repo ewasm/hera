@@ -182,6 +182,48 @@ ExecutionResult WabtEngine::execute(
     }
   );
 
+  hostModule->AppendFuncExport(
+    "getCallDataSize",
+    {{}, {Type::I32}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i32(interface->eeiGetCallDataSize());
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "callDataCopy",
+    {{Type::I32, Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface->eeiCallDataCopy(args[0].get_i32(), args[1].get_i32(), args[2].get_i32());
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getCallValue",
+    {{Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface->eeiGetCallValue(args[0].get_i32());
+      return interp::Result::Ok;
+    }
+  );
+
   // Parse module
   ReadBinaryOptions options(
     Features{},
