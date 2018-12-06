@@ -152,6 +152,36 @@ ExecutionResult WabtEngine::execute(
     }
   );
 
+  hostModule->AppendFuncExport(
+    "finish",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      // FIXME: handle host trap here
+      interface->eeiFinish(args[0].get_i32(), args[1].get_i32());
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "revert",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      // FIXME: handle host trap here
+      interface->eeiRevert(args[0].get_i32(), args[1].get_i32());
+      return interp::Result::Ok;
+    }
+  );
+
   // Parse module
   ReadBinaryOptions options(
     Features{},
