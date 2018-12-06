@@ -124,6 +124,34 @@ ExecutionResult WabtEngine::execute(
     }
   );
 
+  hostModule->AppendFuncExport(
+    "storageStore",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface->eeiStorageStore(args[0].get_i32(), args[1].get_i32());
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "storageLoad",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface->eeiStorageLoad(args[0].get_i32(), args[1].get_i32());
+      return interp::Result::Ok;
+    }
+  );
+
   // Parse module
   ReadBinaryOptions options(
     Features{},
