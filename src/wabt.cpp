@@ -37,10 +37,11 @@
 #include "exceptions.h"
 
 using namespace std;
+using namespace wabt;
 
 namespace hera {
 
-class WabtEthereumInterface : EthereumInterface, public wabt::interp::HostImportDelegate {
+class WabtEthereumInterface : EthereumInterface, public interp::HostImportDelegate {
 public:
   explicit WabtEthereumInterface(
     evmc_context* _context,
@@ -53,123 +54,123 @@ public:
   {}
 
   // TODO: improve this design...
-  void setWasmMemory(wabt::interp::Memory* _wasmMemory) {
+  void setWasmMemory(interp::Memory* _wasmMemory) {
     m_wasmMemory = _wasmMemory;
   }
 
 protected:
-  wabt::Result ImportFunc(
-    wabt::interp::FuncImport* import,
-    wabt::interp::Func* func,
-    wabt::interp::FuncSignature* func_sig,
+  Result ImportFunc(
+    interp::FuncImport* import,
+    interp::Func* func,
+    interp::FuncSignature* func_sig,
     const ErrorCallback& callback
   ) override;
 
-  wabt::Result ImportMemory(
-    wabt::interp::MemoryImport* import,
-    wabt::interp::Memory* mem,
+  Result ImportMemory(
+    interp::MemoryImport* import,
+    interp::Memory* mem,
     const ErrorCallback& callback
   ) override;
 
-  wabt::Result ImportGlobal(
-    wabt::interp::GlobalImport* import,
-    wabt::interp::Global* global,
+  Result ImportGlobal(
+    interp::GlobalImport* import,
+    interp::Global* global,
     const ErrorCallback& callback
   ) override;
 
-  wabt::Result ImportTable(
-    wabt::interp::TableImport* import,
-    wabt::interp::Table* table,
+  Result ImportTable(
+    interp::TableImport* import,
+    interp::Table* table,
     const ErrorCallback& callback
   ) override;
 
-  static wabt::interp::Result wabtUseGas(
-    const wabt::interp::HostFunc* func,
-    const wabt::interp::FuncSignature* sig,
-    wabt::Index num_args,
-    wabt::interp::TypedValue* args,
-    wabt::Index num_results,
-    wabt::interp::TypedValue* out_results,
+  static interp::Result wabtUseGas(
+    const interp::HostFunc* func,
+    const interp::FuncSignature* sig,
+    Index num_args,
+    interp::TypedValue* args,
+    Index num_results,
+    interp::TypedValue* out_results,
     void* user_data
   );
 
-  static wabt::interp::Result wabtGetGasLeft(
-    const wabt::interp::HostFunc* func,
-    const wabt::interp::FuncSignature* sig,
-    wabt::Index num_args,
-    wabt::interp::TypedValue* args,
-    wabt::Index num_results,
-    wabt::interp::TypedValue* out_results,
+  static interp::Result wabtGetGasLeft(
+    const interp::HostFunc* func,
+    const interp::FuncSignature* sig,
+    Index num_args,
+    interp::TypedValue* args,
+    Index num_results,
+    interp::TypedValue* out_results,
     void* user_data
   );
 
-  static wabt::interp::Result wabtStorageStore(
-    const wabt::interp::HostFunc* func,
-    const wabt::interp::FuncSignature* sig,
-    wabt::Index num_args,
-    wabt::interp::TypedValue* args,
-    wabt::Index num_results,
-    wabt::interp::TypedValue* out_results,
+  static interp::Result wabtStorageStore(
+    const interp::HostFunc* func,
+    const interp::FuncSignature* sig,
+    Index num_args,
+    interp::TypedValue* args,
+    Index num_results,
+    interp::TypedValue* out_results,
     void* user_data
   );
 
-  static wabt::interp::Result wabtStorageLoad(
-    const wabt::interp::HostFunc* func,
-    const wabt::interp::FuncSignature* sig,
-    wabt::Index num_args,
-    wabt::interp::TypedValue* args,
-    wabt::Index num_results,
-    wabt::interp::TypedValue* out_results,
+  static interp::Result wabtStorageLoad(
+    const interp::HostFunc* func,
+    const interp::FuncSignature* sig,
+    Index num_args,
+    interp::TypedValue* args,
+    Index num_results,
+    interp::TypedValue* out_results,
     void* user_data
   );
 
-  static wabt::interp::Result wabtFinish(
-    const wabt::interp::HostFunc* func,
-    const wabt::interp::FuncSignature* sig,
-    wabt::Index num_args,
-    wabt::interp::TypedValue* args,
-    wabt::Index num_results,
-    wabt::interp::TypedValue* out_results,
+  static interp::Result wabtFinish(
+    const interp::HostFunc* func,
+    const interp::FuncSignature* sig,
+    Index num_args,
+    interp::TypedValue* args,
+    Index num_results,
+    interp::TypedValue* out_results,
     void* user_data
   );
 
-  static wabt::interp::Result wabtRevert(
-    const wabt::interp::HostFunc* func,
-    const wabt::interp::FuncSignature* sig,
-    wabt::Index num_args,
-    wabt::interp::TypedValue* args,
-    wabt::Index num_results,
-    wabt::interp::TypedValue* out_results,
+  static interp::Result wabtRevert(
+    const interp::HostFunc* func,
+    const interp::FuncSignature* sig,
+    Index num_args,
+    interp::TypedValue* args,
+    Index num_results,
+    interp::TypedValue* out_results,
     void* user_data
   );
 
-  static wabt::interp::Result wabtGetCallDataSize(
-    const wabt::interp::HostFunc* func,
-    const wabt::interp::FuncSignature* sig,
-    wabt::Index num_args,
-    wabt::interp::TypedValue* args,
-    wabt::Index num_results,
-    wabt::interp::TypedValue* out_results,
+  static interp::Result wabtGetCallDataSize(
+    const interp::HostFunc* func,
+    const interp::FuncSignature* sig,
+    Index num_args,
+    interp::TypedValue* args,
+    Index num_results,
+    interp::TypedValue* out_results,
     void* user_data
   );
 
-  static wabt::interp::Result wabtCallDataCopy(
-    const wabt::interp::HostFunc* func,
-    const wabt::interp::FuncSignature* sig,
-    wabt::Index num_args,
-    wabt::interp::TypedValue* args,
-    wabt::Index num_results,
-    wabt::interp::TypedValue* out_results,
+  static interp::Result wabtCallDataCopy(
+    const interp::HostFunc* func,
+    const interp::FuncSignature* sig,
+    Index num_args,
+    interp::TypedValue* args,
+    Index num_results,
+    interp::TypedValue* out_results,
     void* user_data
   );
 
-  static wabt::interp::Result wabtGetCallValue(
-    const wabt::interp::HostFunc* func,
-    const wabt::interp::FuncSignature* sig,
-    wabt::Index num_args,
-    wabt::interp::TypedValue* args,
-    wabt::Index num_results,
-    wabt::interp::TypedValue* out_results,
+  static interp::Result wabtGetCallValue(
+    const interp::HostFunc* func,
+    const interp::FuncSignature* sig,
+    Index num_args,
+    interp::TypedValue* args,
+    Index num_results,
+    interp::TypedValue* out_results,
     void* user_data
   );
 
@@ -179,7 +180,7 @@ private:
   void memorySet(size_t offset, uint8_t value) override { m_wasmMemory->data[offset] = static_cast<char>(value); }
   uint8_t memoryGet(size_t offset) override { return static_cast<uint8_t>(m_wasmMemory->data[offset]); }
 
-  wabt::interp::Memory* m_wasmMemory;
+  interp::Memory* m_wasmMemory;
 };
 
 unique_ptr<WasmEngine> WabtEngine::create()
@@ -187,115 +188,115 @@ unique_ptr<WasmEngine> WabtEngine::create()
   return unique_ptr<WasmEngine>{new WabtEngine};
 }
 
-wabt::Result WabtEthereumInterface::ImportFunc(
-  wabt::interp::FuncImport* import,
-  wabt::interp::Func* func,
-  wabt::interp::FuncSignature* func_sig,
+Result WabtEthereumInterface::ImportFunc(
+  interp::FuncImport* import,
+  interp::Func* func,
+  interp::FuncSignature* func_sig,
   const ErrorCallback& callback
 ) {
   (void)import;
   (void)func;
   (void)callback;
   HERA_DEBUG << "Importing " << import->field_name << "\n";
-  wabt::interp::HostFunc *hostFunc = reinterpret_cast<wabt::interp::HostFunc*>(func);
+  interp::HostFunc *hostFunc = reinterpret_cast<interp::HostFunc*>(func);
   if (import->field_name == "useGas") {
     if (func_sig->param_types.size() != 1 || func_sig->result_types.size() != 0)
-      return wabt::Result::Error;
+      return Result::Error;
     hostFunc->callback = wabtUseGas;
     hostFunc->user_data = this;
-    return wabt::Result::Ok;
+    return Result::Ok;
   } else if (import->field_name == "getGasLeft") {
     if (func_sig->param_types.size() != 0 || func_sig->result_types.size() != 1)
-      return wabt::Result::Error;
+      return Result::Error;
     hostFunc->callback = wabtGetGasLeft;
     hostFunc->user_data = this;
-    return wabt::Result::Ok;
+    return Result::Ok;
   } else if (import->field_name == "storageStore") {
     if (func_sig->param_types.size() != 2 || func_sig->result_types.size() != 0)
-      return wabt::Result::Error;
+      return Result::Error;
     hostFunc->callback = wabtStorageStore;
     hostFunc->user_data = this;
-    return wabt::Result::Ok;
+    return Result::Ok;
   } else if (import->field_name == "storageLoad") {
     if (func_sig->param_types.size() != 2 || func_sig->result_types.size() != 0)
-      return wabt::Result::Error;
+      return Result::Error;
     hostFunc->callback = wabtStorageLoad;
     hostFunc->user_data = this;
-    return wabt::Result::Ok;
+    return Result::Ok;
   } else if (import->field_name == "finish") {
     if (func_sig->param_types.size() != 2 || func_sig->result_types.size() != 0)
-      return wabt::Result::Error;
+      return Result::Error;
     hostFunc->callback = wabtFinish;
     hostFunc->user_data = this;
-    return wabt::Result::Ok;
+    return Result::Ok;
   } else if (import->field_name == "revert") {
     if (func_sig->param_types.size() != 2 || func_sig->result_types.size() != 0)
-      return wabt::Result::Error;
+      return Result::Error;
     hostFunc->callback = wabtRevert;
     hostFunc->user_data = this;
-    return wabt::Result::Ok;
+    return Result::Ok;
   } else if (import->field_name == "getCallDataSize") {
     if (func_sig->param_types.size() != 0 || func_sig->result_types.size() != 1)
-      return wabt::Result::Error;
+      return Result::Error;
     hostFunc->callback = wabtGetCallDataSize;
     hostFunc->user_data = this;
-    return wabt::Result::Ok;
+    return Result::Ok;
   } else if (import->field_name == "callDataCopy") {
     if (func_sig->param_types.size() != 3 || func_sig->result_types.size() != 0)
-      return wabt::Result::Error;
+      return Result::Error;
     hostFunc->callback = wabtCallDataCopy;
     hostFunc->user_data = this;
-    return wabt::Result::Ok;
+    return Result::Ok;
   } else if (import->field_name == "getCallValue") {
     if (func_sig->param_types.size() != 1 || func_sig->result_types.size() != 0)
-      return wabt::Result::Error;
+      return Result::Error;
     hostFunc->callback = wabtGetCallValue;
     hostFunc->user_data = this;
-    return wabt::Result::Ok;
+    return Result::Ok;
   }
-  return wabt::Result::Error;
+  return Result::Error;
 }
 
-wabt::Result WabtEthereumInterface::ImportMemory(
-  wabt::interp::MemoryImport* import,
-  wabt::interp::Memory* mem,
+Result WabtEthereumInterface::ImportMemory(
+  interp::MemoryImport* import,
+  interp::Memory* mem,
   const ErrorCallback& callback
 ) {
   (void)import;
   (void)mem;
   (void)callback;
-  return wabt::Result::Error;
+  return Result::Error;
 }
 
-wabt::Result WabtEthereumInterface::ImportGlobal(
-  wabt::interp::GlobalImport* import,
-  wabt::interp::Global* global,
+Result WabtEthereumInterface::ImportGlobal(
+  interp::GlobalImport* import,
+  interp::Global* global,
   const ErrorCallback& callback
 ) {
   (void)import;
   (void)global;
   (void)callback;
-  return wabt::Result::Error;
+  return Result::Error;
 }
 
-wabt::Result WabtEthereumInterface::ImportTable(
-  wabt::interp::TableImport* import,
-  wabt::interp::Table* table,
+Result WabtEthereumInterface::ImportTable(
+  interp::TableImport* import,
+  interp::Table* table,
   const ErrorCallback& callback
 ) {
   (void)import;
   (void)table;
   (void)callback;
-  return wabt::Result::Error;
+  return Result::Error;
 }
 
-wabt::interp::Result WabtEthereumInterface::wabtUseGas(
-  const wabt::interp::HostFunc* func,
-  const wabt::interp::FuncSignature* sig,
-  wabt::Index num_args,
-  wabt::interp::TypedValue* args,
-  wabt::Index num_results,
-  wabt::interp::TypedValue* out_results,
+interp::Result WabtEthereumInterface::wabtUseGas(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -311,16 +312,16 @@ wabt::interp::Result WabtEthereumInterface::wabtUseGas(
   // FIXME: handle host trap here
   interface->eeiUseGas(gas);
 
-  return wabt::interp::Result::Ok;
+  return interp::Result::Ok;
 }
 
-wabt::interp::Result WabtEthereumInterface::wabtGetGasLeft(
-  const wabt::interp::HostFunc* func,
-  const wabt::interp::FuncSignature* sig,
-  wabt::Index num_args,
-  wabt::interp::TypedValue* args,
-  wabt::Index num_results,
-  wabt::interp::TypedValue* out_results,
+interp::Result WabtEthereumInterface::wabtGetGasLeft(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -333,16 +334,16 @@ wabt::interp::Result WabtEthereumInterface::wabtGetGasLeft(
   out_results[0].type = sig->result_types[0];
   out_results[0].value.i64 = static_cast<uint64_t>(interface->eeiGetGasLeft());
 
-  return wabt::interp::Result::Ok;
+  return interp::Result::Ok;
 }
 
-wabt::interp::Result WabtEthereumInterface::wabtStorageStore(
-  const wabt::interp::HostFunc* func,
-  const wabt::interp::FuncSignature* sig,
-  wabt::Index num_args,
-  wabt::interp::TypedValue* args,
-  wabt::Index num_results,
-  wabt::interp::TypedValue* out_results,
+interp::Result WabtEthereumInterface::wabtStorageStore(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -358,16 +359,16 @@ wabt::interp::Result WabtEthereumInterface::wabtStorageStore(
   
   interface->eeiStorageStore(pathOffset, valueOffset);
 
-  return wabt::interp::Result::Ok;
+  return interp::Result::Ok;
 }
 
-wabt::interp::Result WabtEthereumInterface::wabtStorageLoad(
-  const wabt::interp::HostFunc* func,
-  const wabt::interp::FuncSignature* sig,
-  wabt::Index num_args,
-  wabt::interp::TypedValue* args,
-  wabt::Index num_results,
-  wabt::interp::TypedValue* out_results,
+interp::Result WabtEthereumInterface::wabtStorageLoad(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -383,16 +384,16 @@ wabt::interp::Result WabtEthereumInterface::wabtStorageLoad(
   
   interface->eeiStorageLoad(pathOffset, valueOffset);
 
-  return wabt::interp::Result::Ok;
+  return interp::Result::Ok;
 }
 
-wabt::interp::Result WabtEthereumInterface::wabtFinish(
-  const wabt::interp::HostFunc* func,
-  const wabt::interp::FuncSignature* sig,
-  wabt::Index num_args,
-  wabt::interp::TypedValue* args,
-  wabt::Index num_results,
-  wabt::interp::TypedValue* out_results,
+interp::Result WabtEthereumInterface::wabtFinish(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -409,16 +410,16 @@ wabt::interp::Result WabtEthereumInterface::wabtFinish(
   // FIXME: handle host trap here
   interface->eeiFinish(offset, length);
 
-  return wabt::interp::Result::Ok;
+  return interp::Result::Ok;
 }
 
-wabt::interp::Result WabtEthereumInterface::wabtRevert(
-  const wabt::interp::HostFunc* func,
-  const wabt::interp::FuncSignature* sig,
-  wabt::Index num_args,
-  wabt::interp::TypedValue* args,
-  wabt::Index num_results,
-  wabt::interp::TypedValue* out_results,
+interp::Result WabtEthereumInterface::wabtRevert(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -435,16 +436,16 @@ wabt::interp::Result WabtEthereumInterface::wabtRevert(
   // FIXME: handle host trap here
   interface->eeiRevert(offset, length);
 
-  return wabt::interp::Result::Ok;
+  return interp::Result::Ok;
 }
 
-wabt::interp::Result WabtEthereumInterface::wabtGetCallDataSize(
-  const wabt::interp::HostFunc* func,
-  const wabt::interp::FuncSignature* sig,
-  wabt::Index num_args,
-  wabt::interp::TypedValue* args,
-  wabt::Index num_results,
-  wabt::interp::TypedValue* out_results,
+interp::Result WabtEthereumInterface::wabtGetCallDataSize(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -457,16 +458,16 @@ wabt::interp::Result WabtEthereumInterface::wabtGetCallDataSize(
   out_results[0].type = sig->result_types[0];
   out_results[0].value.i32 = interface->eeiGetCallDataSize();
 
-  return wabt::interp::Result::Ok;
+  return interp::Result::Ok;
 }
 
-wabt::interp::Result WabtEthereumInterface::wabtCallDataCopy(
-  const wabt::interp::HostFunc* func,
-  const wabt::interp::FuncSignature* sig,
-  wabt::Index num_args,
-  wabt::interp::TypedValue* args,
-  wabt::Index num_results,
-  wabt::interp::TypedValue* out_results,
+interp::Result WabtEthereumInterface::wabtCallDataCopy(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -483,16 +484,16 @@ wabt::interp::Result WabtEthereumInterface::wabtCallDataCopy(
 
   interface->eeiCallDataCopy(resultOffset, dataOffset, length);
 
-  return wabt::interp::Result::Ok;
+  return interp::Result::Ok;
 }
 
-wabt::interp::Result WabtEthereumInterface::wabtGetCallValue(
-  const wabt::interp::HostFunc* func,
-  const wabt::interp::FuncSignature* sig,
-  wabt::Index num_args,
-  wabt::interp::TypedValue* args,
-  wabt::Index num_results,
-  wabt::interp::TypedValue* out_results,
+interp::Result WabtEthereumInterface::wabtGetCallValue(
+  const interp::HostFunc* func,
+  const interp::FuncSignature* sig,
+  Index num_args,
+  interp::TypedValue* args,
+  Index num_results,
+  interp::TypedValue* out_results,
   void* user_data
 ) {
   (void)func;
@@ -507,7 +508,7 @@ wabt::interp::Result WabtEthereumInterface::wabtGetCallValue(
   
   interface->eeiGetCallValue(resultOffset);
 
-  return wabt::interp::Result::Ok;
+  return interp::Result::Ok;
 }
 
 ExecutionResult WabtEngine::execute(
@@ -520,7 +521,7 @@ ExecutionResult WabtEngine::execute(
   HERA_DEBUG << "Executing with wabt...\n";
 
   // This is the wasm state
-  wabt::interp::Environment env;
+  interp::Environment env;
 
   // Lets instantiate our state
   ExecutionResult result;
@@ -530,21 +531,21 @@ ExecutionResult WabtEngine::execute(
 
   // Lets add our host module
   // The lifecycle of this pointer is handled by `env`.
-  wabt::interp::HostModule* hostModule = env.AppendHostModule("ethereum");
+  interp::HostModule* hostModule = env.AppendHostModule("ethereum");
   heraAssert(hostModule, "Failed to create host module.");
   hostModule->import_delegate = unique_ptr<WabtEthereumInterface>(interface);
 
-  wabt::ReadBinaryOptions options(
-    wabt::Features{},
+  ReadBinaryOptions options(
+    Features{},
     nullptr, // debugging stream for loading
     false, // ReadDebugNames
     true, // StopOnFirstError
     true // FailOnCustomSectionError
   );
 
-  wabt::ErrorHandlerFile error_handler(wabt::Location::Type::Binary);
-  wabt::interp::DefinedModule* module = nullptr;
-  wabt::ReadBinaryInterp(
+  ErrorHandlerFile error_handler(Location::Type::Binary);
+  interp::DefinedModule* module = nullptr;
+  ReadBinaryInterp(
     &env,
     code.data(),
     code.size(),
@@ -555,21 +556,21 @@ ExecutionResult WabtEngine::execute(
   ensureCondition(module, ContractValidationFailure, "Module failed to load.");
   ensureCondition(env.GetMemoryCount() == 1, ContractValidationFailure, "Multiple memory sections exported.");
 
-  ensureCondition(module->start_func_index == wabt::kInvalidIndex, ContractValidationFailure, "Contract contains start function.");
+  ensureCondition(module->start_func_index == kInvalidIndex, ContractValidationFailure, "Contract contains start function.");
 
-  wabt::interp::Export* mainFunction = module->GetExport("main");
+  interp::Export* mainFunction = module->GetExport("main");
   ensureCondition(mainFunction, ContractValidationFailure, "\"main\" not found");
-  ensureCondition(mainFunction->kind == wabt::ExternalKind::Func, ContractValidationFailure,  "\"main\" is not a function");
+  ensureCondition(mainFunction->kind == ExternalKind::Func, ContractValidationFailure,  "\"main\" is not a function");
 
   // No tracing, no threads
-  wabt::interp::Executor executor(&env, nullptr, wabt::interp::Thread::Options{});
+  interp::Executor executor(&env, nullptr, interp::Thread::Options{});
 
   // FIXME: really bad design
   interface->setWasmMemory(env.GetMemory(0));
 
   // Execute main
   try {
-    wabt::interp::ExecResult wabtResult = executor.RunExport(mainFunction, wabt::interp::TypedValues{});
+    interp::ExecResult wabtResult = executor.RunExport(mainFunction, interp::TypedValues{});
   } catch (EndExecution const&) {
     // This exception is ignored here because we consider it to be a success.
     // It is only a clutch for POSIX style exit()
