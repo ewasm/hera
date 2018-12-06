@@ -110,6 +110,20 @@ ExecutionResult WabtEngine::execute(
     }
   );
 
+  hostModule->AppendFuncExport(
+    "getGasLeft",
+    {{}, {Type::I64}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i64(static_cast<uint64_t>(interface->eeiGetGasLeft()));
+      return interp::Result::Ok;
+    }
+  );
+
   // Parse module
   ReadBinaryOptions options(
     Features{},
