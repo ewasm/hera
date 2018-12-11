@@ -96,6 +96,17 @@ This is useful to trace the translated code by [EVM Transcompiler]. This is only
 
 **Note:** it is valid to invoke `evmTrace` with a negative value for `sp`.  In this case, no stack values will be printed.
 
+## Fuzzing
+
+To enable fuzzing you need clang compiler and provide `-DHERA_FUZZING=ON` option to CMake.
+You should also enable both Binaryen and WABT engines.
+This will build additional executable `hera-fuzzer`.
+Check out its help and [libFuzzer documentation](https://llvm.org/docs/LibFuzzer.html).
+
+```bash
+test/fuzzing/hera-fuzzer -help=1
+```
+
 ## Author(s)
 
 * Alex Beregszaszi

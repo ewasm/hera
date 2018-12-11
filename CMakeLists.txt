@@ -40,6 +40,15 @@ cable_add_buildinfo_library(PROJECT_NAME hera)
 
 option(BUILD_SHARED_LIBS "Build libraries as shared" ON)
 
+if(CABLE_COMPILER_CLANG)
+    option(HERA_FUZZING "Build Hera fuzzer" OFF)
+endif()
+if(HERA_FUZZING)
+    set(fuzzer_flags -fsanitize=fuzzer,undefined,address)
+    add_compile_options(${fuzzer_flags})
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${fuzzer_flags}")
+endif()
+
 option(HERA_WABT "Build with wabt" OFF)
 if (HERA_WABT)
     include(ProjectWabt)
@@ -52,6 +61,7 @@ endif()
 
 add_subdirectory(evmc)
 add_subdirectory(src)
+add_subdirectory(test)
 
 
 install(DIRECTORY include/hera DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
