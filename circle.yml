@@ -118,7 +118,10 @@ defaults:
     run:
       name: "Install aleth"
       command: |
-        URL=https://github.com/ethereum/aleth/releases/download/v1.5.0-alpha.5/aleth-1.5.0-alpha.5-linux-x86_64.tar.gz
+        VER=1.5.0-alpha.5
+        OS=$(uname | tr '[:upper:]' '[:lower:]')
+        URL=https://github.com/ethereum/aleth/releases/download/v$VER/aleth-$VER-$OS-x86_64.tar.gz
+        echo $URL
         curl -L $URL | sudo tar xz -C /usr/local
 
   fetch-tests: &fetch-tests
@@ -131,9 +134,10 @@ defaults:
     run:
       name: "Test shared Hera"
       command: |
+        SO=$([ $(uname) = Darwin ] && echo dylib || echo so)
         if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc engine=binaryen
+        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --evmc engine=binaryen
 
   test-wabt: &test-wabt
     run:
@@ -296,6 +300,26 @@ jobs:
       - *store-package
       - *save-deps-cache
 
+  macos:
+    environment:
+      - BUILD_PARALLEL_JOBS: 4
+      - GENERATOR: Unix Makefiles
+    macos:
+      xcode: "10.1.0"
+    steps:
+      - run:
+          name: "Install system dependencies"
+          command: |
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install -q cmake ninja leveldb
+      - checkout
+      - *update-submodules
+      - *configure
+      - *build
+      - *store-package
+      - *install-aleth
+      - *fetch-tests
+      - *test
+
   lint:
     docker:
       - image: ethereum/cpp-build-env:5
@@ -329,6 +353,7 @@ workflows:
   version: 2
   hera:
     jobs:
+      - macos
       - lint
       - linux-clang-shared-asan
       - linux-gcc-shared-coverage
