@@ -316,6 +316,7 @@ jobs:
       - *configure
       - *build
       - *store-package
+      - *add-package-to-workspace
       - *install-aleth
       - *fetch-tests
       - *test
