@@ -316,8 +316,10 @@ jobs:
       - checkout
       - *update-submodules
       - *environment-info
+      - *restore-deps-cache
       - *configure
       - *build
+      - *save-deps-cache
       - *store-package
       - *add-package-to-workspace
       - *install-aleth
