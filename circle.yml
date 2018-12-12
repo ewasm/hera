@@ -365,6 +365,7 @@ workflows:
       - deploy:
           requires:
             - linux-clang-shared-release
+            - macos
           filters:
             branches:
               ignore: /.*/
