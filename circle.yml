@@ -359,12 +359,15 @@ workflows:
   version: 2
   hera:
     jobs:
-      - macos
       - lint
       - linux-clang-shared-asan
       - linux-gcc-shared-coverage
       - linux-gcc-static-debug
       - linux-clang-shared-release:
+          filters:
+            tags:
+              only: /.*/
+      - macos:
           filters:
             tags:
               only: /.*/
