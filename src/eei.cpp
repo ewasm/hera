@@ -231,7 +231,7 @@ namespace hera {
       safeChargeDataCopy(length, GasSchedule::extcode);
 
       evmc_address address = loadAddress(addressOffset);
-      // FIXME: optimise this so no vector needs to be created
+      // TODO: optimise this so no vector needs to be created
       vector<uint8_t> codeBuffer(length);
       size_t numCopied = m_context->host->copy_code(m_context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
       ensureCondition(numCopied == length, InvalidMemoryAccess, "Out of bounds (source) memory copy");
@@ -303,7 +303,7 @@ namespace hera {
 
       ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
 
-      // FIXME: should this assert that unused topic offsets must be 0?
+      // TODO: should this assert that unused topic offsets must be 0?
       array<evmc_uint256be, 4> topics;
       topics[0] = (numberOfTopics >= 1) ? loadBytes32(topic1) : evmc_uint256be{};
       topics[1] = (numberOfTopics >= 2) ? loadBytes32(topic2) : evmc_uint256be{};
@@ -650,7 +650,7 @@ namespace hera {
 
   void EthereumInterface::loadMemoryReverse(uint32_t srcOffset, uint8_t *dst, size_t length)
   {
-    // FIXME: the source bound check is not needed as the caller already ensures it
+    // NOTE: the source bound check is not needed as the caller already ensures it
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
     ensureCondition(memorySize() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
 
@@ -664,7 +664,7 @@ namespace hera {
 
   void EthereumInterface::loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length)
   {
-    // FIXME: the source bound check is not needed as the caller already ensures it
+    // NOTE: the source bound check is not needed as the caller already ensures it
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
     ensureCondition(memorySize() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
 
@@ -678,7 +678,7 @@ namespace hera {
 
   void EthereumInterface::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
   {
-    // FIXME: the source bound check is not needed as the caller already ensures it
+    // NOTE: the source bound check is not needed as the caller already ensures it
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
     ensureCondition(memorySize() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
     ensureCondition(dst.size() >= length, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
