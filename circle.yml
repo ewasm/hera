@@ -302,6 +302,8 @@ jobs:
 
   macos:
     environment:
+      - CC: cc
+      - CXX: c++
       - BUILD_PARALLEL_JOBS: 4
       - GENERATOR: Unix Makefiles
     macos:
@@ -313,9 +315,13 @@ jobs:
             HOMEBREW_NO_AUTO_UPDATE=1 brew install -q cmake ninja leveldb
       - checkout
       - *update-submodules
+      - *environment-info
+      - *restore-deps-cache
       - *configure
       - *build
+      - *save-deps-cache
       - *store-package
+      - *add-package-to-workspace
       - *install-aleth
       - *fetch-tests
       - *test
