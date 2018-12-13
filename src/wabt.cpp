@@ -545,7 +545,7 @@ ExecutionResult WabtEngine::execute(
 
   ErrorHandlerFile error_handler(Location::Type::Binary);
   interp::DefinedModule* module = nullptr;
-  ReadBinaryInterp(
+  Result loadResult = ReadBinaryInterp(
     &env,
     code.data(),
     code.size(),
@@ -553,7 +553,7 @@ ExecutionResult WabtEngine::execute(
     &error_handler,
     &module
   );
-  ensureCondition(module, ContractValidationFailure, "Module failed to load.");
+  ensureCondition(Succeeded(loadResult) && module, ContractValidationFailure, "Module failed to load.");
   ensureCondition(env.GetMemoryCount() == 1, ContractValidationFailure, "Multiple memory sections exported.");
 
   ensureCondition(module->start_func_index == kInvalidIndex, ContractValidationFailure, "Contract contains start function.");
