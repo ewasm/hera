@@ -98,6 +98,27 @@ defaults:
         rm -rf ~/aleth/hera
         ln -s ~/project ~/aleth/hera
 
+  test-geth: &test-geth
+    run:
+      name: "Build geth with EVMC support"
+      working_directory: ~/
+      command: |
+        mkdir -p go
+        mkdir -p goroot
+        export GOPATH=$HOME/go
+        export GOROOT=$HOME/goroot/go
+        curl https://dl.google.com/go/go1.11.3.linux-amd64.tar.gz > go1.11.3.linux-amd64.tar.gz
+        tar xfz go1.11.3.linux-amd64.tar.gz -C $HOME/goroot
+        export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+        go get github.com/ethereum/go-ethereum
+        cd $GOPATH/src/github.com/ethereum/go-ethereum
+        git remote add ewasm http://github.com/ewasm/go-ethereum
+        git fetch ewasm
+        git checkout -b ewasm ewasm/ewasm
+        git submodule init
+        go build -o geth+evmc ./cmd/geth/...
+        go test ./tests/... -run TestState/stEWASMTests --vm.ewasm="$HOME/build/src/libhera.so"
+
   build-aleth: &build-aleth
     run:
       name: "Build aleth with linked Hera"
@@ -214,6 +235,7 @@ jobs:
       - *test-binaryen
       - *test-wabt
       - *test-wavm
+      - *test-geth
       - *evmc-test
       - *evm2wasm-test
 
