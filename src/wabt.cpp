@@ -86,8 +86,7 @@ ExecutionResult WabtEngine::execute(
 
   // Set up interface to eei host functions
   ExecutionResult result;
-  // FIXME: shouldn't have this loose pointer here, but needed for setWasmMemory
-  WabtEthereumInterface* interface = new WabtEthereumInterface{context, state_code, msg, result, meterInterfaceGas};
+  WabtEthereumInterface interface{context, state_code, msg, result, meterInterfaceGas};
 
   // Create host module
   // The lifecycle of this pointer is handled by `env`.
@@ -105,7 +104,7 @@ ExecutionResult WabtEngine::execute(
     ) {
       int64_t gas = static_cast<int64_t>(args[0].value.i64);
       // FIXME: handle host trap here
-      interface->eeiUseGas(gas);
+      interface.eeiUseGas(gas);
       return interp::Result::Ok;
     }
   );
@@ -119,7 +118,7 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues&,
       interp::TypedValues& results
     ) {
-      results[0].set_i64(static_cast<uint64_t>(interface->eeiGetGasLeft()));
+      results[0].set_i64(static_cast<uint64_t>(interface.eeiGetGasLeft()));
       return interp::Result::Ok;
     }
   );
@@ -133,7 +132,7 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface->eeiStorageStore(args[0].get_i32(), args[1].get_i32());
+      interface.eeiStorageStore(args[0].get_i32(), args[1].get_i32());
       return interp::Result::Ok;
     }
   );
@@ -147,7 +146,7 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface->eeiStorageLoad(args[0].get_i32(), args[1].get_i32());
+      interface.eeiStorageLoad(args[0].get_i32(), args[1].get_i32());
       return interp::Result::Ok;
     }
   );
@@ -162,7 +161,7 @@ ExecutionResult WabtEngine::execute(
       interp::TypedValues&
     ) {
       // FIXME: handle host trap here
-      interface->eeiFinish(args[0].get_i32(), args[1].get_i32());
+      interface.eeiFinish(args[0].get_i32(), args[1].get_i32());
       return interp::Result::Ok;
     }
   );
@@ -177,7 +176,7 @@ ExecutionResult WabtEngine::execute(
       interp::TypedValues&
     ) {
       // FIXME: handle host trap here
-      interface->eeiRevert(args[0].get_i32(), args[1].get_i32());
+      interface.eeiRevert(args[0].get_i32(), args[1].get_i32());
       return interp::Result::Ok;
     }
   );
@@ -191,7 +190,7 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues&,
       interp::TypedValues& results
     ) {
-      results[0].set_i32(interface->eeiGetCallDataSize());
+      results[0].set_i32(interface.eeiGetCallDataSize());
       return interp::Result::Ok;
     }
   );
@@ -205,7 +204,7 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface->eeiCallDataCopy(args[0].get_i32(), args[1].get_i32(), args[2].get_i32());
+      interface.eeiCallDataCopy(args[0].get_i32(), args[1].get_i32(), args[2].get_i32());
       return interp::Result::Ok;
     }
   );
@@ -219,7 +218,7 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface->eeiGetCallValue(args[0].get_i32());
+      interface.eeiGetCallValue(args[0].get_i32());
       return interp::Result::Ok;
     }
   );
@@ -259,7 +258,7 @@ ExecutionResult WabtEngine::execute(
   );
 
   // FIXME: really bad design
-  interface->setWasmMemory(env.GetMemory(0));
+  interface.setWasmMemory(env.GetMemory(0));
 
   // Execute main
   try {
