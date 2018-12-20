@@ -49,19 +49,23 @@ public:
     ExecutionResult & _result,
     bool _meterGas
   ):
-    EthereumInterface(_context, _code, _msg, _result, _meterGas)
-  {}
+    EthereumInterface(_context, _code, _msg, _result, _meterGas){
+      exception_ptr_for_rethrowing = nullptr;
+    }
 
   // TODO: improve this design...
   void setWasmMemory(interp::Memory* _wasmMemory) {
     m_wasmMemory = _wasmMemory;
   }
 
+  exception_ptr exception_ptr_for_rethrowing;
+
 private:
   // These assume that m_wasmMemory was set prior to execution.
   size_t memorySize() const override { return m_wasmMemory->data.size(); }
   void memorySet(size_t offset, uint8_t value) override { m_wasmMemory->data[offset] = static_cast<char>(value); }
   uint8_t memoryGet(size_t offset) override { return static_cast<uint8_t>(m_wasmMemory->data[offset]); }
+
 
   interp::Memory* m_wasmMemory;
 };
@@ -104,7 +108,15 @@ ExecutionResult WabtEngine::execute(
     ) {
       int64_t gas = static_cast<int64_t>(args[0].value.i64);
       // FIXME: handle host trap here
-      interface.eeiUseGas(gas);
+      try {
+        interface.eeiUseGas(gas);
+      } catch (HeraException const&) {
+        HERA_DEBUG<<"caught HeraException\n";
+        // save exception so that we can rethrow it once WAVM returns from the invocation
+        interface.exception_ptr_for_rethrowing = current_exception();
+        // tell wabt to trap the execution and return
+        return interp::Result::TrapHostTrapped;
+      }
       return interp::Result::Ok;
     }
   );
@@ -118,7 +130,15 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues&,
       interp::TypedValues& results
     ) {
-      results[0].set_i64(static_cast<uint64_t>(interface.eeiGetGasLeft()));
+      try {
+        results[0].set_i64(static_cast<uint64_t>(interface.eeiGetGasLeft()));
+      } catch (HeraException const&) {
+        HERA_DEBUG<<"caught HeraException\n";
+        // save exception so that we can rethrow it once WAVM returns from the invocation
+        interface.exception_ptr_for_rethrowing = current_exception();
+        // tell wabt to trap the execution and return
+        return interp::Result::TrapHostTrapped;
+      }
       return interp::Result::Ok;
     }
   );
@@ -132,7 +152,15 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface.eeiStorageStore(args[0].get_i32(), args[1].get_i32());
+      try {
+        interface.eeiStorageStore(args[0].get_i32(), args[1].get_i32());
+      } catch (HeraException const&) {
+        HERA_DEBUG<<"caught HeraException\n";
+        // save exception so that we can rethrow it once WAVM returns from the invocation
+        interface.exception_ptr_for_rethrowing = current_exception();
+        // tell wabt to trap the execution and return
+        return interp::Result::TrapHostTrapped;
+      }
       return interp::Result::Ok;
     }
   );
@@ -146,7 +174,15 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface.eeiStorageLoad(args[0].get_i32(), args[1].get_i32());
+      try {
+        interface.eeiStorageLoad(args[0].get_i32(), args[1].get_i32());
+      } catch (HeraException const&) {
+        HERA_DEBUG<<"caught HeraException\n";
+        // save exception so that we can rethrow it once WAVM returns from the invocation
+        interface.exception_ptr_for_rethrowing = current_exception();
+        // tell wabt to trap the execution and return
+        return interp::Result::TrapHostTrapped;
+      }
       return interp::Result::Ok;
     }
   );
@@ -160,8 +196,15 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      // FIXME: handle host trap here
-      interface.eeiFinish(args[0].get_i32(), args[1].get_i32());
+      try {
+        interface.eeiFinish(args[0].get_i32(), args[1].get_i32());
+      } catch (HeraException const&) {
+        HERA_DEBUG<<"caught HeraException\n";
+        // save exception so that we can rethrow it once WAVM returns from the invocation
+        interface.exception_ptr_for_rethrowing = current_exception();
+        // tell wabt to trap the execution and return
+        return interp::Result::TrapHostTrapped;
+      }
       return interp::Result::Ok;
     }
   );
@@ -175,8 +218,15 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      // FIXME: handle host trap here
-      interface.eeiRevert(args[0].get_i32(), args[1].get_i32());
+      try {
+        interface.eeiRevert(args[0].get_i32(), args[1].get_i32());
+      } catch (HeraException const&) {
+        HERA_DEBUG<<"caught HeraException\n";
+        // save exception so that we can rethrow it once WAVM returns from the invocation
+        interface.exception_ptr_for_rethrowing = current_exception();
+        // tell wabt to trap the execution and return
+        return interp::Result::TrapHostTrapped;
+      }
       return interp::Result::Ok;
     }
   );
@@ -190,7 +240,15 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues&,
       interp::TypedValues& results
     ) {
-      results[0].set_i32(interface.eeiGetCallDataSize());
+      try {
+        results[0].set_i32(interface.eeiGetCallDataSize());
+      } catch (HeraException const&) {
+        HERA_DEBUG<<"caught HeraException\n";
+        // save exception so that we can rethrow it once WAVM returns from the invocation
+        interface.exception_ptr_for_rethrowing = current_exception();
+        // tell wabt to trap the execution and return
+        return interp::Result::TrapHostTrapped;
+      }
       return interp::Result::Ok;
     }
   );
@@ -204,7 +262,15 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface.eeiCallDataCopy(args[0].get_i32(), args[1].get_i32(), args[2].get_i32());
+      try {
+        interface.eeiCallDataCopy(args[0].get_i32(), args[1].get_i32(), args[2].get_i32());
+      } catch (HeraException const&) {
+        HERA_DEBUG<<"caught HeraException\n";
+        // save exception so that we can rethrow it once WAVM returns from the invocation
+        interface.exception_ptr_for_rethrowing = current_exception();
+        // tell wabt to trap the execution and return
+        return interp::Result::TrapHostTrapped;
+      }
       return interp::Result::Ok;
     }
   );
@@ -218,7 +284,15 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface.eeiGetCallValue(args[0].get_i32());
+      try {
+        interface.eeiGetCallValue(args[0].get_i32());
+      } catch (HeraException const&) {
+        HERA_DEBUG<<"caught HeraException\n";
+        // save exception so that we can rethrow it once WAVM returns from the invocation
+        interface.exception_ptr_for_rethrowing = current_exception();
+        // tell wabt to trap the execution and return
+        return interp::Result::TrapHostTrapped;
+      }
       return interp::Result::Ok;
     }
   );
@@ -263,10 +337,15 @@ ExecutionResult WabtEngine::execute(
   // Execute main
   try {
     interp::ExecResult wabtResult = executor.RunExport(mainFunction, interp::TypedValues{}); // second arg is empty since no args
+
+    // rethrow exception
+    if (interface.exception_ptr_for_rethrowing)
+      rethrow_exception (interface.exception_ptr_for_rethrowing);
   } catch (EndExecution const&) {
     // This exception is ignored here because we consider it to be a success.
     // It is only a clutch for POSIX style exit()
   }
+
 
   return result;
 }
