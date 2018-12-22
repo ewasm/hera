@@ -247,8 +247,11 @@ ExecutionResult WavmEngine::internalExecute(
   Runtime::LinkResult linkResult = Runtime::linkModule(moduleIR, resolver);
   heraAssert(linkResult.success, "Couldn't link contract against host module.");
 
+  // compile the module from IR to LLVM bitcode
+  Runtime::GCPointer<Runtime::Module> module = Runtime::compileModule(moduleIR);
+
   // instantiate contract module
-  Runtime::GCPointer<Runtime::ModuleInstance> moduleInstance = Runtime::instantiateModule(compartment, moduleIR, move(linkResult.resolvedImports), "<ewasmcontract>");
+  Runtime::GCPointer<Runtime::ModuleInstance> moduleInstance = Runtime::instantiateModule(compartment, module, move(linkResult.resolvedImports), "<ewasmcontract>");
   heraAssert(moduleInstance, "Couldn't instantiate contact module.");
 
   // get memory for easy access in host functions
