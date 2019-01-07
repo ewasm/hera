@@ -148,17 +148,7 @@ defaults:
         SO=$([ $(uname) = Darwin ] && echo dylib || echo so)
         if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "useGas" --evmc engine=wabt
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "createFromTransaction" --evmc engine=wabt
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "storageStore" --evmc engine=wabt
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "storageLoad" --evmc engine=wabt
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "getCallValue" --evmc engine=wabt
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "getCallDataSize" --evmc engine=wabt
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "callDataCopy" --evmc engine=wabt
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "callDataCopy256" --evmc engine=wabt
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "getGasLeft" --evmc engine=wabt
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "getGasLeftUseAllGas" --evmc engine=wabt
-        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "returnPredefinedData" --evmc engine=wabt
+        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --evmc engine=wabt
 
   test-wavm: &test-wavm
     run:
