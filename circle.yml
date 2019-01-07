@@ -144,7 +144,6 @@ defaults:
     run:
       name: "Test shared Hera (wabt)"
       command: |
-        export ASAN_OPTIONS=detect_leaks=0
         if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "useGas" --evmc engine=wabt
