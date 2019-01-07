@@ -134,6 +134,7 @@ defaults:
     run:
       name: "Test shared Hera"
       command: |
+        export ASAN_OPTIONS=detect_leaks=0
         SO=$([ $(uname) = Darwin ] && echo dylib || echo so)
         if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
@@ -161,6 +162,7 @@ defaults:
     run:
       name: "Test shared Hera (wavm)"
       command: |
+        export ASAN_OPTIONS=detect_leaks=0
         if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "useGas" --evmc engine=wavm
@@ -236,7 +238,6 @@ jobs:
       CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON -DSANITIZE=address
       # The ASan must the first loaded shared library. Force preloading it with this flag.
       PRELOAD_ASAN: true
-      ASAN_OPTIONS: detect_leaks=0
     docker:
       - image: ethereum/cpp-build-env:5
     steps:
