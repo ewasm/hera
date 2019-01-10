@@ -19,7 +19,7 @@ if(EVMC_TESTING)
     include(evmc/cmake/HunterConfig.cmake)
 endif()
 
-cable_configure_toolchain(DEFAULT cxx11-pic)
+cable_configure_toolchain(DEFAULT cxx17-pic)
 
 set(CMAKE_DEBUG_POSTFIX "")
 
