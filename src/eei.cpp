@@ -22,6 +22,7 @@
 
 #include "debugging.h"
 #include "eei.h"
+#include "evmc-helpers.hpp"
 #include "exceptions.h"
 #include "helpers.h"
 
@@ -161,7 +162,7 @@ namespace hera {
 
       evmc_bytes32 blockhash = m_context->host->get_block_hash(m_context, static_cast<int64_t>(number));
 
-      if (isZeroUint256(blockhash))
+      if (is_zero(blockhash))
         return 1;
 
       storeBytes32(blockhash, resultOffset);
@@ -367,7 +368,7 @@ namespace hera {
       evmc_bytes32 current = m_context->host->get_storage(m_context, &m_msg.destination, &path);
 
       // Charge the right amount in case of the create case.
-      if (isZeroUint256(current) && !isZeroUint256(value))
+      if (is_zero(current)&& !is_zero(value))
         takeInterfaceGas(GasSchedule::storageStoreCreate - GasSchedule::storageStoreChange);
 
       // We do not need to take care about the delete case (gas refund), the client does it.
@@ -434,7 +435,7 @@ namespace hera {
         call_message.sender = m_msg.destination;
         call_message.value = loadUint128(valueOffset);
 
-        if ((kind == EEICallKind::Call) && !isZeroUint128(call_message.value)) {
+        if ((kind == EEICallKind::Call) && !is_zero(call_message.value)) {
           ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "call");
         }
         break;
@@ -490,7 +491,7 @@ namespace hera {
 
       // These checks are in EIP150 but not in the YellowPaper
       // Charge valuetransfer gas if value is being transferred.
-      if ((kind == EEICallKind::Call || kind == EEICallKind::CallCode) && !isZeroUint128(call_message.value)) {
+      if ((kind == EEICallKind::Call || kind == EEICallKind::CallCode) && !is_zero(call_message.value)) {
         takeInterfaceGas(GasSchedule::valuetransfer);
 
         if (!enoughSenderBalanceFor(call_message.value))
@@ -508,7 +509,7 @@ namespace hera {
       takeInterfaceGas(gas);
 
       // Add gas stipend for value transfers
-      if (!isZeroUint128(call_message.value))
+      if (!is_zero(call_message.value))
         gas += GasSchedule::valueStipend;
 
       call_message.gas = gas;
@@ -781,7 +782,7 @@ namespace hera {
 
   void EthereumInterface::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
   {
-    ensureCondition(!exceedsUint128(src), ArgumentOutOfRange, "Account balance (or transaction value) exceeds 128 bits.");
+    ensureCondition(!exeeds_128bits(src), ArgumentOutOfRange, "Account balance (or transaction value) exceeds 128 bits.");
     storeMemoryReverse(src.bytes + 16, dstOffset, 16);
   }
 
@@ -810,39 +811,12 @@ namespace hera {
 
   unsigned __int128 EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
   {
-    ensureCondition(!exceedsUint128(value), ArgumentOutOfRange, "Account balance (or transaction value) exceeds 128 bits.");
+    ensureCondition(!exeeds_128bits(value), ArgumentOutOfRange, "Account balance (or transaction value) exceeds 128 bits.");
     unsigned __int128 ret = 0;
     for (unsigned i = 16; i < 32; i++) {
       ret <<= 8;
       ret |= value.bytes[i];
     }
     return ret;
-  }
-
-  bool EthereumInterface::exceedsUint128(evmc_uint256be const& value)
-  {
-    for (unsigned i = 0; i < 16; i++) {
-      if (value.bytes[i])
-        return true;
-    }
-    return false;
-  }
-
-  bool EthereumInterface::isZeroUint128(evmc_uint256be const& value)
-  {
-    for (unsigned i = 16; i < 32; i++) {
-      if (value.bytes[i] != 0)
-        return false;
-    }
-    return true;
-  }
-
-  bool EthereumInterface::isZeroUint256(evmc_uint256be const& value)
-  {
-    for (unsigned i = 0; i < 32; i++) {
-      if (value.bytes[i] != 0)
-        return false;
-    }
-    return true;
   }
 }
