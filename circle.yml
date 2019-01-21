@@ -135,7 +135,6 @@ defaults:
     run:
       name: "Test shared Hera (binaryen)"
       command: |
-        export ASAN_OPTIONS=detect_leaks=0
         SO=$([ $(uname) = Darwin ] && echo dylib || echo so)
         if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/8/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
