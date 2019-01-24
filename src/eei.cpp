@@ -26,6 +26,7 @@
 #include "helpers.h"
 
 #include <evmc/instructions.h>
+#include <evmc/helpers.hpp>
 
 using namespace std;
 
@@ -161,7 +162,7 @@ namespace hera {
 
       evmc_bytes32 blockhash = m_context->host->get_block_hash(m_context, static_cast<int64_t>(number));
 
-      if (isZeroUint256(blockhash))
+      if (is_zero(blockhash))
         return 1;
 
       storeBytes32(blockhash, resultOffset);
@@ -367,7 +368,7 @@ namespace hera {
       evmc_bytes32 current = m_context->host->get_storage(m_context, &m_msg.destination, &path);
 
       // Charge the right amount in case of the create case.
-      if (isZeroUint256(current) && !isZeroUint256(value))
+      if (is_zero(current) && !is_zero(value))
         takeInterfaceGas(GasSchedule::storageStoreCreate - GasSchedule::storageStoreChange);
 
       // We do not need to take care about the delete case (gas refund), the client does it.
@@ -831,15 +832,6 @@ namespace hera {
   bool EthereumInterface::isZeroUint128(evmc_uint256be const& value)
   {
     for (unsigned i = 16; i < 32; i++) {
-      if (value.bytes[i] != 0)
-        return false;
-    }
-    return true;
-  }
-
-  bool EthereumInterface::isZeroUint256(evmc_uint256be const& value)
-  {
-    for (unsigned i = 0; i < 32; i++) {
       if (value.bytes[i] != 0)
         return false;
     }
