@@ -12,6 +12,7 @@ defaults:
       command: |
         echo CXX: $CXX
         echo Generator: $GENERATOR
+        cmake --version
         echo CMake options: $CMAKE_OPTIONS
         $CXX --version
         $CXX --version >> toolchain
