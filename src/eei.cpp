@@ -31,6 +31,20 @@
 using namespace std;
 
 namespace hera {
+namespace
+{
+/* Checks if host supplied 256 bit value exceeds UINT128_MAX */
+bool exceedsUint128(evmc_uint256be const& value) noexcept
+{
+    for (unsigned i = 0; i < 16; i++)
+    {
+        if (value.bytes[i])
+            return true;
+    }
+    return false;
+}
+}  // namespace
+
 #if HERA_DEBUGGING
   void EthereumInterface::debugPrintMem(bool useHex, uint32_t offset, uint32_t length)
   {
@@ -818,14 +832,5 @@ namespace hera {
       ret |= value.bytes[i];
     }
     return ret;
-  }
-
-  bool EthereumInterface::exceedsUint128(evmc_uint256be const& value)
-  {
-    for (unsigned i = 0; i < 16; i++) {
-      if (value.bytes[i])
-        return true;
-    }
-    return false;
   }
 }

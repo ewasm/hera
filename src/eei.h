@@ -166,9 +166,6 @@ private:
 
   static unsigned __int128 safeLoadUint128(evmc_uint256be const& value);
 
-  /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
-  static bool exceedsUint128(evmc_uint256be const& value);
-
   evmc_tx_context m_tx_context{};
   evmc_context* m_context = nullptr;
   std::vector<uint8_t> const& m_code;
