@@ -70,7 +70,7 @@ defaults:
 
   save-aleth-cache: &save-aleth-cache
     save_cache:
-      key: &aleth-cache-key aleth-prebuilt-cache-{{arch}}-{{checksum "toolchain"}}-v1.5.0-alpha.5
+      key: &aleth-cache-key aleth-prebuilt-cache-{{arch}}-{{checksum "toolchain"}}-v1.5.1
       paths:
         - ~/build
         - ~/.hunter
@@ -84,7 +84,7 @@ defaults:
       name: "Checkout aleth repo"
       working_directory: ~/
       command: |
-        git clone https://github.com/ethereum/aleth --branch v1.5.0-alpha.5 --single-branch --recurse-submodules --depth 1
+        git clone https://github.com/ethereum/aleth --branch v1.5.1 --single-branch --recurse-submodules --depth 1
 
   link-hera: &link-hera
     run:
@@ -119,7 +119,7 @@ defaults:
     run:
       name: "Install aleth"
       command: |
-        VER=1.5.0-alpha.5
+        VER=1.5.1
         OS=$(uname | tr '[:upper:]' '[:lower:]')
         URL=https://github.com/ethereum/aleth/releases/download/v$VER/aleth-$VER-$OS-x86_64.tar.gz
         echo $URL
