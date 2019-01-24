@@ -435,7 +435,7 @@ namespace hera {
         call_message.sender = m_msg.destination;
         call_message.value = loadUint128(valueOffset);
 
-        if ((kind == EEICallKind::Call) && !isZeroUint128(call_message.value)) {
+        if ((kind == EEICallKind::Call) && !is_zero(call_message.value)) {
           ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "call");
         }
         break;
@@ -491,7 +491,7 @@ namespace hera {
 
       // These checks are in EIP150 but not in the YellowPaper
       // Charge valuetransfer gas if value is being transferred.
-      if ((kind == EEICallKind::Call || kind == EEICallKind::CallCode) && !isZeroUint128(call_message.value)) {
+      if ((kind == EEICallKind::Call || kind == EEICallKind::CallCode) && !is_zero(call_message.value)) {
         takeInterfaceGas(GasSchedule::valuetransfer);
 
         if (!enoughSenderBalanceFor(call_message.value))
@@ -509,7 +509,7 @@ namespace hera {
       takeInterfaceGas(gas);
 
       // Add gas stipend for value transfers
-      if (!isZeroUint128(call_message.value))
+      if (!is_zero(call_message.value))
         gas += GasSchedule::valueStipend;
 
       call_message.gas = gas;
@@ -827,14 +827,5 @@ namespace hera {
         return true;
     }
     return false;
-  }
-
-  bool EthereumInterface::isZeroUint128(evmc_uint256be const& value)
-  {
-    for (unsigned i = 16; i < 32; i++) {
-      if (value.bytes[i] != 0)
-        return false;
-    }
-    return true;
   }
 }
