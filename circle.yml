@@ -209,7 +209,7 @@ jobs:
       BUILD_PARALLEL_JOBS: 4
       CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON
     docker:
-      - image: ethereum/cpp-build-env:5
+      - image: ethereum/cpp-build-env:7
     steps:
       - checkout
       - *update-submodules
@@ -239,7 +239,7 @@ jobs:
       # The ASan must the first loaded shared library. Force preloading it with this flag.
       PRELOAD_ASAN: true
     docker:
-      - image: ethereum/cpp-build-env:5
+      - image: ethereum/cpp-build-env:7
     steps:
       - checkout
       - *update-submodules
@@ -266,7 +266,7 @@ jobs:
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DCOVERAGE=ON -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON
     docker:
-      - image: ethereum/cpp-build-env:5
+      - image: ethereum/cpp-build-env:7
     steps:
       - checkout
       - *update-submodules
@@ -290,7 +290,7 @@ jobs:
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -DHERA_DEBUGGING=ON -DHERA_WAVM=ON -DHERA_WABT=ON
     docker:
-      - image: ethereum/cpp-build-env:5
+      - image: ethereum/cpp-build-env:7
     steps:
       - checkout
       - *update-submodules
@@ -329,7 +329,7 @@ jobs:
 
   lint:
     docker:
-      - image: ethereum/cpp-build-env:5
+      - image: ethereum/cpp-build-env:7
     steps:
       - checkout
       - *codespell
