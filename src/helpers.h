@@ -22,6 +22,9 @@
 
 namespace hera {
 
+using bytes = std::basic_string<uint8_t>;
+using bytes_view = std::basic_string_view<uint8_t>;
+
 std::string loadFileContents(std::string const& path);
 
 std::string toHex(evmc_uint256be const& value);
