@@ -137,7 +137,7 @@ defaults:
       command: |
         export ASAN_OPTIONS=detect_leaks=0
         SO=$([ $(uname) = Darwin ] && echo dylib || echo so)
-        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
+        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/8/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --evmc engine=binaryen
 
@@ -146,7 +146,7 @@ defaults:
       name: "Test shared Hera (wabt)"
       command: |
         SO=$([ $(uname) = Darwin ] && echo dylib || echo so)
-        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
+        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/8/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --evmc engine=wabt
 
@@ -155,7 +155,7 @@ defaults:
       name: "Test shared Hera (wavm)"
       command: |
         export ASAN_OPTIONS=detect_leaks=0
-        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
+        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/8/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "useGas" --evmc engine=wavm
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "createFromTransaction" --evmc engine=wavm
@@ -178,7 +178,7 @@ defaults:
 #    run:
 #      name: "Run evm2wasm state tests"
 #      command: |
-#        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
+#        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/8/lib/linux/libclang_rt.asan-x86_64.so; fi
 #        testeth --version
 #        testeth -t GeneralStateTests/stExample -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "add11" --evmc evm1mode=evm2wasm.cpp
 #        testeth -t GeneralStateTests/stStackTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc evm1mode=evm2wasm.cpp
@@ -187,7 +187,7 @@ defaults:
     run:
       name: "Upload coverage data"
       command: |
-        codecov --required --gcov-root ~/build --gcov-exec gcov-6
+        codecov --required --gcov-root ~/build --gcov-exec gcov-8
 
 
 version: 2
@@ -201,7 +201,7 @@ jobs:
       BUILD_PARALLEL_JOBS: 4
       CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON
     docker:
-      - image: ethereum/cpp-build-env:7
+      - image: ethereum/cpp-build-env:9
     steps:
       - checkout
       - *update-submodules
@@ -231,7 +231,7 @@ jobs:
       # The ASan must the first loaded shared library. Force preloading it with this flag.
       PRELOAD_ASAN: true
     docker:
-      - image: ethereum/cpp-build-env:7
+      - image: ethereum/cpp-build-env:9
     steps:
       - checkout
       - *update-submodules
@@ -258,7 +258,7 @@ jobs:
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DCOVERAGE=ON -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON
     docker:
-      - image: ethereum/cpp-build-env:7
+      - image: ethereum/cpp-build-env:9
     steps:
       - checkout
       - *update-submodules
@@ -282,7 +282,7 @@ jobs:
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -DHERA_DEBUGGING=ON -DHERA_WAVM=ON -DHERA_WABT=ON
     docker:
-      - image: ethereum/cpp-build-env:7
+      - image: ethereum/cpp-build-env:9
     steps:
       - checkout
       - *update-submodules
@@ -323,7 +323,7 @@ jobs:
 
   lint:
     docker:
-      - image: ethereum/cpp-build-env:7
+      - image: ethereum/cpp-build-env:9
     steps:
       - checkout
       - *codespell
