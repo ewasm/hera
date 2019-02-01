@@ -36,6 +36,11 @@ set(binaryen_other_libraries
     ${binary_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}support${CMAKE_STATIC_LIBRARY_SUFFIX}
 )
 
+set(binaryen_cxx_flags ${CMAKE_CXX_FLAGS})
+if (SANITIZE)
+    set(binaryen_cxx_flags "${binaryen_cxx_flags} -fsanitize=${SANITIZE}")
+endif()
+
 ExternalProject_Add(binaryen
     PREFIX ${prefix}
     DOWNLOAD_NAME binaryen-1.38.24.tar.gz
@@ -49,6 +54,8 @@ ExternalProject_Add(binaryen
     -DCMAKE_INSTALL_LIBDIR=lib
     -DCMAKE_BUILD_TYPE=Release
     -DBUILD_STATIC_LIB=ON
+    -DCMAKE_CXX_FLAGS=${binaryen_cxx_flags}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     ${build_command}
     ${install_command}
     BUILD_BYPRODUCTS ${binaryen_library} ${binaryen_other_libraries}
