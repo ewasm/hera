@@ -413,6 +413,14 @@ evmc_set_option_result hera_set_option(
     return EVMC_SET_OPTION_SUCCESS;
   }
 
+  if (strcmp(name, "benchmark") == 0) {
+    if (strcmp(value, "true") == 0) {
+      WasmEngine::enableBenchmarking();
+      return EVMC_SET_OPTION_SUCCESS;
+    }
+    return EVMC_SET_OPTION_INVALID_VALUE;
+  }
+
   if (strcmp(name, "engine") == 0) {
     auto it = wasm_engine_map.find(value);
     if (it != wasm_engine_map.end()) {

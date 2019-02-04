@@ -45,6 +45,22 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 }
 }  // namespace
 
+bool WasmEngine::benchmarkingEnabled = false;
+
+void WasmEngine::collectBenchmarkingData()
+{
+  constexpr auto to_us = [](clock::duration d) {
+    return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+  };
+
+  const auto now = clock::now();
+  const auto instantiationDuration = executionStartTime - instantiationStartTime;
+  const auto executionDuration = now - executionStartTime;
+
+  std::cerr << "Time [us]: " << to_us(instantiationDuration + executionDuration) << " = "
+            << to_us(instantiationDuration) << " + " << to_us(executionDuration) << "\n";
+}
+
 #if HERA_DEBUGGING
   void EthereumInterface::debugPrintMem(bool useHex, uint32_t offset, uint32_t length)
   {

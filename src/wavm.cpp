@@ -285,9 +285,11 @@ ExecutionResult WavmEngine::execute(
   bool meterInterfaceGas
 ) {
   try {
+    instantiationStarted();
     ExecutionResult result = internalExecute(context, code, state_code, msg, meterInterfaceGas);
     // And clean up mess left by this run.
     Runtime::collectGarbage();
+    executionFinished();
     return result;
   } catch (exception const&) {
     // And clean up mess left by this run.
@@ -372,6 +374,8 @@ ExecutionResult WavmEngine::internalExecute(
   // invoke the main function
   Runtime::GCPointer<Runtime::FunctionInstance> mainFunction = asFunctionNullable(Runtime::getInstanceExport(moduleInstance, "main"));
   ensureCondition(mainFunction, ContractValidationFailure, "\"main\" not found");
+
+  executionStarted();
 
   // this is how WAVM's try/catch for exceptions
   Runtime::catchRuntimeExceptions(

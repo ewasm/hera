@@ -78,6 +78,7 @@ ExecutionResult WabtEngine::execute(
   evmc_message const& msg,
   bool meterInterfaceGas
 ) {
+  instantiationStarted();
   HERA_DEBUG << "Executing with wabt...\n";
 
   // Set up the wabt Environment, which includes the Wasm store
@@ -650,6 +651,8 @@ ExecutionResult WabtEngine::execute(
   // FIXME: really bad design
   interface.setWasmMemory(env.GetMemory(0));
 
+  executionStarted();
+
   // Execute main
   try {
     interp::ExecResult wabtResult = executor.RunExport(mainFunction, interp::TypedValues{}); // second arg is empty since no args
@@ -660,6 +663,7 @@ ExecutionResult WabtEngine::execute(
     // It is only a clutch for POSIX style exit()
   }
 
+  executionFinished();
   return result;
 }
 
