@@ -136,7 +136,7 @@ defaults:
       name: "Test shared Hera (binaryen)"
       command: |
         SO=$([ $(uname) = Darwin ] && echo dylib || echo so)
-        export DYLD_INSERT_LIBRARIES=/Applications/Xcode-10.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/lib/darwin/libclang_rt.asan_osx_dynamic.dylib
+        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/6.0/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --evmc engine=binaryen $TESTETH_OPTIONS
 
@@ -353,7 +353,24 @@ workflows:
   version: 2
   hera:
     jobs:
+      - lint
+      - linux-clang-shared-asan
+      - linux-gcc-shared-coverage
+      - linux-gcc-static-debug
+      - linux-clang-shared-release:
+          filters:
+            tags:
+              only: /.*/
       - macos:
           filters:
             tags:
               only: /.*/
+      - deploy:
+          requires:
+            - linux-clang-shared-release
+            - macos
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9].*/
