@@ -46,6 +46,7 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
 using namespace std;
+using namespace WAVM;
 
 namespace hera {
 
@@ -61,7 +62,7 @@ public:
     EthereumInterface(_context, _code, _msg, _result, _meterGas)
   {}
 
-  void setWasmMemory(Runtime::MemoryInstance* _wasmMemory) {
+  void setWasmMemory(Runtime::Memory* _wasmMemory) {
     m_wasmMemory = _wasmMemory;
   }
 
@@ -71,7 +72,7 @@ private:
   void memorySet(size_t offset, uint8_t value) override { (Runtime::memoryArrayPtr<U8>(m_wasmMemory, offset, 1))[0] = value; }
   uint8_t memoryGet(size_t offset) override { return (Runtime::memoryArrayPtr<U8>(m_wasmMemory, offset, 1))[0]; }
 
-  Runtime::MemoryInstance* m_wasmMemory;
+  Runtime::Memory* m_wasmMemory;
 };
 
 unique_ptr<WasmEngine> WavmEngine::create()
@@ -259,7 +260,7 @@ namespace wavm_host_module {
     bool resolve(
       const string& moduleName,
       const string& exportName,
-      IR::ObjectType type,
+      IR::ExternType type,
       Runtime::Object*& outObject
     ) override
     {
@@ -295,12 +296,14 @@ ExecutionResult WavmEngine::execute(
     instantiationStarted();
     ExecutionResult result = internalExecute(context, code, state_code, msg, meterInterfaceGas);
     // And clean up mess left by this run.
-    Runtime::collectGarbage();
+    // TODO: enable this.
+    // Runtime::collectCompartmentGarbage(compartment);
     executionFinished();
     return result;
   } catch (exception const&) {
     // And clean up mess left by this run.
-    Runtime::collectGarbage();
+    // TODO: enable this.
+    // Runtime::collectCompartmentGarbage(compartment);
     // We only catch this exception here in order to clean up garbage..
     // TODO: hopefully WAVM is fixed so that this isn't needed
     throw;
@@ -360,8 +363,7 @@ ExecutionResult WavmEngine::internalExecute(
   ensureCondition(linkResult.success, ContractValidationFailure, "Couldn't link contract against host module.");
 
   // compile the module from IR to LLVM bitcode
-  Runtime::GCPointer<Runtime::Module> module = Runtime::compileModule(moduleIR);
-  heraAssert(module, "Couldn't compile IR to bitcode.");
+  Runtime::ModuleRef module = Runtime::compileModule(moduleIR);
 
   // instantiate contract module
   Runtime::GCPointer<Runtime::ModuleInstance> moduleInstance = Runtime::instantiateModule(compartment, module, move(linkResult.resolvedImports), "<ewasmcontract>");
@@ -379,7 +381,7 @@ ExecutionResult WavmEngine::internalExecute(
   wavm_host_module::interface.top()->setWasmMemory(memory);
 
   // invoke the main function
-  Runtime::GCPointer<Runtime::FunctionInstance> mainFunction = asFunctionNullable(Runtime::getInstanceExport(moduleInstance, "main"));
+  Runtime::GCPointer<Runtime::Function> mainFunction = asFunctionNullable(Runtime::getInstanceExport(moduleInstance, "main"));
   ensureCondition(mainFunction, ContractValidationFailure, "\"main\" not found");
 
   executionStarted();
