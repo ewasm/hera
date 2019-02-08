@@ -231,7 +231,7 @@ jobs:
       CC:  clang
       GENERATOR: Ninja
       BUILD_PARALLEL_JOBS: 4
-      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON -DSANITIZE=address
+      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON -DSANITIZE=address
       # The ASan must the first loaded shared library. Force preloading it with this flag.
       PRELOAD_ASAN: true
     docker:
