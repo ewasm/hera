@@ -102,81 +102,81 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      int64_t gas = static_cast<int64_t>(args[0].value.i64);
-      // FIXME: handle host trap here
-      interface.eeiUseGas(gas);
+      interface.eeiUseGas(static_cast<int64_t>(args[0].value.i64));
       return interp::Result::Ok;
     }
   );
 
   hostModule->AppendFuncExport(
-    "getGasLeft",
-    {{}, {Type::I64}},
+    "getAddress",
+    {{Type::I32}, {}},
     [&interface](
       const interp::HostFunc*,
       const interp::FuncSignature*,
-      const interp::TypedValues&,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiGetAddress(args[0].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getExternalBalance",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiGetExternalBalance(args[0].value.i32, args[1].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockHash",
+    {{Type::I64, Type::I32}, {Type::I32}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
       interp::TypedValues& results
     ) {
-      results[0].set_i64(static_cast<uint64_t>(interface.eeiGetGasLeft()));
+      results[0].set_i32(interface.eeiGetBlockHash(args[0].value.i64, args[1].value.i32));
       return interp::Result::Ok;
     }
   );
 
   hostModule->AppendFuncExport(
-    "storageStore",
-    {{Type::I32, Type::I32}, {}},
+    "call",
+    {{Type::I64, Type::I32, Type::I32, Type::I32, Type::I32}, {Type::I32}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i32(interface.eeiCall(
+        EthereumInterface::EEICallKind::Call,
+        static_cast<int64_t>(args[0].value.i64), args[1].value.i32,
+        args[2].value.i32, args[3].value.i32, args[4].value.i32
+      ));
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "callDataCopy",
+    {{Type::I32, Type::I32, Type::I32}, {}},
     [&interface](
       const interp::HostFunc*,
       const interp::FuncSignature*,
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface.eeiStorageStore(args[0].get_i32(), args[1].get_i32());
-      return interp::Result::Ok;
-    }
-  );
-
-  hostModule->AppendFuncExport(
-    "storageLoad",
-    {{Type::I32, Type::I32}, {}},
-    [&interface](
-      const interp::HostFunc*,
-      const interp::FuncSignature*,
-      const interp::TypedValues& args,
-      interp::TypedValues&
-    ) {
-      interface.eeiStorageLoad(args[0].get_i32(), args[1].get_i32());
-      return interp::Result::Ok;
-    }
-  );
-
-  hostModule->AppendFuncExport(
-    "finish",
-    {{Type::I32, Type::I32}, {}},
-    [&interface](
-      const interp::HostFunc*,
-      const interp::FuncSignature*,
-      const interp::TypedValues& args,
-      interp::TypedValues&
-    ) {
-      // FIXME: handle host trap here
-      interface.eeiFinish(args[0].get_i32(), args[1].get_i32());
-      return interp::Result::Ok;
-    }
-  );
-
-  hostModule->AppendFuncExport(
-    "revert",
-    {{Type::I32, Type::I32}, {}},
-    [&interface](
-      const interp::HostFunc*,
-      const interp::FuncSignature*,
-      const interp::TypedValues& args,
-      interp::TypedValues&
-    ) {
-      // FIXME: handle host trap here
-      interface.eeiRevert(args[0].get_i32(), args[1].get_i32());
+      interface.eeiCallDataCopy(args[0].value.i32, args[1].value.i32, args[2].value.i32);
       return interp::Result::Ok;
     }
   );
@@ -196,15 +196,97 @@ ExecutionResult WabtEngine::execute(
   );
 
   hostModule->AppendFuncExport(
-    "callDataCopy",
-    {{Type::I32, Type::I32, Type::I32}, {}},
+    "callCode",
+    {{Type::I64, Type::I32, Type::I32, Type::I32, Type::I32}, {Type::I32}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i32(interface.eeiCall(
+        EthereumInterface::EEICallKind::CallCode,
+        static_cast<int64_t>(args[0].value.i64), args[1].value.i32,
+        args[2].value.i32, args[3].value.i32, args[4].value.i32
+      ));
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "callDelegate",
+    {{Type::I64, Type::I32, Type::I32, Type::I32}, {Type::I32}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i32(interface.eeiCall(
+        EthereumInterface::EEICallKind::CallDelegate,
+        static_cast<int64_t>(args[0].value.i64), args[1].value.i32, 0,
+        args[2].value.i32, args[3].value.i32
+      ));
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "callStatic",
+    {{Type::I64, Type::I32, Type::I32, Type::I32}, {Type::I32}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i32(interface.eeiCall(
+        EthereumInterface::EEICallKind::CallStatic,
+        static_cast<int64_t>(args[0].value.i64), args[1].value.i32, 0,
+        args[2].value.i32, args[3].value.i32
+      ));
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "storageStore",
+    {{Type::I32, Type::I32}, {}},
     [&interface](
       const interp::HostFunc*,
       const interp::FuncSignature*,
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface.eeiCallDataCopy(args[0].get_i32(), args[1].get_i32(), args[2].get_i32());
+      interface.eeiStorageStore(args[0].value.i32, args[1].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "storageLoad",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiStorageLoad(args[0].value.i32, args[1].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getCaller",
+    {{Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiGetCaller(args[0].value.i32);
       return interp::Result::Ok;
     }
   );
@@ -218,10 +300,317 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface.eeiGetCallValue(args[0].get_i32());
+      interface.eeiGetCallValue(args[0].value.i32);
       return interp::Result::Ok;
     }
   );
+
+  hostModule->AppendFuncExport(
+    "codeCopy",
+    {{Type::I32, Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiCodeCopy(args[0].value.i32, args[1].value.i32, args[2].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getCodeSize",
+    {{}, {Type::I32}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i32(interface.eeiGetCodeSize());
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockCoinbase",
+    {{Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiGetBlockCoinbase(args[0].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "create",
+    {{Type::I32, Type::I32, Type::I32, Type::I32}, {Type::I32}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i32(interface.eeiCreate(
+        args[0].value.i32, args[1].value.i32,
+        args[2].value.i32, args[3].value.i32
+      ));
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockDifficulty",
+    {{Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiGetBlockDifficulty(args[0].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "externalCodeCopy",
+    {{Type::I32, Type::I32, Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiExternalCodeCopy(
+        args[0].value.i32, args[1].value.i32,
+        args[2].value.i32, args[3].value.i32
+      );
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getExternalCodeSize",
+    {{Type::I32}, {Type::I32}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i32(interface.eeiGetExternalCodeSize(args[0].value.i32));
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getGasLeft",
+    {{}, {Type::I64}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i64(static_cast<uint64_t>(interface.eeiGetGasLeft()));
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockGasLimit",
+    {{}, {Type::I64}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i64(static_cast<uint64_t>(interface.eeiGetBlockGasLimit()));
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getTxGasPrice",
+    {{Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiGetTxGasPrice(args[0].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "log",
+    {{Type::I32, Type::I32, Type::I32, Type::I32, Type::I32, Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiLog(
+        args[0].value.i32, args[1].value.i32, args[2].value.i32, args[3].value.i32,
+        args[4].value.i32, args[5].value.i32, args[6].value.i32
+      );
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockNumber",
+    {{}, {Type::I64}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i64(static_cast<uint64_t>(interface.eeiGetBlockNumber()));
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getTxOrigin",
+    {{Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiGetTxOrigin(args[0].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "finish",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiFinish(args[0].value.i32, args[1].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "revert",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiRevert(args[0].value.i32, args[1].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getReturnDataSize",
+    {{}, {Type::I32}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i32(interface.eeiGetReturnDataSize());
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "returnDataCopy",
+    {{Type::I32, Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiReturnDataCopy(args[0].value.i32, args[1].value.i32, args[2].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "selfDestruct",
+    {{Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.eeiSelfDestruct(args[0].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockTimestamp",
+    {{}, {Type::I64}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues& results
+    ) {
+      results[0].set_i64(static_cast<uint64_t>(interface.eeiGetBlockTimestamp()));
+      return interp::Result::Ok;
+    }
+  );
+
+  // some extra methods for debugging
+
+#if HERA_DEBUGGING
+  hostModule->AppendFuncExport(
+    "printMemHex",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.debugPrintMem(1, args[0].value.i32, args[1].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "printStorageHex",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.debugPrintStorage(1, args[0].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+#endif
 
   // Parse module
   ReadBinaryOptions options(
@@ -245,6 +634,7 @@ ExecutionResult WabtEngine::execute(
 
   ensureCondition(Succeeded(loadResult) && module, ContractValidationFailure, "Module failed to load.");
   ensureCondition(env.GetMemoryCount() == 1, ContractValidationFailure, "Multiple memory sections exported.");
+  ensureCondition(module->GetExport("memory"), ContractValidationFailure, "\"memory\" not found");
   ensureCondition(module->start_func_index == kInvalidIndex, ContractValidationFailure, "Contract contains start function.");
 
   // Prepare to execute
@@ -263,6 +653,8 @@ ExecutionResult WabtEngine::execute(
   // Execute main
   try {
     interp::ExecResult wabtResult = executor.RunExport(mainFunction, interp::TypedValues{}); // second arg is empty since no args
+    // Wrap any non-EEI exception under VMTrap.
+    ensureCondition(wabtResult.result == interp::Result::Ok, VMTrap, "The VM invocation had a trap.");
   } catch (EndExecution const&) {
     // This exception is ignored here because we consider it to be a success.
     // It is only a clutch for POSIX style exit()
@@ -270,5 +662,504 @@ ExecutionResult WabtEngine::execute(
 
   return result;
 }
+
+void WabtEngine::verifyContract(std::vector<uint8_t> const& code) {
+  // Set up the wabt Environment, which includes the Wasm store
+  // and the list of modules used for importing/exporting between modules
+  interp::Environment env;
+
+  // Create host module
+  // The lifecycle of this pointer is handled by `env`.
+  interp::HostModule* hostModule = env.AppendHostModule("ethereum");
+  heraAssert(hostModule, "Failed to create host module.");
+
+  hostModule->AppendFuncExport(
+    "useGas",
+    {{Type::I64}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getAddress",
+    {{Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getExternalBalance",
+    {{Type::I32, Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockHash",
+    {{Type::I64, Type::I32}, {Type::I32}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "call",
+    {{Type::I64, Type::I32, Type::I32, Type::I32, Type::I32}, {Type::I32}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "callDataCopy",
+    {{Type::I32, Type::I32, Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getCallDataSize",
+    {{}, {Type::I32}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "callCode",
+    {{Type::I64, Type::I32, Type::I32, Type::I32, Type::I32}, {Type::I32}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "callDelegate",
+    {{Type::I64, Type::I32, Type::I32, Type::I32}, {Type::I32}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "callStatic",
+    {{Type::I64, Type::I32, Type::I32, Type::I32}, {Type::I32}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "storageStore",
+    {{Type::I32, Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "storageLoad",
+    {{Type::I32, Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getCaller",
+    {{Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getCallValue",
+    {{Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "codeCopy",
+    {{Type::I32, Type::I32, Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getCodeSize",
+    {{}, {Type::I32}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockCoinbase",
+    {{Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "create",
+    {{Type::I32, Type::I32, Type::I32, Type::I32}, {Type::I32}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockDifficulty",
+    {{Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "externalCodeCopy",
+    {{Type::I32, Type::I32, Type::I32, Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getExternalCodeSize",
+    {{Type::I32}, {Type::I32}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getGasLeft",
+    {{}, {Type::I64}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockGasLimit",
+    {{}, {Type::I64}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getTxGasPrice",
+    {{Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "log",
+    {{Type::I32, Type::I32, Type::I32, Type::I32, Type::I32, Type::I32, Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockNumber",
+    {{}, {Type::I64}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getTxOrigin",
+    {{Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "finish",
+    {{Type::I32, Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "revert",
+    {{Type::I32, Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getReturnDataSize",
+    {{}, {Type::I32}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "returnDataCopy",
+    {{Type::I32, Type::I32, Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "selfDestruct",
+    {{Type::I32}, {}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "getBlockTimestamp",
+    {{}, {Type::I64}},
+    [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  // some extra methods for debugging
+
+#if HERA_DEBUGGING
+  hostModule->AppendFuncExport(
+    "printMemHex",
+    {{Type::I32, Type::I32}, {}},
+    [&](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "printStorageHex",
+    {{Type::I32, Type::I32}, {}},
+    [&](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+#endif
+
+  // Parse module
+  ReadBinaryOptions options(
+    Features{},
+    nullptr, // debugging stream for loading
+    false, // ReadDebugNames
+    true, // StopOnFirstError
+    true // FailOnCustomSectionError
+  );
+
+  Errors errors;
+  interp::DefinedModule* module = nullptr;
+  Result loadResult = ReadBinaryInterp(
+    &env,
+    code.data(),
+    code.size(),
+    options,
+    &errors,
+    &module
+  );
+
+  ensureCondition(Succeeded(loadResult) && module, ContractValidationFailure, "Module failed to load.");
+  ensureCondition(env.GetMemoryCount() == 1, ContractValidationFailure, "Multiple memory sections exported.");
+  ensureCondition(module->GetExport("memory"), ContractValidationFailure, "\"memory\" not found");
+  ensureCondition(module->start_func_index == kInvalidIndex, ContractValidationFailure, "Contract contains start function.");
+
+  interp::Export* mainFunction = module->GetExport("main");
+  ensureCondition(mainFunction, ContractValidationFailure, "\"main\" not found");
+  ensureCondition(mainFunction->kind == ExternalKind::Func, ContractValidationFailure,  "\"main\" is not a function");
+};
 
 }

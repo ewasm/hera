@@ -33,9 +33,7 @@ public:
     bool meterInterfaceGas
   ) override;
 
-  void verifyContract(std::vector<uint8_t> const&) override {
-    // TODO: implement
-  }
+  void verifyContract(std::vector<uint8_t> const&) override;
 };
 
 }
