@@ -77,7 +77,6 @@ namespace wavm_host_module {
 
   // set up for re-throwing exceptions, this is not clean, but Hera and WAVM are incompatible without some awkwardness
   std::exception_ptr eei_exception_ptr = nullptr;
-  bool VMTrapFlag = false;
 
   // the host module is called 'ethereum'
   DEFINE_INTRINSIC_MODULE(ethereum)
@@ -121,7 +120,6 @@ namespace wavm_host_module {
       ret = interface.top()->eeiCall(EthereumInterface::EEICallKind::Call, gas, addressOffset, valueOffset, dataOffset, dataLength);
       // Now that we have returned from the contract call, must clear out any exception occurring in the contract called. Note that the following code is skipped if an exception occurred when trying to call.
       eei_exception_ptr = nullptr;
-      VMTrapFlag = false;
     } catch (HeraException const& e) {
       HERA_DEBUG << "caught Hera's Exception\n";
       // save exception so that we can rethrow it once WAVM returns from the invocation
@@ -348,7 +346,6 @@ ExecutionResult WavmEngine::execute(
 
   // clear stuff from previous run
   wavm_host_module::eei_exception_ptr = nullptr;
-  wavm_host_module::VMTrapFlag = false;
 
   // hope and prayer
   Runtime::collectGarbage();
@@ -357,10 +354,6 @@ ExecutionResult WavmEngine::execute(
   ExecutionResult result;
   try {
     result = internalExecute(context, code, state_code, msg, meterInterfaceGas);
-
-    // throw VMTrap exception if there was an exception thrown by WAVM and not by us
-    if(wavm_host_module::VMTrapFlag)
-      ensureCondition(false, VMTrap, "hera exception from WAVM VM Trap")
 
     // re-throw exception if there was one
     if (wavm_host_module::eei_exception_ptr)
@@ -453,7 +446,7 @@ ExecutionResult WavmEngine::internalExecute(
       wavm_host_module::interface.top()->setWasmMemory(nullptr);
       // if WAVM threw an exception and we did not, then make a note so we can throw a corresponding hera exception
       if (wavm_host_module::eei_exception_ptr == nullptr)
-        wavm_host_module::VMTrapFlag = true;
+        wavm_host_module::eei_exception_ptr = hera::VMTrap{Runtime::describeException(exception)};
     }
   );
 
