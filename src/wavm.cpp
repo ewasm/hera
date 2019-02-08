@@ -22,14 +22,21 @@
 
 #include "wavm.h"
 
-#define DLL_IMPORT // Needed by wavm on some platforms
-#include "Inline/Serialization.h"
-#include "IR/Module.h"
-#include "IR/Validate.h"
-#include "Runtime/Intrinsics.h"
-#include "Runtime/Linker.h"
-#include "Runtime/Runtime.h"
-#include "WASM/WASM.h"
+// Needed by wavm on some platforms
+#define IR_API
+#define RUNTIME_API
+#define LOGGING_API
+#define WASM_API
+#define PLATFORM_API
+#define DLL_IMPORT
+
+#include <WAVM/Inline/Serialization.h>
+#include <WAVM/IR/Module.h>
+#include <WAVM/IR/Validate.h>
+#include <WAVM/Runtime/Intrinsics.h>
+#include <WAVM/Runtime/Linker.h>
+#include <WAVM/Runtime/Runtime.h>
+#include <WAVM/WASM/WASM.h>
 
 #include "debugging.h"
 #include "eei.h"
