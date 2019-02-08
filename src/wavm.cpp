@@ -344,27 +344,26 @@ ExecutionResult WavmEngine::execute(
   bool meterInterfaceGas
 ) {
 
-  // clear stuff from previous run
-  wavm_host_module::eei_exception_ptr = nullptr;
-
-  // hope and prayer
-  Runtime::collectGarbage();
-
   // execute the contract
   ExecutionResult result;
   try {
+    // Unneeded safety measure.
+    wavm_host_module::eei_exception_ptr = nullptr;
+
     result = internalExecute(context, code, state_code, msg, meterInterfaceGas);
 
     // re-throw exception if there was one
-    if (wavm_host_module::eei_exception_ptr)
+    if (wavm_host_module::eei_exception_ptr) {
       std::rethrow_exception (wavm_host_module::eei_exception_ptr);
+      wavm_host_module::eei_exception_ptr = nullptr;
+    }
   } catch (EndExecution const&) {
       HERA_DEBUG << "caught Hera's EndExecution\n";
       // This exception is ignored here because we consider it to be a success.
       // It is only a clutch for POSIX style exit()
   }
 
-  // clean up this run, this is done here after leaving the scope of internalExecute()
+  // And clean up mess left by this run.
   Runtime::collectGarbage();
 
   return result;
@@ -437,28 +436,19 @@ ExecutionResult WavmEngine::internalExecute(
     [&] {
         vector<IR::Value> invokeArgs;
         Runtime::invokeFunctionChecked(wavm_context, mainFunction, invokeArgs);
-        // wavm may have cleaned up the memory, so make sure we can't access it
-        wavm_host_module::interface.top()->setWasmMemory(nullptr);
     },
     [&](Runtime::Exception&& exception) {
       HERA_DEBUG << "caught WAVM's Runtime::Exception\n";
-      // wavm may have cleaned up the memory, so make sure we can't access it
-      wavm_host_module::interface.top()->setWasmMemory(nullptr);
-      // if WAVM threw an exception and we did not, then make a note so we can throw a corresponding hera exception
+
+      // Throw a proper EEI exception from this.
       if (wavm_host_module::eei_exception_ptr == nullptr)
-        wavm_host_module::eei_exception_ptr = hera::VMTrap{Runtime::describeException(exception)};
+        wavm_host_module::eei_exception_ptr = make_exception_ptr{hera::VMTrap{Runtime::describeException(exception)}};
     }
   );
 
   // clean up
   wavm_host_module::interface.top()->setWasmMemory(nullptr);
   wavm_host_module::interface.pop();
-  compartment = nullptr;
-  wavm_context = nullptr;
-  ethereumHostModule = nullptr;
-  moduleInstance = nullptr;
-  mainFunction = nullptr;
-  Runtime::collectGarbage();
 
   return result;
 }
