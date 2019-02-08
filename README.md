@@ -43,7 +43,7 @@ Please also check the build options listed in the following section.
 
 ### wabt support
 
-*Limited support, work in progress.*
+*Complete support.*
 
 [wabt] support needs to be enabled via the following build option and requested at runtime with `engine=wabt`:
 
