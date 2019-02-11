@@ -111,6 +111,12 @@ namespace wavm_host_module {
   }
 
 
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getCaller", void, getCaller, U32 resultOffset)
+  {
+    interface.top()->eeiGetCaller(resultOffset);
+  }
+
+
   DEFINE_INTRINSIC_FUNCTION(ethereum, "getGasLeft", U64, getGasLeft)
   {
     return static_cast<U64>(interface.top()->eeiGetGasLeft());

@@ -168,6 +168,7 @@ defaults:
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "getGasLeft" --evmc engine=wavm
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "getGasLeftUseAllGas" --evmc engine=wavm
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "returnPredefinedData" --evmc engine=wavm
+        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "getCaller" --evmc engine=wavm
 
   evmc-test: &evmc-test
     run:
