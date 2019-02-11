@@ -201,10 +201,18 @@ ExecutionResult WavmEngine::execute(
   evmc_message const& msg,
   bool meterInterfaceGas
 ) {
-  ExecutionResult result = internalExecute(context, code, state_code, msg, meterInterfaceGas);
-  // And clean up mess left by this run.
-  Runtime::collectGarbage();
-  return result;
+  try {
+    ExecutionResult result = internalExecute(context, code, state_code, msg, meterInterfaceGas);
+    // And clean up mess left by this run.
+    Runtime::collectGarbage();
+    return result;
+  } catch (exception const&) {
+    // And clean up mess left by this run.
+    Runtime::collectGarbage();
+    // We only catch this exception here in order to clean up garbage..
+    // TODO: hopefully WAVM is fixed so that this isn't needed
+    throw;
+  }
 }
 
 ExecutionResult WavmEngine::internalExecute(
@@ -271,21 +279,28 @@ ExecutionResult WavmEngine::internalExecute(
   ensureCondition(mainFunction, ContractValidationFailure, "\"main\" not found");
 
   // this is how WAVM's try/catch for exceptions
-  Runtime::catchRuntimeExceptions(
-    [&] {
-      try {
-        vector<IR::Value> invokeArgs;
-        Runtime::invokeFunctionChecked(wavm_context, mainFunction, invokeArgs);
-      } catch (EndExecution const&) {
-        // This exception is ignored here because we consider it to be a success.
-        // It is only a clutch for POSIX style exit()
+  // TODO: this is terrible, need to clean up the handling of `interface`
+  try {
+    Runtime::catchRuntimeExceptions(
+      [&] {
+        try {
+          vector<IR::Value> invokeArgs;
+          Runtime::invokeFunctionChecked(wavm_context, mainFunction, invokeArgs);
+        } catch (EndExecution const&) {
+          // This exception is ignored here because we consider it to be a success.
+          // It is only a clutch for POSIX style exit()
+        }
+      },
+      [&](Runtime::Exception&& exception) {
+        // FIXME: decide if each of the exception fit into VMTrap/InternalError
+        ensureCondition(false, VMTrap, Runtime::describeException(exception));
       }
-    },
-    [&](Runtime::Exception&& exception) {
-      // FIXME: decide if each of the exception fit into VMTrap/InternalError
-      ensureCondition(false, VMTrap, Runtime::describeException(exception));
-    }
-  );
+    );
+  } catch (exception const&) {
+    // clean up
+    wavm_host_module::interface.pop();
+    throw;
+  }
 
   // clean up
   wavm_host_module::interface.pop();
