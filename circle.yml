@@ -154,7 +154,7 @@ defaults:
     run:
       name: "Test shared Hera (wavm)"
       command: |
-        export ASAN_OPTIONS=detect_leaks=0
+        export ASAN_OPTIONS=detect_leaks=1
         SO=$([ $(uname) = Darwin ] && echo dylib || echo so)
         if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/8/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
@@ -215,12 +215,12 @@ jobs:
 
   linux-clang-shared-asan:
     environment:
-      BUILD_TYPE: Release
+      BUILD_TYPE: Debug
       CXX: clang++
       CC:  clang
       GENERATOR: Ninja
       BUILD_PARALLEL_JOBS: 4
-      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON -DSANITIZE=address
+      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON -DSANITIZE=address
       # The ASan must the first loaded shared library. Force preloading it with this flag.
       PRELOAD_ASAN: true
     docker:
