@@ -15,10 +15,11 @@
  */
 
 #include <array>
-#include <vector>
-#include <sstream>
-#include <iostream>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <vector>
 
 #include "debugging.h"
 #include "eei.h"
@@ -59,6 +60,9 @@ void WasmEngine::collectBenchmarkingData()
 
   std::cerr << "Time [us]: " << to_us(instantiationDuration + executionDuration) << " = "
             << to_us(instantiationDuration) << " + " << to_us(executionDuration) << "\n";
+
+  std::ofstream f{"hera_benchmarks.csv", std::ios::out | std::ios::app};
+  f << to_us(instantiationDuration) << ',' << to_us(executionDuration) << '\n';
 }
 
 #if HERA_DEBUGGING
