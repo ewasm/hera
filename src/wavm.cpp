@@ -18,6 +18,7 @@
 #include <iostream>
 #include <memory>
 #include <stack>
+#include <map>
 
 #include "wavm.h"
 
@@ -391,6 +392,93 @@ ExecutionResult WavmEngine::internalExecute(
   );
 
   return result;
+}
+
+void WavmEngine::verifyContract(vector<uint8_t> const& code)
+{
+  IR::Module moduleIR = parseModule(code);
+
+  ensureCondition(moduleIR.startFunctionIndex == UINTPTR_MAX, ContractValidationFailure, "Contract contains start function.");
+
+  ensureCondition(moduleIR.memories.size() == 1, ContractValidationFailure, "Multiple memory sections exported.");
+  for (auto const& exportEntry: moduleIR.exports) {
+    if (exportEntry.name == "memory") {
+      ensureCondition(exportEntry.kind == IR::ObjectKind::memory, ContractValidationFailure, "\"memory\" is not pointing to memory.");
+    } else if (exportEntry.name == "main") {
+      ensureCondition(exportEntry.kind == IR::ObjectKind::function, ContractValidationFailure, "\"main\" is not pointing to function.");
+    } else {
+      ensureCondition(false, ContractValidationFailure, "Invalid export is present.");
+    }
+  }
+
+  static const map<string const, IR::FunctionType const> eei_signatures{
+    { "useGas", IR::FunctionType{ {}, { IR::ValueType::i64 } } },
+    { "getGasLeft", IR::FunctionType{ { IR::ValueType::i64 }, {} } },
+    { "getAddress", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "getExternalBalance", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getBlockHash", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i64, IR::ValueType::i32 } } },
+    { "getCallDataSize", IR::FunctionType{ { IR::ValueType::i32 }, {} } },
+    { "callDataCopy", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getCaller", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "getCallValue", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "codeCopy", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getCodeSize", IR::FunctionType{ { IR::ValueType::i32 }, {} } },
+    { "externalCodeCopy", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getExternalCodeSize", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i32 } } },
+    { "getBlockCoinbase", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "getBlockDifficulty", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "getBlockGasLimit", IR::FunctionType{ { IR::ValueType::i64 }, {} } },
+    { "getTxGasPrice", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "log", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getBlockNumber", IR::FunctionType{ { IR::ValueType::i64 }, {} } },
+    { "getBlockTimestamp", IR::FunctionType{ { IR::ValueType::i64 }, {} } },
+    { "getTxOrigin", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "storageStore", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "storageLoad", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "finish", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "revert", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getReturnDataSize", IR::FunctionType{ { IR::ValueType::i32 }, {} } },
+    { "returnDataCopy", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "call", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i64, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "callCode", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i64, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "callDelegate", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i64, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "callStatic", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i64, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "create", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "selfDestruct", IR::FunctionType{ {}, { IR::ValueType::i32 } } }
+  };
+
+  for (auto const& import: moduleIR.functions.imports) {
+#if HERA_DEBUGGING
+    if (import.moduleName == "debug")
+      continue;
+#endif
+
+    ensureCondition(
+      import.moduleName == "ethereum",
+      ContractValidationFailure,
+      "Import from invalid namespace."
+    );
+
+    ensureCondition(
+      eei_signatures.count(import.exportName),
+      ContractValidationFailure,
+      "Importing invalid EEI method."
+    );
+    IR::FunctionType const& eei_function_type = eei_signatures.at(import.exportName);
+
+    ensureCondition(
+      moduleIR.types.size() >= import.type.index,
+      ContractValidationFailure,
+      "Import function type is missing."
+    );
+    IR::FunctionType const& function_type = moduleIR.types[import.type.index];
+
+    ensureCondition(
+      eei_function_type == function_type,
+      ContractValidationFailure,
+      "Imported function type mismatch."
+    );
+  }
 }
 
 } // namespace hera
