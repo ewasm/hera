@@ -267,6 +267,15 @@ namespace wavm_host_module {
   };
 } // namespace wavm_host_module
 
+struct WavmInterfaceKeeper {
+  explicit WavmInterfaceKeeper(WavmEthereumInterface& interface)
+  {
+    wavm_host_module::interface.push(&interface);
+  }
+
+  ~WavmInterfaceKeeper() noexcept { wavm_host_module::interface.pop(); }
+};
+
 ExecutionResult WavmEngine::execute(
   evmc_context* context,
   vector<uint8_t> const& code,
@@ -300,7 +309,7 @@ ExecutionResult WavmEngine::internalExecute(
   // set up a new ethereum interface just for this contract invocation
   ExecutionResult result;
   WavmEthereumInterface interface{context, state_code, msg, result, meterInterfaceGas};
-  wavm_host_module::interface.push(&interface);
+  WavmInterfaceKeeper interfaceKeeper{interface};
 
   // first parse module
   IR::Module moduleIR;
@@ -352,31 +361,21 @@ ExecutionResult WavmEngine::internalExecute(
   ensureCondition(mainFunction, ContractValidationFailure, "\"main\" not found");
 
   // this is how WAVM's try/catch for exceptions
-  // TODO: this is terrible, need to clean up the handling of `interface`
-  try {
-    Runtime::catchRuntimeExceptions(
-      [&] {
-        try {
-          vector<IR::Value> invokeArgs;
-          Runtime::invokeFunctionChecked(wavm_context, mainFunction, invokeArgs);
-        } catch (EndExecution const&) {
-          // This exception is ignored here because we consider it to be a success.
-          // It is only a clutch for POSIX style exit()
-        }
-      },
-      [&](Runtime::Exception&& exception) {
-        // FIXME: decide if each of the exception fit into VMTrap/InternalError
-        ensureCondition(false, VMTrap, Runtime::describeException(exception));
+  Runtime::catchRuntimeExceptions(
+    [&] {
+      try {
+        vector<IR::Value> invokeArgs;
+        Runtime::invokeFunctionChecked(wavm_context, mainFunction, invokeArgs);
+      } catch (EndExecution const&) {
+        // This exception is ignored here because we consider it to be a success.
+        // It is only a clutch for POSIX style exit()
       }
-    );
-  } catch (exception const&) {
-    // clean up
-    wavm_host_module::interface.pop();
-    throw;
-  }
-
-  // clean up
-  wavm_host_module::interface.pop();
+    },
+    [&](Runtime::Exception&& exception) {
+      // FIXME: decide if each of the exception fit into VMTrap/InternalError
+      ensureCondition(false, VMTrap, Runtime::describeException(exception));
+    }
+  );
 
   return result;
 }
