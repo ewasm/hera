@@ -173,15 +173,14 @@ namespace wavm_host_module {
 
   // this is needed for resolving names of imported host functions
   struct HeraWavmResolver : Runtime::Resolver {
-    Runtime::Compartment* compartment;
     HashMap<string, Runtime::ModuleInstance*> moduleNameToInstanceMap;
 
-    HeraWavmResolver(Runtime::Compartment* inCompartment) : compartment(inCompartment) {}
-
-    bool resolve(const string& moduleName,
+    bool resolve(
+      const string& moduleName,
       const string& exportName,
       IR::ObjectType type,
-      Runtime::Object*& outObject) override
+      Runtime::Object*& outObject
+    ) override
     {
       outObject = nullptr;
       auto namedInstance = moduleNameToInstanceMap.get(moduleName);
@@ -246,18 +245,19 @@ ExecutionResult WavmEngine::internalExecute(
   Runtime::GCPointer<Runtime::Context> wavm_context = Runtime::createContext(compartment);
 
   // instantiate host Module
-  HashMap<string, Runtime::Object*> extraEthereumExports; //empty for current ewasm stuff
-  Runtime::GCPointer<Runtime::ModuleInstance> ethereumHostModule = Intrinsics::instantiateModule(compartment, wavm_host_module::INTRINSIC_MODULE_REF(ethereum), "ethereum", extraEthereumExports);
+  Runtime::GCPointer<Runtime::ModuleInstance> ethereumHostModule = Intrinsics::instantiateModule(compartment, wavm_host_module::INTRINSIC_MODULE_REF(ethereum), "ethereum", {});
   heraAssert(ethereumHostModule, "Failed to create host module.");
 
   // prepare contract module to resolve links against host module
-  wavm_host_module::HeraWavmResolver resolver(compartment);
+  wavm_host_module::HeraWavmResolver resolver;
+  // TODO: move this into the constructor?
   resolver.moduleNameToInstanceMap.set("ethereum", ethereumHostModule);
   Runtime::LinkResult linkResult = Runtime::linkModule(moduleIR, resolver);
   heraAssert(linkResult.success, "Couldn't link contract against host module.");
 
   // compile the module from IR to LLVM bitcode
   Runtime::GCPointer<Runtime::Module> module = Runtime::compileModule(moduleIR);
+  heraAssert(module, "Couldn't compile IR to bitcode.");
 
   // instantiate contract module
   Runtime::GCPointer<Runtime::ModuleInstance> moduleInstance = Runtime::instantiateModule(compartment, module, move(linkResult.resolvedImports), "<ewasmcontract>");
