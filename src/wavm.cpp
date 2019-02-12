@@ -99,7 +99,7 @@ namespace wavm_host_module {
     interface.top()->eeiGetExternalBalance(addressOffset, resultOffset);
   }
 
-  DEFINE_INTRINSIC_FUNCTION(ethereum, "getBlockHash", U32, getBlockHash, U32 number, U32 resultOffset)
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getBlockHash", U32, getBlockHash, U64 number, U32 resultOffset)
   {
     return interface.top()->eeiGetBlockHash(number, resultOffset);
   }
