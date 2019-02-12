@@ -353,6 +353,8 @@ ExecutionResult WavmEngine::internalExecute(
   Runtime::GCPointer<Runtime::ModuleInstance> moduleInstance = Runtime::instantiateModule(compartment, module, move(linkResult.resolvedImports), "<ewasmcontract>");
   heraAssert(moduleInstance, "Couldn't instantiate contact module.");
 
+  ensureCondition(!Runtime::getStartFunction(moduleInstance), ContractValidationFailure, "Contract contains start function.");
+
   // get memory for easy access in host functions
   wavm_host_module::interface.top()->setWasmMemory(asMemory(Runtime::getInstanceExport(moduleInstance, "memory")));
 
