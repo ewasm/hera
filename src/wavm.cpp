@@ -245,8 +245,7 @@ ExecutionResult WavmEngine::internalExecute(
   Runtime::GCPointer<Runtime::Context> wavm_context = Runtime::createContext(compartment);
 
   // instantiate host Module
-  HashMap<string, Runtime::Object*> extraEthereumExports; //empty for current ewasm stuff
-  Runtime::GCPointer<Runtime::ModuleInstance> ethereumHostModule = Intrinsics::instantiateModule(compartment, wavm_host_module::INTRINSIC_MODULE_REF(ethereum), "ethereum", extraEthereumExports);
+  Runtime::GCPointer<Runtime::ModuleInstance> ethereumHostModule = Intrinsics::instantiateModule(compartment, wavm_host_module::INTRINSIC_MODULE_REF(ethereum), "ethereum", {});
   heraAssert(ethereumHostModule, "Failed to create host module.");
 
   // prepare contract module to resolve links against host module
