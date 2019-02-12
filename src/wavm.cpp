@@ -173,15 +173,14 @@ namespace wavm_host_module {
 
   // this is needed for resolving names of imported host functions
   struct HeraWavmResolver : Runtime::Resolver {
-    Runtime::Compartment* compartment;
     HashMap<string, Runtime::ModuleInstance*> moduleNameToInstanceMap;
 
-    HeraWavmResolver(Runtime::Compartment* inCompartment) : compartment(inCompartment) {}
-
-    bool resolve(const string& moduleName,
+    bool resolve(
+      const string& moduleName,
       const string& exportName,
       IR::ObjectType type,
-      Runtime::Object*& outObject) override
+      Runtime::Object*& outObject
+    ) override
     {
       outObject = nullptr;
       auto namedInstance = moduleNameToInstanceMap.get(moduleName);
@@ -251,7 +250,8 @@ ExecutionResult WavmEngine::internalExecute(
   heraAssert(ethereumHostModule, "Failed to create host module.");
 
   // prepare contract module to resolve links against host module
-  wavm_host_module::HeraWavmResolver resolver(compartment);
+  wavm_host_module::HeraWavmResolver resolver;
+  // TODO: move this into the constructor?
   resolver.moduleNameToInstanceMap.set("ethereum", ethereumHostModule);
   Runtime::LinkResult linkResult = Runtime::linkModule(moduleIR, resolver);
   heraAssert(linkResult.success, "Couldn't link contract against host module.");
