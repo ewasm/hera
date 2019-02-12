@@ -158,8 +158,7 @@ defaults:
         SO=$([ $(uname) = Darwin ] && echo dylib || echo so)
         if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/8/lib/linux/libclang_rt.asan-x86_64.so; fi
         testeth --version
-        export TEST_CASES="callCode callCodeVeryLong callData callDataCopy callDataCopy256 callDataValue callDelegate callNoDataNoValue callStatic callValue codeCopy create createCode extCodeCopy getAddress getBalanceExt getBlockCoinbase getBlockDifficulty getBlockGasLimit getBlockhash getCallDataSize getCallValue getCaller getCodeSize getExternalBalance getExternalCodeSize getGasLeft getGasLeftUseAllGas getTxGasPrice getTxOrigin logVeryLong returnDataCopy revert selfDestruct storageLoad storageStore unreachable useGas createFromTransaction returnPredefinedData returnVeryLong revertVeryLong initMalformedBytecodeHasStart initMalformedBytecodeHasStartFromTransaction getBlockHashFailure"
-        for i in $TEST_CASES; do testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --singletest "$i" --evmc engine=wavm ; done
+        testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --evmc engine=wavm
 
   evmc-test: &evmc-test
     run:
