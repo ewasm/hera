@@ -186,7 +186,10 @@ namespace wavm_host_module {
       outObject = nullptr;
       auto namedInstance = moduleNameToInstanceMap.get(moduleName);
       if (namedInstance)
-          outObject = Runtime::getInstanceExport(*namedInstance, exportName);
+        outObject = Runtime::getInstanceExport(*namedInstance, exportName);
+      if (outObject && !isA(outObject, type))
+        outObject = nullptr;
+      HERA_DEBUG << "Resolving " << moduleName << " : " << exportName << " -> " << (outObject != nullptr) << "\n";
       return outObject != nullptr;
     }
   };
