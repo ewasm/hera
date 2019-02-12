@@ -355,8 +355,14 @@ ExecutionResult WavmEngine::internalExecute(
 
   ensureCondition(!Runtime::getStartFunction(moduleInstance), ContractValidationFailure, "Contract contains start function.");
 
+  // FIXME: check for number of exported memory sections. (Wavm exposes no way to check this.)
+  // Note: wavm has an assertion to disallow multiple memory sections, but it is only enabled on debug builds.
+  // ensureCondition(moduleInstance->memories.size() == 1, ContractValidationFailure, "Multiple (or no) memory sections exported.");
+  Runtime::GCPointer<Runtime::MemoryInstance> memory = asMemoryNullable(Runtime::getInstanceExport(moduleInstance, "memory"));
+  ensureCondition(memory, ContractValidationFailure, "\"memory\" not found");
+
   // get memory for easy access in host functions
-  wavm_host_module::interface.top()->setWasmMemory(asMemory(Runtime::getInstanceExport(moduleInstance, "memory")));
+  wavm_host_module::interface.top()->setWasmMemory(memory);
 
   // invoke the main function
   Runtime::GCPointer<Runtime::FunctionInstance> mainFunction = asFunctionNullable(Runtime::getInstanceExport(moduleInstance, "main"));
