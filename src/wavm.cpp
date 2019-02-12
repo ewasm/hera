@@ -337,8 +337,6 @@ ExecutionResult WavmEngine::internalExecute(
 
   // compartment is like the Wasm store, represents the VM, has lists of globals, memories, tables, and also has wavm's runtime stuff
   Runtime::GCPointer<Runtime::Compartment> compartment = Runtime::createCompartment();
-  // context stores the compartment and some other stuff
-  Runtime::GCPointer<Runtime::Context> wavm_context = Runtime::createContext(compartment);
 
   // instantiate host Module
   Runtime::GCPointer<Runtime::ModuleInstance> ethereumHostModule = Intrinsics::instantiateModule(compartment, wavm_host_module::INTRINSIC_MODULE_REF(ethereum), "ethereum", {});
@@ -378,8 +376,9 @@ ExecutionResult WavmEngine::internalExecute(
   Runtime::catchRuntimeExceptions(
     [&] {
       try {
-        vector<IR::Value> invokeArgs;
-        Runtime::invokeFunctionChecked(wavm_context, mainFunction, invokeArgs);
+        // context stores the compartment and some other stuff
+        Runtime::GCPointer<Runtime::Context> wavm_context = Runtime::createContext(compartment);
+        Runtime::invokeFunctionChecked(wavm_context, mainFunction, {} /* function parameters */);
       } catch (EndExecution const&) {
         // This exception is ignored here because we consider it to be a success.
         // It is only a clutch for POSIX style exit()
