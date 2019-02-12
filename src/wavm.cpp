@@ -84,14 +84,24 @@ namespace wavm_host_module {
     interface.top()->eeiUseGas(amount);
   }
 
-  DEFINE_INTRINSIC_FUNCTION(ethereum, "getGasLeft", U64, getGasLeft)
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getGasLeft", I64, getGasLeft)
   {
-    return static_cast<U64>(interface.top()->eeiGetGasLeft());
+    return interface.top()->eeiGetGasLeft();
   }
 
   DEFINE_INTRINSIC_FUNCTION(ethereum, "getAddress", void, getAddress, U32 resultOffset)
   {
     interface.top()->eeiGetAddress(resultOffset);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getExternalBalance", void, getExternalBalance, U32 addressOffset, U32 resultOffset)
+  {
+    interface.top()->eeiGetExternalBalance(addressOffset, resultOffset);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getBlockHash", U32, getBlockHash, U32 number, U32 resultOffset)
+  {
+    return interface.top()->eeiGetBlockHash(number, resultOffset);
   }
 
   DEFINE_INTRINSIC_FUNCTION(ethereum, "getCallDataSize", U32, getCallDataSize)
@@ -109,6 +119,11 @@ namespace wavm_host_module {
     interface.top()->eeiGetCaller(resultOffset);
   }
 
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getCallValue", void, getCallValue, U32 resultOffset)
+  {
+    interface.top()->eeiGetCallValue(resultOffset);
+  }
+
   DEFINE_INTRINSIC_FUNCTION(ethereum, "getCodeSize", U32, getCodeSize)
   {
     return interface.top()->eeiGetCodeSize();
@@ -117,6 +132,56 @@ namespace wavm_host_module {
   DEFINE_INTRINSIC_FUNCTION(ethereum, "codeCopy", void, codeCopy, U32 resultOffset, U32 codeOffset, U32 length)
   {
     interface.top()->eeiCodeCopy(resultOffset, codeOffset, length);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getExternalCodeSize", U32, getExternalCodeSize, U32 addressOffset)
+  {
+    return interface.top()->eeiGetExternalCodeSize(addressOffset);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "externalCodeCopy", void, externalCodeCopy, U32 addressOffset, U32 resultOffset, U32 codeOffset, U32 length)
+  {
+    interface.top()->eeiExternalCodeCopy(addressOffset, resultOffset, codeOffset, length);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getBlockCoinbase", void, getBlockCoinbase, U32 resultOffset)
+  {
+    interface.top()->eeiGetBlockCoinbase(resultOffset);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getBlockDifficulty", void, getBlockDifficulty, U32 resultOffset)
+  {
+    interface.top()->eeiGetBlockDifficulty(resultOffset);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getBlockGasLimit", I64, getBlockGasLimit)
+  {
+    return interface.top()->eeiGetBlockGasLimit();
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getTxGasPrice", void, getTxGasPrice, U32 resultOffset)
+  {
+    interface.top()->eeiGetTxGasPrice(resultOffset);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "log", void, log, U32 dataOffset, U32 length, U32 numberOfTopics, U32 topic1, U32 topic2, U32 topic3, U32 topic4)
+  {
+    interface.top()->eeiLog(dataOffset, length, numberOfTopics, topic1, topic2, topic3, topic4);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getBlockNumber", I64, getBlockNumber)
+  {
+    return interface.top()->eeiGetBlockNumber();
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getBlockTimestamp", I64, getBlockTimestamp)
+  {
+    return interface.top()->eeiGetBlockTimestamp();
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "getTxOrigin", void, getTxOrigin, U32 resultOffset)
+  {
+    interface.top()->eeiGetTxOrigin(resultOffset);
   }
 
   DEFINE_INTRINSIC_FUNCTION(ethereum, "storageStore", void, storageStore, U32 pathOffset, U32 valueOffset)
@@ -152,6 +217,31 @@ namespace wavm_host_module {
   DEFINE_INTRINSIC_FUNCTION(ethereum, "call", U32, call, I64 gas, U32 addressOffset, U32 valueOffset, U32 dataOffset, U32 dataLength)
   {
     return interface.top()->eeiCall(EthereumInterface::EEICallKind::Call, gas, addressOffset, valueOffset, dataOffset, dataLength);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "callCode", U32, callCode, I64 gas, U32 addressOffset, U32 valueOffset, U32 dataOffset, U32 dataLength)
+  {
+    return interface.top()->eeiCall(EthereumInterface::EEICallKind::CallCode, gas, addressOffset, valueOffset, dataOffset, dataLength);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "callDelegate", U32, callDelegate, I64 gas, U32 addressOffset, U32 dataOffset, U32 dataLength)
+  {
+    return interface.top()->eeiCall(EthereumInterface::EEICallKind::CallDelegate, gas, addressOffset, 0, dataOffset, dataLength);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "callStatic", U32, callStatic, I64 gas, U32 addressOffset, U32 dataOffset, U32 dataLength)
+  {
+    return interface.top()->eeiCall(EthereumInterface::EEICallKind::CallStatic, gas, addressOffset, 0, dataOffset, dataLength);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "create", U32, create, U32 valueOffset, U32 dataOffset, U32 dataLength, U32 resultOffset)
+  {
+    return interface.top()->eeiCreate(valueOffset, dataOffset, dataLength, resultOffset);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(ethereum, "selfDestruct", void, selfDestruct, U32 addressOffset)
+  {
+    interface.top()->eeiSelfDestruct(addressOffset);
   }
 
   // this is needed for resolving names of imported host functions
