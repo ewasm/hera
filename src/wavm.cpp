@@ -258,6 +258,7 @@ ExecutionResult WavmEngine::internalExecute(
 
   // compile the module from IR to LLVM bitcode
   Runtime::GCPointer<Runtime::Module> module = Runtime::compileModule(moduleIR);
+  heraAssert(module, "Couldn't compile IR to bitcode.");
 
   // instantiate contract module
   Runtime::GCPointer<Runtime::ModuleInstance> moduleInstance = Runtime::instantiateModule(compartment, module, move(linkResult.resolvedImports), "<ewasmcontract>");
