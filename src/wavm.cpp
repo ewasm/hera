@@ -297,20 +297,8 @@ ExecutionResult WavmEngine::execute(
   }
 }
 
-ExecutionResult WavmEngine::internalExecute(
-  evmc_context* context,
-  vector<uint8_t> const& code,
-  vector<uint8_t> const& state_code,
-  evmc_message const& msg,
-  bool meterInterfaceGas
-) {
-  HERA_DEBUG << "Executing with wavm...\n";
-
-  // set up a new ethereum interface just for this contract invocation
-  ExecutionResult result;
-  WavmEthereumInterface interface{context, state_code, msg, result, meterInterfaceGas};
-  WavmInterfaceKeeper interfaceKeeper{interface};
-
+IR::Module WavmEngine::parseModule(vector<uint8_t> const& code)
+{
   // first parse module
   IR::Module moduleIR;
   try {
@@ -325,6 +313,24 @@ ExecutionResult WavmEngine::internalExecute(
     // Catching this here because apparently wavm doesn't necessarily checks bounds before allocation
     ensureCondition(false, ContractValidationFailure, "Bug in wavm: didn't check bounds before allocation");
   }
+  return moduleIR;
+}
+
+ExecutionResult WavmEngine::internalExecute(
+  evmc_context* context,
+  vector<uint8_t> const& code,
+  vector<uint8_t> const& state_code,
+  evmc_message const& msg,
+  bool meterInterfaceGas
+) {
+  HERA_DEBUG << "Executing with wavm...\n";
+
+  IR::Module moduleIR = parseModule(code);
+
+  // set up a new ethereum interface just for this contract invocation
+  ExecutionResult result;
+  WavmEthereumInterface interface{context, state_code, msg, result, meterInterfaceGas};
+  WavmInterfaceKeeper interfaceKeeper{interface};
 
   // next set up the VM
   // Note: in ewasm, we create a new VM for each call to a module, so we must instantiate a new host module for each of these VMs, this is inefficient, but OK for prototyping.

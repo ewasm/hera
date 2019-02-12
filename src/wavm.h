@@ -19,6 +19,10 @@
 
 #include "eei.h"
 
+namespace IR {
+class Module;
+}
+
 namespace hera {
 
 class WavmEngine : public WasmEngine {
@@ -46,6 +50,8 @@ private:
     evmc_message const& msg,
     bool meterInterfaceGas
   );
+
+  IR::Module parseModule(std::vector<uint8_t> const& code);
 };
 
 } // namespace hera
