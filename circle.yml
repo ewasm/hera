@@ -35,6 +35,14 @@ defaults:
         sudo pip3 install codespell
         codespell --skip=".git"
 
+  clangformat: &clangformat
+    run:
+      name: "Run clang-format"
+      command: |
+        clang-format --version
+        clang-format -i src/*
+        git diff --exit-code
+
   build: &build
     run:
       name: "Build"
@@ -325,6 +333,7 @@ jobs:
     steps:
       - checkout
       - *codespell
+      - *clangformat
 
   # The job collects built packages (available in the workspace) and
   # uploads them to the GitHub release matching the git tag.
