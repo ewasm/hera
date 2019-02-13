@@ -25,7 +25,7 @@ namespace hera {
 using bytes = std::basic_string<uint8_t>;
 using bytes_view = std::basic_string_view<uint8_t>;
 
-std::string loadFileContents(std::string const& path);
+bytes loadFileContents(std::string const& path);
 
 std::string toHex(evmc_uint256be const& value);
 
@@ -34,8 +34,8 @@ std::string bytesAsHexStr(const uint8_t *bytes, const size_t length);
 
 std::vector<uint8_t> parseHexString(std::string const& input);
 
-bool hasWasmPreamble(std::vector<uint8_t> const& _input);
+bool hasWasmPreamble(bytes_view _input);
 
-bool hasWasmVersion(std::vector<uint8_t> const& _input, uint8_t _version);
+bool hasWasmVersion(bytes_view _input, uint8_t _version);
 
 }

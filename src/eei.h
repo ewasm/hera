@@ -31,7 +31,7 @@ namespace hera {
 
 struct ExecutionResult {
   int64_t gasLeft = 0;
-  std::vector<uint8_t> returnValue;
+  bytes returnValue;
   bool isRevert = false;
 };
 
@@ -89,7 +89,7 @@ public:
     evmc_context* _context,
     bytes_view _code,
     evmc_message const& _msg,
-    ExecutionResult & _result,
+    ExecutionResult& _result,
     bool _meterGas
   ):
     m_host(_context),
@@ -103,7 +103,7 @@ public:
     // set starting gas
     m_result.gasLeft = m_msg.gas;
     // set sane defaults
-    m_result.returnValue = std::vector<uint8_t>{};
+    m_result.returnValue = {};
     m_result.isRevert = false;
   }
 
@@ -177,7 +177,7 @@ private:
   void ensureSourceMemoryBounds(uint32_t offset, uint32_t length);
   void loadMemoryReverse(uint32_t srcOffset, uint8_t *dst, size_t length);
   void loadMemory(uint32_t srcOffset, uint8_t *dst, size_t length);
-  void loadMemory(uint32_t srcOffset, std::vector<uint8_t> & dst, size_t length);
+  void loadMemory(uint32_t srcOffset, bytes& dst, size_t length);
   void storeMemoryReverse(const uint8_t *src, uint32_t dstOffset, uint32_t length);
   void storeMemory(const uint8_t *src, uint32_t dstOffset, uint32_t length);
   void storeMemory(bytes_view src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length);
