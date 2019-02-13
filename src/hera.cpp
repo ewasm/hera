@@ -273,11 +273,13 @@ evmc_result hera_execute(
     heraAssert(hera->engine, "Wasm engine not set.");
     WasmEngine& engine = *hera->engine;
 
-    ExecutionResult result = engine.execute(context, run_code, state_code, *msg, meterInterfaceGas);
+    // TODO: Convert run_code and state_code to bytes.
+    ExecutionResult result = engine.execute(context, {run_code.data(), run_code.size()}, {state_code.data(), state_code.size()}, *msg, meterInterfaceGas);
     heraAssert(result.gasLeft >= 0, "Negative gas left after execution.");
 
     // copy call result
     if (result.returnValue.size() > 0) {
+      // TODO: Convert to bytes type.
       vector<uint8_t> returnValue;
 
       if (msg->kind == EVMC_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
@@ -295,7 +297,7 @@ evmc_result hera_execute(
           "Invalid contract or metering failed."
         );
         // FIXME: this should be done by the sentinel
-        engine.verifyContract(returnValue);
+        engine.verifyContract({returnValue.data(), returnValue.size()});
       } else {
         returnValue = move(result.returnValue);
       }

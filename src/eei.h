@@ -45,13 +45,13 @@ public:
 
   virtual ExecutionResult execute(
     evmc_context* context,
-    std::vector<uint8_t> const& code,
-    std::vector<uint8_t> const& state_code,
+    bytes_view code,
+    bytes_view state_code,
     evmc_message const& msg,
     bool meterInterfaceGas
   ) = 0;
 
-  virtual void verifyContract(std::vector<uint8_t> const& code) = 0;
+  virtual void verifyContract(bytes_view code) = 0;
 
   static void enableBenchmarking() noexcept { benchmarkingEnabled = true; }
 
@@ -87,7 +87,7 @@ class EthereumInterface {
 public:
   explicit EthereumInterface(
     evmc_context* _context,
-    std::vector<uint8_t> const& _code,  // TODO: Change arg type to bytes or bytes_view.
+    bytes_view _code,
     evmc_message const& _msg,
     ExecutionResult & _result,
     bool _meterGas
