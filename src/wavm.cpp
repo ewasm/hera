@@ -348,7 +348,7 @@ ExecutionResult WavmEngine::internalExecute(
   // TODO: move this into the constructor?
   resolver.moduleNameToInstanceMap.set("ethereum", ethereumHostModule);
   Runtime::LinkResult linkResult = Runtime::linkModule(moduleIR, resolver);
-  heraAssert(linkResult.success, "Couldn't link contract against host module.");
+  ensureCondition(linkResult.success, ContractValidationFailure, "Couldn't link contract against host module.");
 
   // compile the module from IR to LLVM bitcode
   Runtime::GCPointer<Runtime::Module> module = Runtime::compileModule(moduleIR);
