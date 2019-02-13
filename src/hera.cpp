@@ -354,7 +354,7 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
 
   if (name.find("0x") == 0) {
     // hex address
-    vector<uint8_t> ret = parseHexString(name.substr(2, string::npos));
+    bytes ret = parseHexString(name.substr(2, string::npos));
     if (ret.empty()) {
       HERA_DEBUG << "Failed to parse hex address: " << name << "\n";
       return false;
