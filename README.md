@@ -51,7 +51,7 @@ Please also check the build options listed in the following section.
 
 ### WAVM support
 
-*Limited support, work in progress.*
+*Complete support.*
 
 [WAVM] support needs to be enabled via the following build option and requested at runtime with `engine=wavm`:
 
@@ -122,7 +122,7 @@ Apache 2.0
 [geth]: https://github.com/ethereum/go-ethereum
 [Binaryen]: https://github.com/webassembly/binaryen
 [wabt]: https://github.com/webassembly/wabt
-[WAVM]: https://github.com/AndrewScheidecker/WAVM
+[WAVM]: https://github.com/WAVM/WAVM
 [Sentinel system contract]: https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract
 [EVM Transcompiler]: https://github.com/ewasm/design/blob/master/system_contracts.md#evm-transcompiler
 [EEI]: https://github.com/ewasm/design/blob/master/eth_interface.md
