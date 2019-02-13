@@ -218,9 +218,10 @@ evmc_result hera_execute(
     bool meterInterfaceGas = true;
 
     // the bytecode residing in the state - this will be used by interface methods (i.e. codecopy)
-    vector<uint8_t> state_code(code, code + code_size);
+    bytes_view state_code{code, code_size};
 
     // the actual executable code - this can be modified (metered or evm2wasm compiled)
+    // TODO: Convert to bytes type.
     vector<uint8_t> run_code(code, code + code_size);
 
     // replace executable code if replacement is supplied
@@ -273,8 +274,7 @@ evmc_result hera_execute(
     heraAssert(hera->engine, "Wasm engine not set.");
     WasmEngine& engine = *hera->engine;
 
-    // TODO: Convert run_code and state_code to bytes.
-    ExecutionResult result = engine.execute(context, {run_code.data(), run_code.size()}, {state_code.data(), state_code.size()}, *msg, meterInterfaceGas);
+    ExecutionResult result = engine.execute(context, {run_code.data(), run_code.size()}, state_code, *msg, meterInterfaceGas);
     heraAssert(result.gasLeft >= 0, "Negative gas left after execution.");
 
     // copy call result
