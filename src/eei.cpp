@@ -50,19 +50,20 @@ bool WasmEngine::benchmarkingEnabled = false;
 
 void WasmEngine::collectBenchmarkingData()
 {
-  constexpr auto to_us = [](clock::duration d) {
-    return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
+  // Convert duration to string with microsecond units.
+  constexpr auto to_us_str = [](clock::duration d) {
+    return std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(d).count());
   };
 
   const auto now = clock::now();
   const auto instantiationDuration = executionStartTime - instantiationStartTime;
   const auto executionDuration = now - executionStartTime;
 
-  std::cerr << "Time [us]: " << to_us(instantiationDuration + executionDuration) << " = "
-            << to_us(instantiationDuration) << " + " << to_us(executionDuration) << "\n";
-
-  std::ofstream f{"hera_benchmarks.csv", std::ios::out | std::ios::app};
-  f << to_us(instantiationDuration) << ',' << to_us(executionDuration) << '\n';
+  const auto log = "Time [us]: " + to_us_str(instantiationDuration + executionDuration) +
+                   " (instantiation: " + to_us_str(instantiationDuration) +
+                   ", execution: " + to_us_str(executionDuration) + ")\n";
+  std::cerr << log;
+  std::ofstream{"hera_benchmarks.log", std::ios::out | std::ios::app} << log;
 }
 
 #if HERA_DEBUGGING
