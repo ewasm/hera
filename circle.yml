@@ -131,9 +131,9 @@ defaults:
       command: |
         git clone https://github.com/ewasm/tests -b wasm-tests --single-branch --depth 1
 
-  test: &test
+  test: &test-binaryen
     run:
-      name: "Test shared Hera"
+      name: "Test shared Hera (binaryen)"
       command: |
         export ASAN_OPTIONS=detect_leaks=0
         SO=$([ $(uname) = Darwin ] && echo dylib || echo so)
@@ -207,7 +207,7 @@ jobs:
       - *install-aleth
       - *add-package-to-workspace
       - *fetch-tests
-      - *test
+      - *test-binaryen
       - *test-wabt
       - *test-wavm
       - *evmc-test
@@ -236,7 +236,7 @@ jobs:
       - *save-deps-cache
       - *install-aleth
       - *fetch-tests
-      - *test
+      - *test-binaryen
       - *test-wabt
       - *test-wavm
       - *evmc-test
@@ -263,7 +263,7 @@ jobs:
       - *save-deps-cache
       - *install-aleth
       - *fetch-tests
-      - *test
+      - *test-binaryen
       - *upload-coverage-data
 
   linux-gcc-static-debug:
@@ -311,7 +311,7 @@ jobs:
       - *add-package-to-workspace
       - *install-aleth
       - *fetch-tests
-      - *test
+      - *test-binaryen
       - *test-wabt
 
   lint:

@@ -28,11 +28,13 @@
 #include <evmc/evmc.h>
 #include <evmc/helpers.hpp>
 
-#include "binaryen.h"
 #include "debugging.h"
 #include "eei.h"
 #include "exceptions.h"
 #include "helpers.h"
+#if HERA_BINARYEN
+#include "binaryen.h"
+#endif
 #if HERA_WAVM
 #include "wavm.h"
 #endif
@@ -56,7 +58,9 @@ enum class hera_evm1mode {
 using WasmEngineCreateFn = unique_ptr<WasmEngine>(*)();
 
 const map<string, WasmEngineCreateFn> wasm_engine_map {
+#if HERA_BINARYEN
   { "binaryen", BinaryenEngine::create },
+#endif
 #if HERA_WAVM
   { "wavm", WavmEngine::create },
 #endif
@@ -72,7 +76,18 @@ const map<string, hera_evm1mode> evm1mode_options {
 };
 
 struct hera_instance : evmc_instance {
-  unique_ptr<WasmEngine> engine{new BinaryenEngine};
+  unique_ptr<WasmEngine> engine{
+// This is the order of preference.
+#if HERA_BINARYEN
+    new BinaryenEngine
+#elif HERA_WABT
+    new WabtEngine
+#elif HERA_WAVM
+    new WavmEngine
+#else
+#error "No engine requested."
+#endif
+  };
   hera_evm1mode evm1mode = hera_evm1mode::reject;
   bool metering = false;
   map<evmc_address, vector<uint8_t>> contract_preload_list;

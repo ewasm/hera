@@ -39,7 +39,9 @@ Please also check the build options listed in the following section.
 
 *Complete support.*
 
-[Binaryen] is always built and needs no build options.
+[Binaryen] is built by default and needs no build options. It can be disabled with:
+
+- `-DHERA_BINARYEN=OFF`
 
 ### wabt support
 

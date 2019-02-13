@@ -34,7 +34,6 @@ if(CABLE_COMPILER_GNULIKE)
     add_compile_options(-Wno-pedantic)
 endif()
 
-include(ProjectBinaryen)
 
 cable_add_buildinfo_library(PROJECT_NAME hera)
 
@@ -49,6 +48,11 @@ if(HERA_FUZZING)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${fuzzer_flags}")
 endif()
 
+option(HERA_BINARYEN "Build with binaryen" ON)
+if (HERA_BINARYEN)
+    include(ProjectBinaryen)
+endif()
+
 option(HERA_WABT "Build with wabt" OFF)
 if (HERA_WABT)
     include(ProjectWabt)
@@ -57,6 +61,10 @@ endif()
 option(HERA_WAVM "Build with WAVM" OFF)
 if (HERA_WAVM)
     include(ProjectWAVM)
+endif()
+
+if (NOT (HERA_BINARYEN OR HERA_WABT OR HERA_WAVM))
+    message(FATAL_ERROR "At least one one engine must be enabled.")
 endif()
 
 add_subdirectory(evmc)
