@@ -18,6 +18,7 @@
 #include <iostream>
 #include <memory>
 #include <stack>
+#include <map>
 
 #include "wavm.h"
 
@@ -297,20 +298,8 @@ ExecutionResult WavmEngine::execute(
   }
 }
 
-ExecutionResult WavmEngine::internalExecute(
-  evmc_context* context,
-  vector<uint8_t> const& code,
-  vector<uint8_t> const& state_code,
-  evmc_message const& msg,
-  bool meterInterfaceGas
-) {
-  HERA_DEBUG << "Executing with wavm...\n";
-
-  // set up a new ethereum interface just for this contract invocation
-  ExecutionResult result;
-  WavmEthereumInterface interface{context, state_code, msg, result, meterInterfaceGas};
-  WavmInterfaceKeeper interfaceKeeper{interface};
-
+IR::Module WavmEngine::parseModule(vector<uint8_t> const& code)
+{
   // first parse module
   IR::Module moduleIR;
   try {
@@ -325,14 +314,30 @@ ExecutionResult WavmEngine::internalExecute(
     // Catching this here because apparently wavm doesn't necessarily checks bounds before allocation
     ensureCondition(false, ContractValidationFailure, "Bug in wavm: didn't check bounds before allocation");
   }
+  return moduleIR;
+}
+
+ExecutionResult WavmEngine::internalExecute(
+  evmc_context* context,
+  vector<uint8_t> const& code,
+  vector<uint8_t> const& state_code,
+  evmc_message const& msg,
+  bool meterInterfaceGas
+) {
+  HERA_DEBUG << "Executing with wavm...\n";
+
+  IR::Module moduleIR = parseModule(code);
+
+  // set up a new ethereum interface just for this contract invocation
+  ExecutionResult result;
+  WavmEthereumInterface interface{context, state_code, msg, result, meterInterfaceGas};
+  WavmInterfaceKeeper interfaceKeeper{interface};
 
   // next set up the VM
   // Note: in ewasm, we create a new VM for each call to a module, so we must instantiate a new host module for each of these VMs, this is inefficient, but OK for prototyping.
 
   // compartment is like the Wasm store, represents the VM, has lists of globals, memories, tables, and also has wavm's runtime stuff
   Runtime::GCPointer<Runtime::Compartment> compartment = Runtime::createCompartment();
-  // context stores the compartment and some other stuff
-  Runtime::GCPointer<Runtime::Context> wavm_context = Runtime::createContext(compartment);
 
   // instantiate host Module
   Runtime::GCPointer<Runtime::ModuleInstance> ethereumHostModule = Intrinsics::instantiateModule(compartment, wavm_host_module::INTRINSIC_MODULE_REF(ethereum), "ethereum", {});
@@ -343,7 +348,7 @@ ExecutionResult WavmEngine::internalExecute(
   // TODO: move this into the constructor?
   resolver.moduleNameToInstanceMap.set("ethereum", ethereumHostModule);
   Runtime::LinkResult linkResult = Runtime::linkModule(moduleIR, resolver);
-  heraAssert(linkResult.success, "Couldn't link contract against host module.");
+  ensureCondition(linkResult.success, ContractValidationFailure, "Couldn't link contract against host module.");
 
   // compile the module from IR to LLVM bitcode
   Runtime::GCPointer<Runtime::Module> module = Runtime::compileModule(moduleIR);
@@ -372,8 +377,9 @@ ExecutionResult WavmEngine::internalExecute(
   Runtime::catchRuntimeExceptions(
     [&] {
       try {
-        vector<IR::Value> invokeArgs;
-        Runtime::invokeFunctionChecked(wavm_context, mainFunction, invokeArgs);
+        // context stores the compartment and some other stuff
+        Runtime::GCPointer<Runtime::Context> wavm_context = Runtime::createContext(compartment);
+        Runtime::invokeFunctionChecked(wavm_context, mainFunction, {} /* function parameters */);
       } catch (EndExecution const&) {
         // This exception is ignored here because we consider it to be a success.
         // It is only a clutch for POSIX style exit()
@@ -386,6 +392,93 @@ ExecutionResult WavmEngine::internalExecute(
   );
 
   return result;
+}
+
+void WavmEngine::verifyContract(vector<uint8_t> const& code)
+{
+  IR::Module moduleIR = parseModule(code);
+
+  ensureCondition(moduleIR.startFunctionIndex == UINTPTR_MAX, ContractValidationFailure, "Contract contains start function.");
+
+  ensureCondition(moduleIR.memories.size() == 1, ContractValidationFailure, "Multiple memory sections exported.");
+  for (auto const& exportEntry: moduleIR.exports) {
+    if (exportEntry.name == "memory") {
+      ensureCondition(exportEntry.kind == IR::ObjectKind::memory, ContractValidationFailure, "\"memory\" is not pointing to memory.");
+    } else if (exportEntry.name == "main") {
+      ensureCondition(exportEntry.kind == IR::ObjectKind::function, ContractValidationFailure, "\"main\" is not pointing to function.");
+    } else {
+      ensureCondition(false, ContractValidationFailure, "Invalid export is present.");
+    }
+  }
+
+  static const map<string const, IR::FunctionType const> eei_signatures{
+    { "useGas", IR::FunctionType{ {}, { IR::ValueType::i64 } } },
+    { "getGasLeft", IR::FunctionType{ { IR::ValueType::i64 }, {} } },
+    { "getAddress", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "getExternalBalance", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getBlockHash", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i64, IR::ValueType::i32 } } },
+    { "getCallDataSize", IR::FunctionType{ { IR::ValueType::i32 }, {} } },
+    { "callDataCopy", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getCaller", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "getCallValue", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "codeCopy", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getCodeSize", IR::FunctionType{ { IR::ValueType::i32 }, {} } },
+    { "externalCodeCopy", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getExternalCodeSize", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i32 } } },
+    { "getBlockCoinbase", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "getBlockDifficulty", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "getBlockGasLimit", IR::FunctionType{ { IR::ValueType::i64 }, {} } },
+    { "getTxGasPrice", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "log", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getBlockNumber", IR::FunctionType{ { IR::ValueType::i64 }, {} } },
+    { "getBlockTimestamp", IR::FunctionType{ { IR::ValueType::i64 }, {} } },
+    { "getTxOrigin", IR::FunctionType{ {}, { IR::ValueType::i32 } } },
+    { "storageStore", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "storageLoad", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "finish", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "revert", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "getReturnDataSize", IR::FunctionType{ { IR::ValueType::i32 }, {} } },
+    { "returnDataCopy", IR::FunctionType{ {}, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "call", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i64, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "callCode", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i64, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "callDelegate", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i64, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "callStatic", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i64, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "create", IR::FunctionType{ { IR::ValueType::i32 }, { IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32, IR::ValueType::i32 } } },
+    { "selfDestruct", IR::FunctionType{ {}, { IR::ValueType::i32 } } }
+  };
+
+  for (auto const& import: moduleIR.functions.imports) {
+#if HERA_DEBUGGING
+    if (import.moduleName == "debug")
+      continue;
+#endif
+
+    ensureCondition(
+      import.moduleName == "ethereum",
+      ContractValidationFailure,
+      "Import from invalid namespace."
+    );
+
+    ensureCondition(
+      eei_signatures.count(import.exportName),
+      ContractValidationFailure,
+      "Importing invalid EEI method."
+    );
+    IR::FunctionType const& eei_function_type = eei_signatures.at(import.exportName);
+
+    ensureCondition(
+      moduleIR.types.size() > import.type.index,
+      ContractValidationFailure,
+      "Import function type is missing."
+    );
+    IR::FunctionType const& function_type = moduleIR.types[import.type.index];
+
+    ensureCondition(
+      eei_function_type == function_type,
+      ContractValidationFailure,
+      "Imported function type mismatch."
+    );
+  }
 }
 
 } // namespace hera

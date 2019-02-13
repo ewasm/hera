@@ -19,6 +19,10 @@
 
 #include "eei.h"
 
+namespace IR {
+class Module;
+}
+
 namespace hera {
 
 class WavmEngine : public WasmEngine {
@@ -34,9 +38,7 @@ public:
     bool meterInterfaceGas
   ) override;
 
-  void verifyContract(std::vector<uint8_t> const&) override {
-    // TODO: implement
-  }
+  void verifyContract(std::vector<uint8_t> const&) override;
 
 private:
   ExecutionResult internalExecute(
@@ -46,6 +48,8 @@ private:
     evmc_message const& msg,
     bool meterInterfaceGas
   );
+
+  IR::Module parseModule(std::vector<uint8_t> const& code);
 };
 
 } // namespace hera
