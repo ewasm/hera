@@ -115,9 +115,9 @@ defaults:
         git remote add ewasm http://github.com/ewasm/go-ethereum
         git fetch ewasm
         git checkout -b ewasm ewasm/ewasm
-        git submodule init
+        rm -rf tests/testdata && git clone http://github.com/ewasm/tests.git tests/testdata
         go build -o geth+evmc ./cmd/geth/...
-        go test ./tests/... -run TestState/stEWASMTests --vm.ewasm="$HOME/build/src/libhera.so"
+        go test ./tests/... -v -run TestState/stEWASMTests --vm.ewasm="$HOME/build/src/libhera.so"
 
   build-aleth: &build-aleth
     run:
