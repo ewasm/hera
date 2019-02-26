@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include <vector>
+#include <fstream>
 #include <iomanip>
 #include <sstream>
-#include <fstream>
+#include <vector>
 
 #include <evmc/evmc.h>
 
@@ -29,8 +29,9 @@ namespace hera {
 
 bytes loadFileContents(string const& path)
 {
-  basic_ifstream<uint8_t> is(path);
-  return bytes{(istreambuf_iterator<uint8_t>(is)), istreambuf_iterator<uint8_t>()};
+  using iterator = istreambuf_iterator<ifstream::char_type>;
+  ifstream is{path};
+  return {iterator{is}, iterator{}};
 }
 
 string toHex(evmc_uint256be const& value) {
