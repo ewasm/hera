@@ -131,7 +131,7 @@ pair<evmc_status_code, vector<uint8_t>> callSystemContract(
   if (result.release)
     result.release(&result);
 
-  return make_pair(result.status_code, ret);
+  return {result.status_code, ret};
 }
 
 // Calls the Sentinel contract with input data @input.
