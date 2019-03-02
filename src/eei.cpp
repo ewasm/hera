@@ -130,7 +130,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 
   void EthereumInterface::eeiUseGas(int64_t gas)
   {
-      HERA_DEBUG << depthToString() << " useGas " << gas << "\n";
+      //HERA_DEBUG << depthToString() << " useGas " << gas << "\n";
 
       ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
 
@@ -435,7 +435,13 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 
   uint32_t EthereumInterface::eeiCall(EEICallKind kind, int64_t gas, uint32_t addressOffset, uint32_t valueOffset, uint32_t dataOffset, uint32_t dataLength)
   {
-      HERA_DEBUG << "call gas " << gas << "\n" ;
+      HERA_DEBUG << "call  other contract " << gas << "\n" ;
+
+      // add by csun TODO ???
+      // Gas value may be -1
+      //HERA_DEBUG << "gas " << gas << "\n";
+      gas = gas <= 0 ? 4760000 : gas;
+
       ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
 
       evmc_message call_message;

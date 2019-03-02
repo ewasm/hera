@@ -440,10 +440,6 @@ private:
         dataLength = static_cast<uint32_t>(arguments[3].geti32());
       }
 
-      // add by csun TODO ???
-      // Gas value may be -1
-      //HERA_DEBUG << "gas " << gas << "\n";
-      // gas = gas < 0 ? 4700000 : gas;
       return wasm::Literal(eeiCall(kind, gas, addressOffset, valueOffset, dataOffset, dataLength));
     }
 
