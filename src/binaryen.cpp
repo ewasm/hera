@@ -440,6 +440,10 @@ private:
         dataLength = static_cast<uint32_t>(arguments[3].geti32());
       }
 
+      // add by csun TODO ???
+      // Gas value may be -1
+      //HERA_DEBUG << "gas " << gas << "\n";
+      // gas = gas < 0 ? 4700000 : gas;
       return wasm::Literal(eeiCall(kind, gas, addressOffset, valueOffset, dataOffset, dataLength));
     }
 
@@ -488,7 +492,8 @@ ExecutionResult BinaryenEngine::execute(
   // WasmPrinter::printModule(module);
 
   // Validate
-  verifyContract(module);
+  HERA_DEBUG << "verifyContract module before init instance\n";
+  //verifyContract(module);
 
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
@@ -650,6 +655,8 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
       ContractValidationFailure,
       "Imported function type is missing."
     );
+
+    HERA_DEBUG << "import name " << import->name << ", function_type:" << function_type->result << "," << function_type->params.size()  << ", eei_function_type:" << eei_function_type.result << "," << eei_function_type.params.size() << "\n";
 
     ensureCondition(
       function_type->structuralComparison(eei_function_type),

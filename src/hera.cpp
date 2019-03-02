@@ -53,6 +53,7 @@ enum class hera_evm1mode {
   reject,
   fallback,
   evm2wasm_contract,
+  evm2wasm_js,
 };
 
 using WasmEngineCreateFn = unique_ptr<WasmEngine>(*)();
@@ -69,10 +70,14 @@ const map<string, WasmEngineCreateFn> wasm_engine_map {
 #endif
 };
 
+
+// modify by csun TODO ???
+// evm2wasm.js is not accessed by user, it is just used for testing
 const map<string, hera_evm1mode> evm1mode_options {
   { "reject", hera_evm1mode::reject },
   { "fallback", hera_evm1mode::fallback },
   { "evm2wasm", hera_evm1mode::evm2wasm_contract },
+  { "evm2wasm.js", hera_evm1mode::evm2wasm_js },
 };
 
 struct hera_instance : evmc_instance {
@@ -191,6 +196,60 @@ vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
   return ret;
 }
 
+// NOTE: assumes that pattern doesn't contain any formatting characters (e.g. %)
+string mktemp_string(string pattern) {
+  const unsigned long len = pattern.size();
+  char tmp[len + 1];
+  strcpy(tmp, pattern.data());
+  if (!mktemp(tmp) || (tmp[0] == 0))
+     return string();
+  return string(tmp, strlen(tmp));
+}
+
+// Calls evm2wasm (as a Javascript CLI) with input data @input.
+// @returns the compiled output or empty output otherwise.
+vector<uint8_t> evm2wasm_js(vector<uint8_t> const& input, bool evmTrace) {
+  HERA_DEBUG << "Calling evm2wasm.js (input " << input.size() << " bytes)...\n";
+
+  string fileEVM = mktemp_string("/tmp/hera.evm2wasm.evm.XXXXXX");
+  string fileWASM = mktemp_string("/tmp/hera.evm2wasm.wasm.XXXXXX");
+
+  if (fileEVM.size() == 0 || fileWASM.size() == 0)
+    return vector<uint8_t>();
+
+  ofstream os;
+  os.open(fileEVM);
+  // print as a hex string
+  os << hex;
+  for (uint8_t byte: input)
+    os << setfill('0') << setw(2) << static_cast<int>(byte);
+  os.close();
+
+  string cmd = string("evm2wasm.js ") + "-e " + fileEVM + " -o " + fileWASM + " --charge-per-op";
+  if (evmTrace)
+    cmd += " --trace";
+
+  HERA_DEBUG << "(Calling evm2wasm.js with command: " << cmd << ")\n";
+
+  int ret = system(cmd.data());
+  unlink(fileEVM.data());
+
+  if (ret != 0) {
+    HERA_DEBUG << "evm2wasm.js failed\n";
+
+    unlink(fileWASM.data());
+    return vector<uint8_t>();
+  }
+
+  string str = loadFileContents(fileWASM);
+
+  unlink(fileWASM.data());
+
+  HERA_DEBUG << "evm2wasm.js done (output " << str.length() << " bytes)\n";
+
+  return vector<uint8_t>(str.begin(), str.end());
+}
+
 void hera_destroy_result(evmc_result const* result) noexcept
 {
   delete[] result->output_data;
@@ -241,6 +300,10 @@ evmc_result hera_execute(
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
         break;
+      case hera_evm1mode::evm2wasm_js:
+        run_code = evm2wasm_js( run_code, false );
+        ensureCondition(run_code.size() > 8, ContractValidationFailure, "Transcompiling via evm2wasm.js failed");
+        break;
       case hera_evm1mode::fallback:
         HERA_DEBUG << "Non-WebAssembly input, but fallback mode enabled, asking client to deal with it.\n";
         ret.status_code = EVMC_REJECTED;
@@ -257,6 +320,10 @@ evmc_result hera_execute(
       ContractValidationFailure,
       "Contract has an invalid WebAssembly version."
     );
+
+    if ( !isWasm ) {
+      HERA_DEBUG << "evmByte size is " << code_size << ", wasmByte size is " << run_code.size() << "\n";
+    }
 
     // Avoid this in case of evm2wasm translated code
     if (msg->kind == EVMC_CREATE && isWasm) {
@@ -295,7 +362,9 @@ evmc_result hera_execute(
           "Invalid contract or metering failed."
         );
         // FIXME: this should be done by the sentinel
-        engine.verifyContract(returnValue);
+        
+        HERA_DEBUG << "verifyContract returnValue\n";
+        engine.verifyContract(returnValue);   // modify by csun ??? verifyContract anyway???
       } else {
         returnValue = move(result.returnValue);
       }

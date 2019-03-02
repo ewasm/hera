@@ -435,6 +435,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 
   uint32_t EthereumInterface::eeiCall(EEICallKind kind, int64_t gas, uint32_t addressOffset, uint32_t valueOffset, uint32_t dataOffset, uint32_t dataLength)
   {
+      HERA_DEBUG << "call gas " << gas << "\n" ;
       ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
 
       evmc_message call_message;
@@ -642,6 +643,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 
   void EthereumInterface::takeGas(int64_t gas)
   {
+    //HERA_DEBUG << "takeGas " << m_result.gasLeft << ", " << gas << "\n";
     // NOTE: gas >= 0 is validated by the callers of this method
     ensureCondition(gas <= m_result.gasLeft, OutOfGas, "Out of gas.");
     m_result.gasLeft -= gas;
@@ -649,6 +651,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 
   void EthereumInterface::takeInterfaceGas(int64_t gas)
   {
+    HERA_DEBUG << "takeInterfaceGas " << gas << "\n";
     if (!m_meterGas)
       return;
     heraAssert(gas >= 0, "Trying to take negative gas.");
@@ -735,6 +738,14 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 
   void EthereumInterface::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
   {
+    // add by csun TODO ???
+    // src may be out of range
+    uint32_t len = length > src.size() - srcOffset ? (uint32_t)src.size() - srcOffset : length;
+    if ( len != length ) {
+      HERA_DEBUG << "src size:" << src.size() << ", srcOffset:" << srcOffset << ", dstOffset:" << dstOffset << ", length:" << length << "\n"; 
+      length = len;
+    }
+
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
     ensureCondition(src.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
     ensureCondition((dstOffset + length) >= dstOffset, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
