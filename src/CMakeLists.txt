@@ -33,7 +33,7 @@ endif()
 target_include_directories(hera
     PUBLIC $<BUILD_INTERFACE:${hera_include_dir}>$<INSTALL_INTERFACE:include>
 )
-target_link_libraries(hera PUBLIC evmc::evmc PRIVATE hera-buildinfo evmc::instructions)
+target_link_libraries(hera PUBLIC evmc::evmc PUBLIC hera-buildinfo evmc::instructions)
 if(NOT WIN32)
   if(CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(hera PROPERTIES LINK_FLAGS "-Wl,--no-undefined")
