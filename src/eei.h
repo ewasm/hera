@@ -132,6 +132,11 @@ protected:
   uint32_t eeiCreate(uint32_t valueOffset, uint32_t dataOffset, uint32_t length, uint32_t resultOffset);
   void eeiSelfDestruct(uint32_t addressOffset);
 
+  uint32_t eeiInputLength();
+  void eeiFetchInput(uint32_t inputOffset);
+  void eeiGetValue(uint32_t resultOffset);
+  void eeiPanic( uint32_t payloadOffset, uint32_t payloadLength );
+
 private:
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
 

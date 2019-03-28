@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 #include <vector>
 
 #include <pass.h>
@@ -140,8 +141,11 @@ private:
       // Reroute to debug namespace
       return callDebugImport(import, arguments);
 #endif
+    HERA_DEBUG << "call import func " << import->module.str << "::" << import->base.str << " (" << to_string(arguments.size()) << " arguments)";
 
-    heraAssert(import->module == wasm::Name("ethereum"), "Only imports from the 'ethereum' namespace are allowed.");
+    // env is imported by parity rust api
+    heraAssert(import->module == wasm::Name("ethereum") || 
+      import->module == wasm::Name("env"), "Only imports from the 'ethereum' namespace are allowed.");
 
     if (import->base == wasm::Name("useGas")) {
       heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
@@ -463,7 +467,62 @@ private:
       eeiSelfDestruct(addressOffset);
     }
 
-    heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
+    // csun add adapter pwasm imports ???
+    if (import->base == wasm::Name("input_length")) {
+        heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
+
+        return wasm::Literal(eeiInputLength());
+    }
+
+    if (import->base == wasm::Name("fetch_input")) {
+        heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+      
+        uint32_t inputOffset = static_cast<uint32_t>( arguments[0].geti32() );
+        eeiFetchInput( inputOffset );
+        return wasm::Literal();
+    }
+
+    if (import->base == wasm::Name("gas")) {
+        heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
+        int64_t gas = arguments[0].geti64();
+        eeiUseGas(gas);
+        return wasm::Literal();
+    }
+
+    if (import->base == wasm::Name("value")) {
+        heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+     
+        uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
+        eeiGetValue( resultOffset );
+        return wasm::Literal();
+    } 
+
+    if (import->base == wasm::Name("panic")) {
+        /*heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
+        uint32_t payloadPtr = static_cast<uint32_t>(arguments[0].geti32());
+        uint32_t payloadLength = static_cast<uint32_t>(arguments[1].geti32());
+        eeiPanic( payloadPtr, payloadLength );
+        return wasm::Literal();*/
+        heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
+        uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
+        uint32_t size = static_cast<uint32_t>(arguments[1].geti32());
+
+        eeiRevert(offset, size);
+    }
+
+    if (import->base == wasm::Name("ret")) {
+        heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
+        uint32_t offset = static_cast<uint32_t>(arguments[0].geti32());
+        uint32_t size = static_cast<uint32_t>(arguments[1].geti32());
+
+        eeiFinish( offset, size );
+    }
+
+    heraAssert(false, string("1 Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + " arguments)");
   }
 
 unique_ptr<WasmEngine> BinaryenEngine::create()
@@ -485,11 +544,12 @@ ExecutionResult BinaryenEngine::execute(
   loadModule(code, module);
 
   // Print
-  // WasmPrinter::printModule(module);
+  //wasm::WasmPrinter::printModule(&module);
+  //HERA_DEBUG << "finish module" << "\n";
 
   // Validate
   HERA_DEBUG << "verifyContract module before init instance\n";
-  //verifyContract(module);
+  verifyContract(module);
 
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
@@ -499,7 +559,8 @@ ExecutionResult BinaryenEngine::execute(
   wasm::ModuleInstance instance(module, &interface);
 
   try {
-    wasm::Name main = wasm::Name("main");
+    // csun TODO ??? change export function to call temporary
+    wasm::Name main = wasm::Name("call");
     wasm::LiteralList args;
     instance.callExport(main, args);
   } catch (EndExecution const&) {
@@ -539,6 +600,220 @@ wasm::FunctionType createFunctionType(vector<wasm::Type> params, wasm::Type resu
 }
 }
 
+void BinaryenEngine::verifyContractOfExportMain( wasm::Module & module ) {
+    ensureCondition(
+            module.getExportOrNull(wasm::Name("main")) != nullptr,
+            ContractValidationFailure,
+            "Contract entry point (\"main\") missing."
+    );
+
+    ensureCondition(
+            module.getExportOrNull(wasm::Name("memory")) != nullptr,
+            ContractValidationFailure,
+            "Contract export (\"memory\") missing."
+    );
+
+    ensureCondition(
+            module.exports.size() == 2,
+            ContractValidationFailure,
+            "Contract exports more than (\"main\") and (\"memory\")."
+    );
+
+    // The existence of this is ensured above.
+    wasm::Export* main_export = module.getExport(wasm::Name("main"));
+
+    wasm::Function* main_function = module.getFunctionOrNull(main_export->value);
+    ensureCondition(
+            main_function,
+            ContractValidationFailure,
+            "Contract is invalid. \"main\" is not a function."
+    );
+
+    ensureCondition(
+            (main_function->getNumParams() == 0) &&
+            (main_function->result == wasm::Type::none),
+            ContractValidationFailure,
+            "Contract is invalid. \"main\" has an invalid signature."
+    );
+
+    static const map<wasm::Name const, wasm::FunctionType const> eei_signatures{
+            { wasm::Name("useGas"), createFunctionType({ wasm::Type::i64 }, wasm::Type::none) },
+            { wasm::Name("getGasLeft"), createFunctionType({}, wasm::Type::i64) },
+            { wasm::Name("getAddress"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("getExternalBalance"), createFunctionType({ wasm::Type::i32,wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("getBlockHash"), createFunctionType({ wasm::Type::i64, wasm::Type::i32 }, wasm::Type::i32) },
+            { wasm::Name("getCallDataSize"), createFunctionType({}, wasm::Type::i32) },
+            { wasm::Name("callDataCopy"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("getCaller"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("getCallValue"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("codeCopy"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32}, wasm::Type::none) },
+            { wasm::Name("getCodeSize"), createFunctionType({}, wasm::Type::i32) },
+            { wasm::Name("externalCodeCopy"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("getExternalCodeSize"), createFunctionType({ wasm::Type::i32 }, wasm::Type::i32) },
+            { wasm::Name("getBlockCoinbase"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("getBlockDifficulty"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("getBlockGasLimit"), createFunctionType({}, wasm::Type::i64) },
+            { wasm::Name("getTxGasPrice"), createFunctionType({ wasm::Type::i32}, wasm::Type::none) },
+            { wasm::Name("log"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("getBlockNumber"), createFunctionType({}, wasm::Type::i64) },
+            { wasm::Name("getBlockTimestamp"), createFunctionType({}, wasm::Type::i64) },
+            { wasm::Name("getTxOrigin"), createFunctionType({ wasm::Type::i32}, wasm::Type::none) },
+            { wasm::Name("storageStore"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("storageLoad"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("finish"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("revert"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("getReturnDataSize"), createFunctionType({ }, wasm::Type::i32) },
+            { wasm::Name("returnDataCopy"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("call"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
+            { wasm::Name("callCode"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
+            { wasm::Name("callDelegate"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
+            { wasm::Name("callStatic"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
+            { wasm::Name("create"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
+            { wasm::Name("selfDestruct"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) }
+    };
+
+    for (auto const& import: module.imports) {
+        #if HERA_DEBUGGING
+        if (import->module == wasm::Name("debug"))
+            continue;
+        #endif
+
+        ensureCondition(
+                import->module == wasm::Name("ethereum"),
+                ContractValidationFailure,
+                "Import from invalid namespace."
+        );
+
+        ensureCondition(
+                eei_signatures.count(import->base),
+                ContractValidationFailure,
+                "Importing invalid EEI method."
+        );
+        // NOTE: needs to be a copy by value due to `structuralComparison` requiring a non-const input
+        wasm::FunctionType eei_function_type = eei_signatures.at(import->base);
+
+        wasm::FunctionType *function_type = module.getFunctionTypeOrNull(import->functionType);
+        ensureCondition(
+                function_type,
+                ContractValidationFailure,
+                "Imported function type is missing."
+        );
+
+        HERA_DEBUG << "import name " << import->name << ", function_type:" << function_type->result << ","
+                   << function_type->params.size() << ", eei_function_type:" << eei_function_type.result << ","
+                   << eei_function_type.params.size() << "\n";
+
+        ensureCondition(
+                function_type->structuralComparison(eei_function_type),
+                ContractValidationFailure,
+                "Imported function type mismatch."
+        );
+    }
+}
+
+void BinaryenEngine::verifyContractOfExportCall( wasm::Module &module ) {
+    ensureCondition(
+            module.getExportOrNull(wasm::Name("call")) != nullptr,
+            ContractValidationFailure,
+            "Contract entry point (\"call\") missing."
+    );
+
+    ensureCondition(
+            module.exports.size() == 1,
+            ContractValidationFailure,
+            "Contract exports more than (\"call\")."
+    );
+
+    // The existence of this is ensured above.
+    wasm::Export* call_export = module.getExport(wasm::Name("call"));
+
+    wasm::Function* call_function = module.getFunctionOrNull(call_export->value);
+    ensureCondition(
+            call_function,
+            ContractValidationFailure,
+            "Contract is invalid. \"call\" is not a function."
+    );
+
+    ensureCondition(
+            (call_function->getNumParams() == 0) &&
+            (call_function->result == wasm::Type::none),
+            ContractValidationFailure,
+            "Contract is invalid. \"call\" has an invalid signature."
+    );
+
+    static const map<wasm::Name const, wasm::FunctionType const> eei_signatures{
+            { wasm::Name("storage_read"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("storage_write"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("ret"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("gas"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("input_length"), createFunctionType({}, wasm::Type::i32) },
+            { wasm::Name("fetch_input"), createFunctionType({wasm::Type::i32}, wasm::Type::none) },
+            { wasm::Name("panic"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("debug"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("ccall"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32}, wasm::Type::i32) },
+            { wasm::Name("dcall"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32}, wasm::Type::i32) },
+            { wasm::Name("scall"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32}, wasm::Type::i32) },
+            { wasm::Name("value"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("create"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
+            { wasm::Name("suicide"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("blockhash"), createFunctionType({ wasm::Type::i64, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("blocknumber"), createFunctionType({}, wasm::Type::i64) },
+            { wasm::Name("coinbase"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("difficulty"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("gaslimit"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("timestamp"), createFunctionType({}, wasm::Type::i64) },
+            { wasm::Name("address"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("sender"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("origin"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("elog"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("create2"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
+            { wasm::Name("gasleft"), createFunctionType({}, wasm::Type::i64) }
+    };
+
+    for (auto const& import: module.imports) {
+        #if HERA_DEBUGGING
+        if (import->module == wasm::Name("debug"))
+            continue;
+        #endif
+
+        ensureCondition(
+                import->module == wasm::Name("env"),
+                ContractValidationFailure,
+                "Import from invalid namespace."
+        );
+
+        if ( import->base == wasm::Name( "memory" ) ) {
+            continue;
+        }
+
+        HERA_DEBUG << "check import " << import->base << "\n";
+        ensureCondition(
+                eei_signatures.count(import->base),
+                ContractValidationFailure,
+                "Importing invalid EEI method."
+        );
+        // NOTE: needs to be a copy by value due to `structuralComparison` requiring a non-const input
+        wasm::FunctionType eei_function_type = eei_signatures.at(import->base);
+
+        wasm::FunctionType *function_type = module.getFunctionTypeOrNull(import->functionType);
+        ensureCondition(
+                function_type,
+                ContractValidationFailure,
+                "Imported function type is missing."
+        );
+
+        HERA_DEBUG << "import name " << import->name << ", function_type:" << function_type->result << ","
+                   << function_type->params.size() << ", eei_function_type:" << eei_function_type.result << ","
+                   << eei_function_type.params.size() << "\n";
+
+        ensureCondition(
+                function_type->structuralComparison(eei_function_type),
+                ContractValidationFailure,
+                "Imported function type mismatch."
+        );
+    }
+}
+
 void BinaryenEngine::verifyContract(wasm::Module & module)
 {
   ensureCondition(
@@ -554,111 +829,11 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
     "Contract contains start function."
   );
 
-  ensureCondition(
-    module.getExportOrNull(wasm::Name("main")) != nullptr,
-    ContractValidationFailure,
-    "Contract entry point (\"main\") missing."
-  );
-
-  ensureCondition(
-    module.getExportOrNull(wasm::Name("memory")) != nullptr,
-    ContractValidationFailure,
-    "Contract export (\"memory\") missing."
-  );
-
-  ensureCondition(
-    module.exports.size() == 2,
-    ContractValidationFailure,
-    "Contract exports more than (\"main\") and (\"memory\")."
-  );
-
-  // The existence of this is ensured above.
-  wasm::Export* main_export = module.getExport(wasm::Name("main"));
-
-  wasm::Function* main_function = module.getFunctionOrNull(main_export->value);
-  ensureCondition(
-    main_function,
-    ContractValidationFailure,
-    "Contract is invalid. \"main\" is not a function."
-  );
-
-  ensureCondition(
-    (main_function->getNumParams() == 0) &&
-    (main_function->result == wasm::Type::none),
-    ContractValidationFailure,
-    "Contract is invalid. \"main\" has an invalid signature."
-  );
-
-  static const map<wasm::Name const, wasm::FunctionType const> eei_signatures{
-    { wasm::Name("useGas"), createFunctionType({ wasm::Type::i64 }, wasm::Type::none) },
-    { wasm::Name("getGasLeft"), createFunctionType({}, wasm::Type::i64) },
-    { wasm::Name("getAddress"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("getExternalBalance"), createFunctionType({ wasm::Type::i32,wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("getBlockHash"), createFunctionType({ wasm::Type::i64, wasm::Type::i32 }, wasm::Type::i32) },
-    { wasm::Name("getCallDataSize"), createFunctionType({}, wasm::Type::i32) },
-    { wasm::Name("callDataCopy"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("getCaller"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("getCallValue"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("codeCopy"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32}, wasm::Type::none) },
-    { wasm::Name("getCodeSize"), createFunctionType({}, wasm::Type::i32) },
-    { wasm::Name("externalCodeCopy"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("getExternalCodeSize"), createFunctionType({ wasm::Type::i32 }, wasm::Type::i32) },
-    { wasm::Name("getBlockCoinbase"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("getBlockDifficulty"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("getBlockGasLimit"), createFunctionType({}, wasm::Type::i64) },
-    { wasm::Name("getTxGasPrice"), createFunctionType({ wasm::Type::i32}, wasm::Type::none) },
-    { wasm::Name("log"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("getBlockNumber"), createFunctionType({}, wasm::Type::i64) },
-    { wasm::Name("getBlockTimestamp"), createFunctionType({}, wasm::Type::i64) },
-    { wasm::Name("getTxOrigin"), createFunctionType({ wasm::Type::i32}, wasm::Type::none) },
-    { wasm::Name("storageStore"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("storageLoad"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("finish"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("revert"), createFunctionType({ wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("getReturnDataSize"), createFunctionType({ }, wasm::Type::i32) },
-    { wasm::Name("returnDataCopy"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
-    { wasm::Name("call"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
-    { wasm::Name("callCode"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
-    { wasm::Name("callDelegate"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
-    { wasm::Name("callStatic"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
-    { wasm::Name("create"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
-    { wasm::Name("selfDestruct"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) }
-  };
-
-  for (auto const& import: module.imports) {
-#if HERA_DEBUGGING
-    if (import->module == wasm::Name("debug"))
-      continue;
-#endif
-
-    ensureCondition(
-      import->module == wasm::Name("ethereum"),
-      ContractValidationFailure,
-      "Import from invalid namespace."
-    );
-
-    ensureCondition(
-      eei_signatures.count(import->base),
-      ContractValidationFailure,
-      "Importing invalid EEI method."
-    );
-    // NOTE: needs to be a copy by value due to `structuralComparison` requiring a non-const input
-    wasm::FunctionType eei_function_type = eei_signatures.at(import->base);
-
-    wasm::FunctionType* function_type = module.getFunctionTypeOrNull(import->functionType);
-    ensureCondition(
-      function_type,
-      ContractValidationFailure,
-      "Imported function type is missing."
-    );
-
-    HERA_DEBUG << "import name " << import->name << ", function_type:" << function_type->result << "," << function_type->params.size()  << ", eei_function_type:" << eei_function_type.result << "," << eei_function_type.params.size() << "\n";
-
-    ensureCondition(
-      function_type->structuralComparison(eei_function_type),
-      ContractValidationFailure,
-      "Imported function type mismatch."
-    );
+  // csun modify TODO ???  memory is not export
+  if ( module.getExportOrNull(wasm::Name("main")) != nullptr ) {
+      verifyContractOfExportMain( module );
+  } else {
+      verifyContractOfExportCall( module );
   }
 }
 

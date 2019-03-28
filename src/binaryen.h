@@ -42,6 +42,9 @@ public:
 private:
   void verifyContract(wasm::Module & module);
 
+  void verifyContractOfExportMain(wasm::Module & module);
+  void verifyContractOfExportCall(wasm::Module &module);
+
   /// Parses and loads a Wasm module.
   /// Don't ask, Module has no copy constructor, hence the reference.
   void loadModule(std::vector<uint8_t> const& code, wasm::Module & module);

@@ -28,6 +28,13 @@
 #include <evmc/instructions.h>
 #include <evmc/helpers.hpp>
 
+  
+/*#include <limits>
+#include <cstring>
+#include <unistd.h>
+#include <fstream>
+#include <map>*/
+
 using namespace std;
 
 namespace hera {
@@ -130,8 +137,8 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 
   void EthereumInterface::eeiUseGas(int64_t gas)
   {
-      //HERA_DEBUG << depthToString() << " useGas " << gas << "\n";
-
+      HERA_DEBUG << depthToString() << " useGas " << gas << "\n";
+      
       ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
 
       takeGas(gas);
@@ -214,7 +221,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 
   void EthereumInterface::eeiGetCallValue(uint32_t resultOffset)
   {
-      HERA_DEBUG << depthToString() << " getCallValue " << hex << resultOffset << dec << "\n";
+      HERA_DEBUG << depthToString() << " getCallValue offset=" << resultOffset << "\n";
 
       takeInterfaceGas(GasSchedule::base);
 
@@ -227,6 +234,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 
       safeChargeDataCopy(length, GasSchedule::verylow);
 
+      HERA_DEBUG << "store code to shared memory, then set code to statedb, code size is " << m_code.size() << ", copy length is " << length << ", copy src[" << codeOffset << "," << codeOffset + length << "] to dest[" << resultOffset << "," << resultOffset + length  << "]\n";
       storeMemory(m_code, codeOffset, resultOffset, length);
   }
 
@@ -435,7 +443,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 
   uint32_t EthereumInterface::eeiCall(EEICallKind kind, int64_t gas, uint32_t addressOffset, uint32_t valueOffset, uint32_t dataOffset, uint32_t dataLength)
   {
-      HERA_DEBUG << "call  other contract " << gas << "\n" ;
+      HERA_DEBUG << "call other contract " << gas << "\n" ;
 
       // add by csun TODO ???
       // Gas value may be -1
@@ -647,10 +655,38 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
       throw EndExecution{};
   }
 
+  uint32_t EthereumInterface::eeiInputLength() {
+    HERA_DEBUG << depthToString() << "inputLength " << m_msg.input_size << "\n";
+    return (uint32_t)m_msg.input_size;
+  }
+
+  void EthereumInterface::eeiFetchInput(uint32_t inputOffset) {
+    HERA_DEBUG << depthToString() << " fetchInput " << hex << inputOffset << dec << "\n";
+
+    uint32_t inputSize = (uint32_t)m_msg.input_size;
+    safeChargeDataCopy( inputSize, GasSchedule::verylow );
+
+    vector<uint8_t> input( m_msg.input_data, m_msg.input_data + inputSize );
+    storeMemory( input, 0, inputOffset, inputSize );
+  }
+
+  void EthereumInterface::eeiGetValue(uint32_t resultOffset)
+  {
+      HERA_DEBUG << depthToString() << " getValue offset=" << resultOffset << "\n";
+      storeUint128(m_msg.value, resultOffset);
+  }
+
+  void EthereumInterface::eeiPanic( uint32_t payloadOffset, uint32_t payloadLength ) {
+    HERA_DEBUG << depthToString() << " panic payloadOffset " << hex << payloadOffset << ", payloadLength " << payloadLength << "\n";
+  }
+
   void EthereumInterface::takeGas(int64_t gas)
   {
     //HERA_DEBUG << "takeGas " << m_result.gasLeft << ", " << gas << "\n";
     // NOTE: gas >= 0 is validated by the callers of this method
+    if ( gas > m_result.gasLeft ) {
+      HERA_DEBUG << "gas is " << gas << ", gasLeft " << m_result.gasLeft << "\n";
+    }  
     ensureCondition(gas <= m_result.gasLeft, OutOfGas, "Out of gas.");
     m_result.gasLeft -= gas;
   }
@@ -680,7 +716,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
     ensureCondition(memorySize() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
 
     if (!length)
-      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec << "\n";
+      HERA_DEBUG << "Zero-length1 memory load from offset 0x" << hex << srcOffset << dec << "\n";
 
     for (uint32_t i = 0; i < length; ++i) {
       dst[length - (i + 1)] = memoryGet(srcOffset + i);
@@ -694,7 +730,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
     ensureCondition(memorySize() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");
 
     if (!length)
-      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec << "\n";
+      HERA_DEBUG << "Zero-length2 memory load from offset 0x" << hex << srcOffset << dec << "\n";
 
     for (uint32_t i = 0; i < length; ++i) {
       dst[i] = memoryGet(srcOffset + i);
@@ -709,7 +745,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
     ensureCondition(dst.size() >= length, InvalidMemoryAccess, "Out of bounds (destination) memory copy.");
 
     if (!length)
-      HERA_DEBUG << "Zero-length memory load from offset 0x" << hex << srcOffset << dec <<"\n";
+      HERA_DEBUG << "Zero-length3 memory load from offset 0x" << hex << srcOffset << dec <<"\n";
 
     for (uint32_t i = 0; i < length; ++i) {
       dst[i] = memoryGet(srcOffset + i);
