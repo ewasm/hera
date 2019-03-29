@@ -657,13 +657,13 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
 
   uint32_t EthereumInterface::eeiInputLength() {
     HERA_DEBUG << depthToString() << "inputLength " << m_msg.input_size << "\n";
-    return (uint32_t)m_msg.input_size;
+    return static_cast<uint32_t>(m_msg.input_size);
   }
 
   void EthereumInterface::eeiFetchInput(uint32_t inputOffset) {
-    HERA_DEBUG << depthToString() << " fetchInput " << hex << inputOffset << dec << "\n";
+    HERA_DEBUG << depthToString()  << "inputSize "  << m_msg.input_size << ", fetchInput " << hex << "0x" << inputOffset << "\n";
 
-    uint32_t inputSize = (uint32_t)m_msg.input_size;
+    uint32_t inputSize = static_cast<uint32_t>(m_msg.input_size);
     safeChargeDataCopy( inputSize, GasSchedule::verylow );
 
     vector<uint8_t> input( m_msg.input_data, m_msg.input_data + inputSize );
@@ -677,7 +677,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
   }
 
   void EthereumInterface::eeiPanic( uint32_t payloadOffset, uint32_t payloadLength ) {
-    HERA_DEBUG << depthToString() << " panic payloadOffset " << hex << payloadOffset << ", payloadLength " << payloadLength << "\n";
+    HERA_DEBUG << depthToString() << " panic payloadOffset " << hex << "0x" << payloadOffset << ", payloadLength " << payloadLength << dec << "\n";
   }
 
   void EthereumInterface::takeGas(int64_t gas)

@@ -274,6 +274,7 @@ evmc_result hera_execute(
     heraAssert(rev == EVMC_BYZANTIUM, "Only Byzantium supported.");
     heraAssert(msg->gas >= 0, "EVMC supplied negative startgas");
 
+    HERA_DEBUG << "code_size " << code_size << "\n";
     bool meterInterfaceGas = true;
 
     // the bytecode residing in the state - this will be used by interface methods (i.e. codecopy)
@@ -288,6 +289,8 @@ evmc_result hera_execute(
       HERA_DEBUG << "Overriding contract.\n";
       run_code = preload->second;
     }
+
+    HERA_DEBUG << "state_code size " << state_code.size() << ", run_code size " << run_code.size() << " code_size " << code_size << "\n";
 
     // ensure we can only handle WebAssembly version 1
     bool isWasm = hasWasmPreamble(run_code);
@@ -323,6 +326,12 @@ evmc_result hera_execute(
 
     if ( !isWasm ) {
       HERA_DEBUG << "evmByte size is " << code_size << ", wasmByte size is " << run_code.size() << "\n";
+      #if HERA_DEBUGGING
+        for (size_t i = 0; i < run_code.size(); ++i) {
+            HERA_DEBUG << (int32_t)run_code[i] << " ";
+        }
+        HERA_DEBUG << "\n";
+      #endif
     }
 
     // Avoid this in case of evm2wasm translated code

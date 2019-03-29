@@ -498,6 +498,28 @@ private:
         return wasm::Literal();
     } 
 
+    if (import->base == wasm::Name("storage_write")) {
+        heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
+        uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
+        uint32_t valueOffset = static_cast<uint32_t>(arguments[1].geti32());
+
+        eeiStorageStore(pathOffset, valueOffset);
+
+        return wasm::Literal();
+    }
+
+    if (import->base == wasm::Name("storage_read")) {
+        heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
+
+        uint32_t pathOffset = static_cast<uint32_t>(arguments[0].geti32());
+        uint32_t resultOffset = static_cast<uint32_t>(arguments[1].geti32());
+
+        eeiStorageLoad(pathOffset, resultOffset);
+
+        return wasm::Literal();
+    }
+
     if (import->base == wasm::Name("panic")) {
         /*heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
@@ -550,6 +572,7 @@ ExecutionResult BinaryenEngine::execute(
   // Validate
   HERA_DEBUG << "verifyContract module before init instance\n";
   verifyContract(module);
+  HERA_DEBUG << "verifyContract successfully\n";
 
   // NOTE: DO NOT use the optimiser here, it will conflict with metering
 
