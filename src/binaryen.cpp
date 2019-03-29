@@ -582,8 +582,9 @@ ExecutionResult BinaryenEngine::execute(
   wasm::ModuleInstance instance(module, &interface);
 
   try {
-    // csun TODO ??? change export function to call temporary
-    wasm::Name main = wasm::Name("call");
+    // call function main if original code is evm bytes
+    // call function call if original code is wasm bytes
+    wasm::Name main = code.size() == state_code.size() ? wasm::Name("call") : wasm::Name("main");
     wasm::LiteralList args;
     instance.callExport(main, args);
   } catch (EndExecution const&) {
