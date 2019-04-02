@@ -303,6 +303,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
       return m_tx_context.block_gas_limit;
   }
 
+
   void EthereumInterface::eeiGetTxGasPrice(uint32_t valueOffset)
   {
       HERA_DEBUG << depthToString() << " getTxGasPrice " << hex << valueOffset << dec << "\n";
@@ -671,11 +672,14 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
     storeMemory( input, 0, inputOffset, inputSize );
   }
 
-  void EthereumInterface::eeiGetValue(uint32_t resultOffset)
-  {
+  void EthereumInterface::eeiGetValue(uint32_t resultOffset) {
       HERA_DEBUG << depthToString() << " getValue offset=" << resultOffset << "\n";
       storeUint128(m_msg.value, resultOffset);
   }
+
+  /*int64_t EthereumInterface::eeiGetGasLeft(uint32_t resultOffset) {
+
+  }*/
 
   void EthereumInterface::eeiPanic( uint32_t payloadOffset, uint32_t payloadLength ) {
     HERA_DEBUG << depthToString() << " panic payloadOffset " << hex << "0x" << payloadOffset << ", payloadLength " << payloadLength << dec << "\n";

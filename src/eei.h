@@ -135,6 +135,7 @@ protected:
   uint32_t eeiInputLength();
   void eeiFetchInput(uint32_t inputOffset);
   void eeiGetValue(uint32_t resultOffset);
+  //int64_t eeiGetGasLeft(uint32_t resultOffset);
   void eeiPanic( uint32_t payloadOffset, uint32_t payloadLength );
 
 private:
