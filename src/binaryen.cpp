@@ -16,6 +16,7 @@
 
 
 #include <vector>
+#include <queue>
 
 #include <pass.h>
 #include <wasm.h>
@@ -520,6 +521,36 @@ private:
         return wasm::Literal();
     }
 
+    if (import->base == wasm::Name( "sender" )) {
+        heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
+        uint32_t resultOffset = static_cast<uint32_t>(arguments[0].geti32());
+
+        eeiGetCaller(resultOffset);
+
+        return wasm::Literal();
+    }
+
+    if (import->base == wasm::Name( "elog" )) {
+        heraAssert(arguments.size() == 4, string("Argument count mismatch in: ") + import->base.str);
+
+        uint32_t topicOffset = static_cast<uint32_t>(arguments[0].geti32());
+        uint32_t topicCount = static_cast<uint32_t>(arguments[1].geti32());
+        uint32_t dataOffset = static_cast<uint32_t>(arguments[2].geti32());
+        uint32_t dataLength = static_cast<uint32_t>(arguments[3].geti32());
+        uint32_t topic1 = 0, topic2 = 0, topic3 = 0, topic4 = 0;
+
+        const uint32_t TOPIC_SIZE = 32;
+        if ( topicCount > 1 ) topic1 = topicOffset;
+        if ( topicCount > 2 ) topic2 = topic1 + TOPIC_SIZE;
+        if ( topicCount > 3 ) topic3 = topic2 + TOPIC_SIZE;
+        if ( topicCount > 4 ) topic4 = topic3 + TOPIC_SIZE;
+
+        eeiLog(dataOffset, dataLength, topicCount, topic1, topic2, topic3, topic4);
+
+        return wasm::Literal();
+    }
+
     if (import->base == wasm::Name("panic")) {
         /*heraAssert(arguments.size() == 2, string("Argument count mismatch in: ") + import->base.str);
 
@@ -730,7 +761,7 @@ void BinaryenEngine::verifyContractOfExportMain( wasm::Module & module ) {
         ensureCondition(
                 function_type->structuralComparison(eei_function_type),
                 ContractValidationFailure,
-                "Imported function type mismatch."
+                "Imported1 function type mismatch."
         );
     }
 }
@@ -789,7 +820,7 @@ void BinaryenEngine::verifyContractOfExportCall( wasm::Module &module ) {
             { wasm::Name("address"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
             { wasm::Name("sender"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
             { wasm::Name("origin"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
-            { wasm::Name("elog"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::none) },
+            { wasm::Name("elog"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32}, wasm::Type::none) },
             { wasm::Name("create2"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
             { wasm::Name("gasleft"), createFunctionType({}, wasm::Type::i64) }
     };
@@ -833,8 +864,10 @@ void BinaryenEngine::verifyContractOfExportCall( wasm::Module &module ) {
         ensureCondition(
                 function_type->structuralComparison(eei_function_type),
                 ContractValidationFailure,
-                "Imported function type mismatch."
+                "Imported2 function type mismatch."
         );
+
+        HERA_DEBUG << "finish check import " << import->base << "\n";
     }
 }
 

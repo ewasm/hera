@@ -315,6 +315,7 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
   void EthereumInterface::eeiLog(uint32_t dataOffset, uint32_t length, uint32_t numberOfTopics, uint32_t topic1, uint32_t topic2, uint32_t topic3, uint32_t topic4)
   {
       HERA_DEBUG << depthToString() << " log " << hex << dataOffset << " " << length << " " << numberOfTopics << dec << "\n";
+      HERA_DEBUG << "topic1 offset " << topic1 << ", topic2 offset " << topic2 << ", topic3 offset " << topic3 << ", topic4 offset " << topic4 << "\n";
 
       static_assert(GasSchedule::log <= 65536, "Gas cost of log could lead to overflow");
       static_assert(GasSchedule::logTopic <= 65536, "Gas cost of logTopic could lead to overflow");
