@@ -694,21 +694,24 @@ private:
           return wasm::Literal(eeiCall(kind, gas, addressOffset, valueOffset, dataOffset, dataLength));
       }
 
-      // TODO ???
+      // TODO ??? not sure
       if (import->base == wasm::Name( "gaslimit" )) {
           heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
-          //return wasm::Literal(eeiGetBlockGasLimit());
+          uint32_t dstOffset = static_cast<uint32_t>(arguments[0].geti32());
+
+          eeiGetBlockGasLimit( dstOffset );
+          return wasm::Literal();
       }
 
       // TODO ??? not sure
       if (import->base == wasm::Name( "gasleft" )) {
           heraAssert(arguments.size() == 0, string("Argument count mismatch in: ") + import->base.str);
 
-          //return wasm::Literal( eeiGetGasLeft() );
+          return wasm::Literal( eeiGetGasLeft() );
       }
 
-      // TODO ???
+      // TODO ??? unsupport now
       if (import->base == wasm::Name( "create2" )) {
           heraAssert(arguments.size() == 5, string("Argument count mismatch in: ") + import->base.str);
 
@@ -719,6 +722,8 @@ private:
           uint32_t resultOffset = static_cast<uint32_t>(arguments[4].geti32());*/
 
           //return wasm::Literal(eeiCreate(valueOffset, dataOffset, length, resultOffset));
+
+          // unsupport now
       }
 
       // TODO ???
@@ -726,8 +731,10 @@ private:
           heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
 
           //uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
+          // do nothing
       }
 
+      // TODO ???
       if (import->base == wasm::Name("debug")) {
           // do nothing
       }

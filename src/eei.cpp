@@ -677,6 +677,13 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
       storeUint128(m_msg.value, resultOffset);
   }
 
+  void EthereumInterface::eeiGetBlockGasLimit(uint32_t dstOffset) {
+      HERA_DEBUG << depthToString() << " get block gas limit offset " << hex << dstOffset << "\n";
+
+      //storeBytes32( convertToBytes32( m_tx_context.block_gas_limit ), dstOffset );
+      storeUint256( convertToBytes32( m_tx_context.block_gas_limit ), dstOffset );
+  }
+
   /*int64_t EthereumInterface::eeiGetGasLeft(uint32_t resultOffset) {
 
   }*/
@@ -816,6 +823,44 @@ bool exceedsUint128(evmc_uint256be const& value) noexcept
     loadMemory(srcOffset, dst.bytes, 32);
     return dst;
   }
+
+  evmc_uint256be EthereumInterface::convertToBytes32( int64_t val ) {
+      evmc_uint256be dst = {};
+
+      size_t sz = sizeof( int64_t );
+      for ( size_t i = 0; i < sz; ++i ) {
+          dst.bytes[i] = static_cast<uint8_t>( (val>>(i*8)) & 0xFF );
+      }
+
+#if HERA_DEBUGGING
+      for ( size_t i = 0; i < sz; ++i ) {
+          HERA_DEBUG << dst.bytes[i] << " ";
+      }
+
+      HERA_DEBUG << "\n";
+#endif
+
+      return dst;
+  }
+
+ /* evmc_uint256be EthereumInterface::converToUint256( int64_t val ) {
+      evmc_uint256be dst = {};
+
+      size_t sz = sizeof( int64_t );
+      for ( size_t i = 0; i < sz; ++i) {
+          dst.bytes[31-i] = static_cast<uint8_t>( (val>>(i*8)) & 0xFF );
+      }
+
+#if HERA_DEBUGGING
+      for ( size_t i = 0; i < sz; ++i ) {
+          HERA_DEBUG << dst.bytes[i] << " ";
+      }
+
+      HERA_DEBUG << "\n";
+#endif
+
+      return dst;
+  }*/
 
   void EthereumInterface::storeBytes32(evmc_uint256be const& src, uint32_t dstOffset)
   {

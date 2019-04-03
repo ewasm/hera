@@ -135,7 +135,7 @@ protected:
   uint32_t eeiInputLength();
   void eeiFetchInput(uint32_t inputOffset);
   void eeiGetValue(uint32_t resultOffset);
-  //int64_t eeiGetGasLeft(uint32_t resultOffset);
+  void eeiGetBlockGasLimit(uint32_t dstOffset);
   void eeiPanic( uint32_t payloadOffset, uint32_t payloadLength );
 
 private:
@@ -165,6 +165,8 @@ private:
   void storeAddress(evmc_address const& src, uint32_t dstOffset);
   evmc_uint256be loadUint128(uint32_t srcOffset);
   void storeUint128(evmc_uint256be const& src, uint32_t dstOffset);
+
+  evmc_uint256be convertToBytes32( int64_t val );
 
   inline int64_t maxCallGas(int64_t gas) { return gas - (gas / 64); }
 
