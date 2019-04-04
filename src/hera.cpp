@@ -51,6 +51,14 @@ enum class hera_evm1mode {
   reject,
   fallback,
   evm2wasm_contract,
+  runevm_contract,
+};
+
+const map<string, hera_evm1mode> evm1mode_options {
+  { "reject", hera_evm1mode::reject },
+  { "fallback", hera_evm1mode::fallback },
+  { "evm2wasm", hera_evm1mode::evm2wasm_contract },
+  { "runevm", hera_evm1mode::runevm_contract },
 };
 
 using WasmEngineCreateFn = unique_ptr<WasmEngine>(*)();
@@ -67,25 +75,21 @@ const map<string, WasmEngineCreateFn> wasm_engine_map {
 #endif
 };
 
-const map<string, hera_evm1mode> evm1mode_options {
-  { "reject", hera_evm1mode::reject },
-  { "fallback", hera_evm1mode::fallback },
-  { "evm2wasm", hera_evm1mode::evm2wasm_contract },
-};
-
-struct hera_instance : evmc_instance {
-  unique_ptr<WasmEngine> engine{
+WasmEngineCreateFn wasmEngineCreateFn =
 // This is the order of preference.
 #if HERA_BINARYEN
-    new BinaryenEngine
+    BinaryenEngine::create
 #elif HERA_WABT
-    new WabtEngine
+    WabtEngine::create
 #elif HERA_WAVM
-    new WavmEngine
+    WavmEngine::create
 #else
 #error "No engine requested."
 #endif
-  };
+;
+
+struct hera_instance : evmc_instance {
+  unique_ptr<WasmEngine> engine = wasmEngineCreateFn();
   hera_evm1mode evm1mode = hera_evm1mode::reject;
   bool metering = false;
   map<evmc_address, bytes> contract_preload_list;
@@ -95,6 +99,7 @@ struct hera_instance : evmc_instance {
 
 const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } };
 const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } };
+const evmc_address runevmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xc } };
 
 // Calls a system contract at @address with input data @input.
 // It is a "staticcall" with sender 000...000 and no value.
@@ -130,6 +135,39 @@ pair<evmc_status_code, bytes> callSystemContract(
     result.release(&result);
 
   return {result.status_code, ret};
+}
+
+pair<evmc_status_code, bytes> locallyExecuteSystemContract(
+  evmc_context* context,
+  evmc_address const& address,
+  int64_t & gas,
+  bytes_view input,
+  bytes_view code,
+  bytes_view state_code
+) {
+  const evmc_message message = {
+    .kind = EVMC_CALL,
+    .flags = EVMC_STATIC,
+    .depth = 0,
+    .gas = gas,
+    .destination = address,
+    .sender = {},
+    .input_data = input.data(),
+    .input_size = input.size(),
+    .value = {},
+    .create2_salt = {},
+  };
+
+  unique_ptr<WasmEngine> engine = wasmEngineCreateFn();
+  // TODO: should we catch exceptions here?
+  ExecutionResult result = engine->execute(context, code, state_code, message, false);
+
+  bytes ret;
+  evmc_status_code status = result.isRevert ? EVMC_REVERT : EVMC_SUCCESS;
+  if (status == EVMC_SUCCESS && result.returnValue.size() > 0)
+    ret = move(result.returnValue);
+
+  return {status, move(ret)};
 }
 
 // Calls the Sentinel contract with input data @input.
@@ -184,6 +222,45 @@ bytes evm2wasm(evmc_context* context, bytes_view input) {
     status == EVMC_SUCCESS,
     ContractValidationFailure,
     "evm2wasm has failed."
+  );
+
+  return ret;
+}
+
+// Calls the runevm contract.
+// @returns a wasm-based evm interpreter.
+bytes runevm(evmc_context* context, bytes code) {
+  HERA_DEBUG << "Calling runevm (code " << code.size() << " bytes)...\n";
+
+  int64_t gas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
+  evmc_status_code status;
+  bytes ret;
+
+  tie(status, ret) = locallyExecuteSystemContract(
+      context,
+      runevmAddress,
+      gas,
+      {},
+      code,
+      code
+  );
+
+  HERA_DEBUG << "runevm done (output " << ret.size() << " bytes) with status=" << status << "\n";
+
+  ensureCondition(
+    status == EVMC_SUCCESS,
+    ContractValidationFailure,
+    "runevm has failed."
+  );
+  ensureCondition(
+    ret.size() > 0,
+    ContractValidationFailure,
+    "Runevm returned empty."
+  );
+  ensureCondition(
+    hasWasmPreamble(ret),
+    ContractValidationFailure,
+    "Runevm result has no wasm preamble."
   );
 
   return ret;
@@ -247,6 +324,12 @@ evmc_result hera_execute(
         HERA_DEBUG << "Non-WebAssembly input, failure.\n";
         ret.status_code = EVMC_FAILURE;
         return ret;
+      case hera_evm1mode::runevm_contract:
+        run_code = runevm(context, hera->contract_preload_list[runevmAddress]);
+        ensureCondition(run_code.size() > 8, ContractValidationFailure, "Interpreting via runevm failed");
+        // Runevm does interface metering on its own
+        meterInterfaceGas = false;
+        break;
       }
     }
 
@@ -367,7 +450,8 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
     // alias
     const map<string, evmc_address> aliases = {
       { string("sentinel"), sentinelAddress },
-      { string("evm2wasm"), evm2wasmAddress }
+      { string("evm2wasm"), evm2wasmAddress },
+      { string("runevm"), runevmAddress },
     };
 
     if (aliases.count(name) == 0) {
@@ -425,7 +509,8 @@ evmc_set_option_result hera_set_option(
   if (strcmp(name, "engine") == 0) {
     auto it = wasm_engine_map.find(value);
     if (it != wasm_engine_map.end()) {
-      hera->engine = it->second();
+      wasmEngineCreateFn = it->second;
+      hera->engine = wasmEngineCreateFn();
       return EVMC_SET_OPTION_SUCCESS;
     }
     return EVMC_SET_OPTION_INVALID_VALUE;
