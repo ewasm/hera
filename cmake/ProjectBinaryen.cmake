@@ -43,12 +43,12 @@ endif()
 
 ExternalProject_Add(binaryen
     PREFIX ${prefix}
-    DOWNLOAD_NAME binaryen-1.38.28.tar.gz
+    DOWNLOAD_NAME binaryen-1.38.30.tar.gz
     DOWNLOAD_DIR ${prefix}/downloads
     SOURCE_DIR ${source_dir}
     BINARY_DIR ${binary_dir}
-    URL https://github.com/WebAssembly/binaryen/archive/1.38.28.tar.gz
-    URL_HASH SHA256=4cdf51ceaba2cbb98f3bf20022716f43911b4f437f89a4da479340a82a14f213
+    URL https://github.com/WebAssembly/binaryen/archive/1.38.30.tar.gz
+    URL_HASH SHA256=bb55a9824d54c764d4352086959dfbcb70be31d697570364d8a4fb53601d432d
     CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     -DCMAKE_INSTALL_LIBDIR=lib
