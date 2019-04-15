@@ -35,7 +35,7 @@ if(CABLE_COMPILER_GNULIKE)
 endif()
 
 
-cable_add_buildinfo_library(PROJECT_NAME hera)
+cable_add_buildinfo_library(PROJECT_NAME hera EXPORT heraTargets)
 
 option(BUILD_SHARED_LIBS "Build libraries as shared" ON)
 
@@ -82,14 +82,11 @@ configure_package_config_file(
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
 )
 
-if(BUILD_SHARED_LIBS)
-    # TODO: To enable for static libs, hera-buildinfo library must be modified in Cable.
-    install(
-        EXPORT heraTargets
-        NAMESPACE hera::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
-    )
-endif()
+install(
+    EXPORT heraTargets
+    NAMESPACE hera::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/hera
+)
 
 install(
     FILES
