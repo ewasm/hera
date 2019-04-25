@@ -61,6 +61,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* input, size_t size)
 
     expect(resBinaryen.gas_left == resWabt.gas_left);
     expect(resBinaryen.output_size == resWabt.output_size);
+    expect(resBinaryen.status_code == resWabt.status_code);
 
     if (resBinaryen.release)
         resBinaryen.release(&resBinaryen);
