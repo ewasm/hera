@@ -479,6 +479,7 @@ ExecutionResult BinaryenEngine::execute(
   evmc_message const& msg,
   bool meterInterfaceGas
 ) {
+  instantiationStarted();
   wasm::Module module;
 
   // Load module
@@ -497,6 +498,8 @@ ExecutionResult BinaryenEngine::execute(
   BinaryenEthereumInterface interface(context, state_code, msg, result, meterInterfaceGas);
   wasm::ModuleInstance instance(module, &interface);
 
+  executionStarted();
+
   try {
     wasm::Name main = wasm::Name("main");
     wasm::LiteralList args;
@@ -506,6 +509,7 @@ ExecutionResult BinaryenEngine::execute(
     // It is only a clutch for POSIX style exit()
   }
 
+  executionFinished();
   return result;
 }
 

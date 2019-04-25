@@ -66,6 +66,7 @@ These are to be used via EVMC `set_option`:
 
 - `engine=<engine>` will select the underlying WebAssembly engine, where the only accepted values currently are `binaryen`, `wabt`, and `wavm`
 - `metering=true` will enable metering of bytecode at deployment using the [Sentinel system contract] (set to `false` by default)
+- `benchmark=true` will produce execution timings and output it to both standard error output and `hera_benchmarks.log` file.
 - `evm1mode=<evm1mode>` will select how EVM1 bytecode is handled
 - `sys:<alias/address>=file.wasm` will override the code executing at the specified address with code loaded from a filepath at runtime. This option supports aliases for system contracts as well, such that `sys:sentinel=file.wasm` and `sys:evm2wasm=file.wasm` are both valid. **This option is intended for debugging purposes.**
 
