@@ -191,7 +191,7 @@ jobs:
       CC:  clang
       GENERATOR: Ninja
       BUILD_PARALLEL_JOBS: 4
-      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON
+      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_BINARYEN=ON -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON
     docker:
       - image: ethereum/cpp-build-env:9
     steps:
@@ -219,7 +219,7 @@ jobs:
       CC:  clang
       GENERATOR: Ninja
       BUILD_PARALLEL_JOBS: 4
-      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON -DSANITIZE=address
+      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_BINARYEN=ON -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TESTING=ON -DSANITIZE=address
       # The ASan must the first loaded shared library. Force preloading it with this flag.
       PRELOAD_ASAN: true
     docker:
@@ -248,7 +248,7 @@ jobs:
       - CC:  gcc
       - GENERATOR: Ninja
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DCOVERAGE=ON -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON
+      - CMAKE_OPTIONS: -DCOVERAGE=ON -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON -DHERA_BINARYEN=ON
     docker:
       - image: ethereum/cpp-build-env:9
     steps:
@@ -272,7 +272,7 @@ jobs:
       - CC:  gcc
       - GENERATOR: Unix Makefiles
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -DHERA_DEBUGGING=ON -DHERA_WAVM=ON -DHERA_WABT=ON
+      - CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=OFF -DHERA_DEBUGGING=ON -DHERA_BINARYEN=ON -DHERA_WAVM=ON -DHERA_WABT=ON
     docker:
       - image: ethereum/cpp-build-env:9
     steps:
@@ -291,7 +291,7 @@ jobs:
       - CXX: c++
       - GENERATOR: Unix Makefiles
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON -DHERA_WABT=ON
+      - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON -DHERA_BINARYEN=ON -DHERA_WABT=ON
     macos:
       xcode: "10.1.0"
     steps:

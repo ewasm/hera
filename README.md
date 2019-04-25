@@ -35,21 +35,21 @@ Please also check the build options listed in the following section.
 - `-DHERA_DEBUGGING=ON` will turn on debugging features and messages
 - `-DBUILD_SHARED_LIBS=ON` is a standard CMake option to build libraries as shared. This will build Hera shared library that can be then dynamically loaded by EVMC compatible Clients (e.g. `aleth` from [aleth]). **This is the preferred way of compilation.**
 
-### Binaryen support
-
-*Complete support.*
-
-[Binaryen] is built by default and needs no build options. It can be disabled with:
-
-- `-DHERA_BINARYEN=OFF`
-
 ### wabt support
 
 *Complete support.*
 
-[wabt] support needs to be enabled via the following build option and requested at runtime with `engine=wabt`:
+[wabt] is built by default and needs no build options. It can be disabled with:
 
-- `-DHERA_WABT=ON` will request the compilation of wabt support
+- `-DHERA_WABT=OFF`
+
+### Binaryen support
+
+*Complete support.*
+
+[Binaryen] support needs to be enabled via the following build option and requested at runtime with `engine=binaryen`:
+
+- `-DHERA_BINARYEN=ON` will request the compilation of Binaryen support
 
 ### WAVM support
 
