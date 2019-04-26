@@ -12,11 +12,12 @@ include(CableToolchains)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-if(EVMC_TESTING OR EVMC_TEST_TOOLS)
-    # If Hunter is needed it must be initialized before project(hera).
-    include(evmc/cmake/cable/HunterGate.cmake)
-    include(evmc/cmake/HunterConfig.cmake)
-endif()
+include(evmc/cmake/cable/HunterGate.cmake)
+
+HunterGate(
+    URL "https://github.com/chfast/hunter/archive/afa1e3f1bba64de50692d96ff5ce1805bbefa171.tar.gz"
+    SHA1 "0550019a38e10c22530e618d89c9a7f22b95143a"
+)
 
 cable_configure_toolchain(DEFAULT cxx17-pic)
 
