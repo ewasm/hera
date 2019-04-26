@@ -89,7 +89,7 @@ ExecutionResult WabtEngine::execute(
   ExecutionResult result;
   WabtEthereumInterface interface{context, state_code, msg, result, meterInterfaceGas};
 
-  // Create host module
+  // Create EEI host module
   // The lifecycle of this pointer is handled by `env`.
   interp::HostModule* hostModule = env.AppendHostModule("ethereum");
   heraAssert(hostModule, "Failed to create host module.");
@@ -581,9 +581,12 @@ ExecutionResult WabtEngine::execute(
     }
   );
 
-  // some extra methods for debugging
-
 #if HERA_DEBUGGING
+  // Create debug host module
+  // The lifecycle of this pointer is handled by `env`.
+  hostModule = env.AppendHostModule("debug");
+  heraAssert(hostModule, "Failed to create host module.");
+
   hostModule->AppendFuncExport(
     "printMemHex",
     {{Type::I32, Type::I32}, {}},
@@ -672,7 +675,7 @@ void WabtEngine::verifyContract(std::vector<uint8_t> const& code) {
   // and the list of modules used for importing/exporting between modules
   interp::Environment env;
 
-  // Create host module
+  // Create EEI host module
   // The lifecycle of this pointer is handled by `env`.
   interp::HostModule* hostModule = env.AppendHostModule("ethereum");
   heraAssert(hostModule, "Failed to create host module.");
@@ -1106,9 +1109,12 @@ void WabtEngine::verifyContract(std::vector<uint8_t> const& code) {
     }
   );
 
-  // some extra methods for debugging
-
 #if HERA_DEBUGGING
+  // Create debug host module
+  // The lifecycle of this pointer is handled by `env`.
+  hostModule = env.AppendHostModule("debug");
+  heraAssert(hostModule, "Failed to create host module.");
+
   hostModule->AppendFuncExport(
     "printMemHex",
     {{Type::I32, Type::I32}, {}},
