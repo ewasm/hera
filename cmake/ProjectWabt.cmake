@@ -26,6 +26,8 @@ ExternalProject_Add(wabt
     -DBUILD_TESTS=OFF
     -DBUILD_TOOLS=OFF
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+    -DCMAKE_CXX_FLAGS=-fvisibility=hidden
+    -DCMAKE_C_FLAGS=-fvisibility=hidden
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS ${wabt_library}
 )

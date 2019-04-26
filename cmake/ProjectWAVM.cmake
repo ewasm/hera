@@ -24,6 +24,7 @@ set(llvmjit_library ${binary_dir}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}LLVMJIT${CMA
 
 set(other_libraries ${platform_library} ${wasm_library} ${ir_library} ${logging_library} ${unwind_library} ${llvmjit_library})
 
+set(flags "-Wno-error -fvisibility=hidden")
 
 ExternalProject_Add(wavm
     PREFIX ${prefix}
@@ -41,7 +42,8 @@ ExternalProject_Add(wavm
     -DCMAKE_BUILD_TYPE=Release
     -DLLVM_DIR=${LLVM_DIR}
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
-    -DCMAKE_CXX_FLAGS=-Wno-error
+    -DCMAKE_CXX_FLAGS=${flags}
+    -DCMAKE_C_FLAGS=${flags}
     INSTALL_COMMAND ""
     BUILD_BYPRODUCTS ${runtime_library} ${other_libraries}
 )
