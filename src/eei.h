@@ -20,6 +20,7 @@
 #include <vector>
 
 #include <evmc/evmc.h>
+#include <evmc/evmc.hpp>
 
 #include "exceptions.h"
 
@@ -88,7 +89,7 @@ public:
     ExecutionResult & _result,
     bool _meterGas
   ):
-    m_context(_context),
+    m_host(_context),
     m_code(_code),
     m_msg(_msg),
     m_result(_result),
@@ -101,9 +102,6 @@ public:
     // set sane defaults
     m_result.returnValue = std::vector<uint8_t>{};
     m_result.isRevert = false;
-
-    // cache the transaction context here
-    m_tx_context = m_context->host->get_tx_context(m_context);
   }
 
 // WAVM/WABT host functions access this interface through an instance,
@@ -195,12 +193,11 @@ private:
   /* Checks for overflow and safely charges gas for variable length data copies */
   void safeChargeDataCopy(uint32_t length, unsigned baseCost);
 
-  bool enoughSenderBalanceFor(evmc_uint256be const& value) const;
+  bool enoughSenderBalanceFor(evmc_uint256be const& value);
 
   static unsigned __int128 safeLoadUint128(evmc_uint256be const& value);
 
-  evmc_tx_context m_tx_context{};
-  evmc_context* m_context = nullptr;
+  evmc::HostContext m_host;
   std::vector<uint8_t> const& m_code;
   evmc_message const& m_msg;
   std::vector<uint8_t> m_lastReturnData;

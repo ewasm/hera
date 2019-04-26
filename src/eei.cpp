@@ -102,7 +102,7 @@ void WasmEngine::collectBenchmarkingData()
 
       HERA_DEBUG << "): " << dec;
 
-      evmc_bytes32 result = m_context->host->get_storage(m_context, &m_msg.destination, &path);
+      evmc_bytes32 result = m_host.get_storage(m_msg.destination, path);
 
       if (useHex)
       {
@@ -185,7 +185,7 @@ void WasmEngine::collectBenchmarkingData()
       takeInterfaceGas(GasSchedule::balance);
 
       evmc_address address = loadAddress(addressOffset);
-      evmc_uint256be balance = m_context->host->get_balance(m_context, &address);
+      evmc_uint256be balance = m_host.get_balance(address);
       storeUint128(balance, resultOffset);
   }
 
@@ -195,7 +195,7 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::blockhash);
 
-      evmc_bytes32 blockhash = m_context->host->get_block_hash(m_context, static_cast<int64_t>(number));
+      evmc_bytes32 blockhash = m_host.get_block_hash(static_cast<int64_t>(number));
 
       if (is_zero(blockhash))
         return 1;
@@ -269,7 +269,7 @@ void WasmEngine::collectBenchmarkingData()
       evmc_address address = loadAddress(addressOffset);
       // TODO: optimise this so no vector needs to be created
       vector<uint8_t> codeBuffer(length);
-      size_t numCopied = m_context->host->copy_code(m_context, &address, codeOffset, codeBuffer.data(), codeBuffer.size());
+      size_t numCopied = m_host.copy_code(address, codeOffset, codeBuffer.data(), codeBuffer.size());
       ensureCondition(numCopied == length, InvalidMemoryAccess, "Out of bounds (source) memory copy");
 
       storeMemory(codeBuffer, 0, resultOffset, length);
@@ -282,7 +282,7 @@ void WasmEngine::collectBenchmarkingData()
       takeInterfaceGas(GasSchedule::extcode);
 
       evmc_address address = loadAddress(addressOffset);
-      size_t code_size = m_context->host->get_code_size(m_context, &address);
+      size_t code_size = m_host.get_code_size(address);
 
       return static_cast<uint32_t>(code_size);
   }
@@ -293,7 +293,7 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::base);
 
-      storeAddress(m_tx_context.block_coinbase, resultOffset);
+      storeAddress(m_host.get_tx_context().block_coinbase, resultOffset);
   }
 
   void EthereumInterface::eeiGetBlockDifficulty(uint32_t offset)
@@ -302,7 +302,7 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::base);
 
-      storeUint256(m_tx_context.block_difficulty, offset);
+      storeUint256(m_host.get_tx_context().block_difficulty, offset);
   }
 
   int64_t EthereumInterface::eeiGetBlockGasLimit()
@@ -311,9 +311,9 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::base);
 
-      static_assert(is_same<decltype(m_tx_context.block_gas_limit), int64_t>::value, "int64_t type expected");
+      static_assert(is_same<decltype(m_host.get_tx_context().block_gas_limit), int64_t>::value, "int64_t type expected");
 
-      return m_tx_context.block_gas_limit;
+      return m_host.get_tx_context().block_gas_limit;
   }
 
   void EthereumInterface::eeiGetTxGasPrice(uint32_t valueOffset)
@@ -322,7 +322,7 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::base);
 
-      storeUint128(m_tx_context.tx_gas_price, valueOffset);
+      storeUint128(m_host.get_tx_context().tx_gas_price, valueOffset);
   }
 
   void EthereumInterface::eeiLog(uint32_t dataOffset, uint32_t length, uint32_t numberOfTopics, uint32_t topic1, uint32_t topic2, uint32_t topic3, uint32_t topic4)
@@ -350,7 +350,7 @@ void WasmEngine::collectBenchmarkingData()
       vector<uint8_t> data(length);
       loadMemory(dataOffset, data, length);
 
-      m_context->host->emit_log(m_context, &m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
+      m_host.emit_log(m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
   }
 
   int64_t EthereumInterface::eeiGetBlockNumber()
@@ -359,9 +359,9 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::base);
 
-      static_assert(is_same<decltype(m_tx_context.block_number), int64_t>::value, "int64_t type expected");
+      static_assert(is_same<decltype(m_host.get_tx_context().block_number), int64_t>::value, "int64_t type expected");
 
-      return m_tx_context.block_number;
+      return m_host.get_tx_context().block_number;
   }
 
   int64_t EthereumInterface::eeiGetBlockTimestamp()
@@ -370,9 +370,9 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::base);
 
-      static_assert(is_same<decltype(m_tx_context.block_timestamp), int64_t>::value, "int64_t type expected");
+      static_assert(is_same<decltype(m_host.get_tx_context().block_timestamp), int64_t>::value, "int64_t type expected");
 
-      return m_tx_context.block_timestamp;
+      return m_host.get_tx_context().block_timestamp;
   }
 
   void EthereumInterface::eeiGetTxOrigin(uint32_t resultOffset)
@@ -381,7 +381,7 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::base);
 
-      storeAddress(m_tx_context.tx_origin, resultOffset);
+      storeAddress(m_host.get_tx_context().tx_origin, resultOffset);
   }
 
   void EthereumInterface::eeiStorageStore(uint32_t pathOffset, uint32_t valueOffset)
@@ -400,7 +400,7 @@ void WasmEngine::collectBenchmarkingData()
 
       evmc_bytes32 path = loadBytes32(pathOffset);
       evmc_bytes32 value = loadBytes32(valueOffset);
-      evmc_bytes32 current = m_context->host->get_storage(m_context, &m_msg.destination, &path);
+      evmc_bytes32 current = m_host.get_storage(m_msg.destination, path);
 
       // Charge the right amount in case of the create case.
       if (is_zero(current) && !is_zero(value))
@@ -408,7 +408,7 @@ void WasmEngine::collectBenchmarkingData()
 
       // We do not need to take care about the delete case (gas refund), the client does it.
 
-      m_context->host->set_storage(m_context, &m_msg.destination, &path, &value);
+      m_host.set_storage(m_msg.destination, path, value);
   }
 
   void EthereumInterface::eeiStorageLoad(uint32_t pathOffset, uint32_t resultOffset)
@@ -418,7 +418,7 @@ void WasmEngine::collectBenchmarkingData()
       takeInterfaceGas(GasSchedule::storageLoad);
 
       evmc_bytes32 path = loadBytes32(pathOffset);
-      evmc_bytes32 result = m_context->host->get_storage(m_context, &m_msg.destination, &path);
+      evmc_bytes32 result = m_host.get_storage(m_msg.destination, path);
 
       storeBytes32(result, resultOffset);
   }
@@ -534,7 +534,7 @@ void WasmEngine::collectBenchmarkingData()
           return 1;
 
         // Only charge callNewAccount gas if the account is new and non-zero value is being transferred per EIP161.
-        if ((kind == EEICallKind::Call) && !m_context->host->account_exists(m_context, &call_message.destination))
+        if ((kind == EEICallKind::Call) && !m_host.account_exists(call_message.destination))
           takeInterfaceGas(GasSchedule::callNewAccount);
       }
 
@@ -550,16 +550,13 @@ void WasmEngine::collectBenchmarkingData()
 
       call_message.gas = gas;
 
-      evmc_result call_result = m_context->host->call(m_context, &call_message);
+      auto call_result = m_host.call(call_message);
 
       if (call_result.output_data) {
         m_lastReturnData.assign(call_result.output_data, call_result.output_data + call_result.output_size);
       } else {
         m_lastReturnData.clear();
       }
-
-      if (call_result.release)
-        call_result.release(&call_result);
 
       /* Return unspent gas */
       heraAssert(call_result.gas_left >= 0, "EVMC returned negative gas left");
@@ -615,7 +612,7 @@ void WasmEngine::collectBenchmarkingData()
       create_message.gas = gas;
       takeInterfaceGas(gas);
 
-      evmc_result create_result = m_context->host->call(m_context, &create_message);
+      auto create_result = m_host.call(create_message);
 
       /* Return unspent gas */
       heraAssert(create_result.gas_left >= 0, "EVMC returned negative gas left");
@@ -629,9 +626,6 @@ void WasmEngine::collectBenchmarkingData()
       } else {
         m_lastReturnData.clear();
       }
-
-      if (create_result.release)
-        create_result.release(&create_result);
 
       switch (create_result.status_code) {
       case EVMC_SUCCESS:
@@ -653,10 +647,10 @@ void WasmEngine::collectBenchmarkingData()
 
       evmc_address address = loadAddress(addressOffset);
 
-      if (!m_context->host->account_exists(m_context, &address))
+      if (!m_host.account_exists(address))
         takeInterfaceGas(GasSchedule::callNewAccount);
 
-      m_context->host->selfdestruct(m_context, &m_msg.destination, &address);
+      m_host.selfdestruct(m_msg.destination, address);
 
       throw EndExecution{};
   }
@@ -839,9 +833,9 @@ void WasmEngine::collectBenchmarkingData()
     takeInterfaceGas(GasSchedule::copy * ((int64_t(length) + 31) / 32));
   }
 
-  bool EthereumInterface::enoughSenderBalanceFor(evmc_uint256be const& value) const
+  bool EthereumInterface::enoughSenderBalanceFor(evmc_uint256be const& value)
   {
-    evmc_uint256be balance = m_context->host->get_balance(m_context, &m_msg.destination);
+    evmc_uint256be balance = m_host.get_balance(m_msg.destination);
     return safeLoadUint128(balance) >= safeLoadUint128(value);
   }
 
