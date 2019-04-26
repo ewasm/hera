@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8)
 
-if (NOT EXISTS ${CMAKE_SOURCE_DIR}/evmc/.git OR NOT EXISTS ${CMAKE_SOURCE_DIR}/cmake/cable/.git)
+if(NOT EXISTS ${CMAKE_SOURCE_DIR}/evmc/.git OR NOT EXISTS ${CMAKE_SOURCE_DIR}/cmake/cable/.git)
     message(FATAL_ERROR "Git submodules not initialized, execute:\n  git submodule update --init")
 endif()
 
@@ -12,8 +12,7 @@ include(CableToolchains)
 include(CMakePackageConfigHelpers)
 include(GNUInstallDirs)
 
-option(EVMC_TESTING "Build EVMC tests and test tools" OFF)
-if(EVMC_TESTING)
+if(EVMC_TESTING OR EVMC_TEST_TOOLS)
     # If Hunter is needed it must be initialized before project(hera).
     include(evmc/cmake/cable/HunterGate.cmake)
     include(evmc/cmake/HunterConfig.cmake)
