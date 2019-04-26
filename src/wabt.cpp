@@ -580,6 +580,39 @@ ExecutionResult WabtEngine::execute(
     }
   );
 
+  // Create the bignum host module
+  // The lifecycle of this pointer is handled by `env`.
+  hostModule = env.AppendHostModule("bignum");
+  heraAssert(hostModule, "Failed to create host module.");
+
+  hostModule->AppendFuncExport(
+    "mul256",
+    {{Type::I32, Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.mul256(args[0].value.i32, args[1].value.i32, args[2].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "umulmod256",
+    {{Type::I32, Type::I32, Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.umulmod256(args[0].value.i32, args[1].value.i32, args[2].value.i32, args[3].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
 #if HERA_DEBUGGING
   // Create debug host module
   // The lifecycle of this pointer is handled by `env`.
@@ -1099,6 +1132,37 @@ void WabtEngine::verifyContract(bytes_view code) {
     "getBlockTimestamp",
     {{}, {Type::I64}},
     [](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  // Create the bignum host module
+  // The lifecycle of this pointer is handled by `env`.
+  hostModule = env.AppendHostModule("bignum");
+  heraAssert(hostModule, "Failed to create host module.");
+
+  hostModule->AppendFuncExport(
+    "mul256",
+    {{Type::I32, Type::I32, Type::I32}, {}},
+    [&](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "umulmod256",
+    {{Type::I32, Type::I32, Type::I32, Type::I32}, {}},
+    [&](
       const interp::HostFunc*,
       const interp::FuncSignature*,
       const interp::TypedValues&,
