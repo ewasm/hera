@@ -249,6 +249,20 @@ namespace wavm_host_module {
     interface.top()->eeiSelfDestruct(addressOffset);
   }
 
+  // the host module is called 'bignum'
+  DEFINE_INTRINSIC_MODULE(bignum)
+
+  // host functions follow
+  DEFINE_INTRINSIC_FUNCTION(bignum, "mul256", void, mul256, U32 a, U32 b, U32 ret)
+  {
+    interface.top()->mul256(a, b, ret);
+  }
+
+  DEFINE_INTRINSIC_FUNCTION(bignum, "umulmod256", void, umulmod246, U32 a, U32 b, U32 mod, U32 ret)
+  {
+    interface.top()->umulmod256(a, b, mod, ret);
+  }
+
   // this is needed for resolving names of imported host functions
   struct HeraWavmResolver : Runtime::Resolver {
     HashMap<string, Runtime::ModuleInstance*> moduleNameToInstanceMap;
@@ -349,10 +363,14 @@ ExecutionResult WavmEngine::internalExecute(
   Runtime::GCPointer<Runtime::ModuleInstance> ethereumHostModule = Intrinsics::instantiateModule(compartment, wavm_host_module::INTRINSIC_MODULE_REF(ethereum), "ethereum", {});
   heraAssert(ethereumHostModule, "Failed to create host module.");
 
+  Runtime::GCPointer<Runtime::ModuleInstance> bignumHostModule = Intrinsics::instantiateModule(compartment, wavm_host_module::INTRINSIC_MODULE_REF(bignum), "bignum", {});
+  heraAssert(bignumHostModule, "Failed to create host module.");
+
   // prepare contract module to resolve links against host module
   wavm_host_module::HeraWavmResolver resolver;
   // TODO: move this into the constructor?
   resolver.moduleNameToInstanceMap.set("ethereum", ethereumHostModule);
+  resolver.moduleNameToInstanceMap.set("bignum", bignumHostModule);
   Runtime::LinkResult linkResult = Runtime::linkModule(moduleIR, resolver);
   ensureCondition(linkResult.success, ContractValidationFailure, "Couldn't link contract against host module.");
 
@@ -457,7 +475,7 @@ void WavmEngine::verifyContract(bytes_view code)
 
   for (auto const& import: moduleIR.functions.imports) {
 #if HERA_DEBUGGING
-    if (import.moduleName == "debug")
+    if (import.moduleName == "debug" || import.moduleName == "bignum")
       continue;
 #endif
 
