@@ -93,7 +93,7 @@ public:
     bool _meterGas
   ):
     m_host(_context),
-    m_code{_code.begin(), _code.end()},
+    m_code{_code},
     m_msg(_msg),
     m_result(_result),
     m_meterGas(_meterGas)
@@ -201,7 +201,7 @@ private:
   static unsigned __int128 safeLoadUint128(evmc_uint256be const& value);
 
   evmc::HostContext m_host;
-  bytes m_code;
+  bytes_view m_code;
   evmc_message const& m_msg;
   bytes m_lastReturnData;
   ExecutionResult & m_result;

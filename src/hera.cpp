@@ -273,7 +273,7 @@ evmc_result hera_execute(
     heraAssert(hera->engine, "Wasm engine not set.");
     WasmEngine& engine = *hera->engine;
 
-    ExecutionResult result = engine.execute(context, {run_code.data(), run_code.size()}, state_code, *msg, meterInterfaceGas);
+    ExecutionResult result = engine.execute(context, run_code, state_code, *msg, meterInterfaceGas);
     heraAssert(result.gasLeft >= 0, "Negative gas left after execution.");
 
     // copy call result
