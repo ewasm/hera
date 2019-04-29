@@ -21,6 +21,8 @@
 #ifndef wasm_shell_interface_h
 #define wasm_shell_interface_h
 
+#include <vector>
+
 #include <wasm.h>
 #include <wasm-interpreter.h>
 

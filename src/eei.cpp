@@ -16,10 +16,7 @@
 
 #include <array>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
-#include <sstream>
-#include <vector>
 
 #include "debugging.h"
 #include "eei.h"

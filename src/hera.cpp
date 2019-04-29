@@ -18,12 +18,10 @@
 
 #include <limits>
 #include <cstring>
-#include <vector>
 #include <unistd.h>
 #include <iostream>
-#include <fstream>
-#include <iomanip>
 #include <map>
+#include <memory>
 
 #include <evmc/evmc.h>
 #include <evmc/helpers.hpp>

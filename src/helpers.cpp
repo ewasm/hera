@@ -17,7 +17,6 @@
 #include <fstream>
 #include <iomanip>
 #include <sstream>
-#include <vector>
 
 #include <evmc/evmc.h>
 
