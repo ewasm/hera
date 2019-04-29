@@ -19,7 +19,6 @@
 #include <chrono>
 #include <cstdint>
 #include <string>
-#include <vector>
 
 #include <evmc/evmc.h>
 #include <evmc/evmc.hpp>

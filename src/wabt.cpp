@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <vector>
 #include <iostream>
 
 #include "src/interp/binary-reader-interp.h"
