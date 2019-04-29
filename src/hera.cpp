@@ -407,7 +407,10 @@ evmc_set_option_result hera_set_option(
   }
 
   if (strcmp(name, "metering") == 0) {
-    hera->metering = strcmp(value, "true") == 0;
+    if (strcmp(value, "true") == 0)
+      hera->metering = true;
+    else if (strcmp(value, "false") != 0)
+      return EVMC_SET_OPTION_INVALID_VALUE;
     return EVMC_SET_OPTION_SUCCESS;
   }
 
