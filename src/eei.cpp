@@ -220,8 +220,7 @@ void WasmEngine::collectBenchmarkingData()
 
       safeChargeDataCopy(length, GasSchedule::verylow);
 
-      vector<uint8_t> input(m_msg.input_data, m_msg.input_data + m_msg.input_size);
-      storeMemory(input, dataOffset, resultOffset, length);
+      storeMemory({m_msg.input_data, m_msg.input_size}, dataOffset, resultOffset, length);
   }
 
   void EthereumInterface::eeiGetCaller(uint32_t resultOffset)
@@ -267,8 +266,8 @@ void WasmEngine::collectBenchmarkingData()
       safeChargeDataCopy(length, GasSchedule::extcode);
 
       evmc_address address = loadAddress(addressOffset);
-      // TODO: optimise this so no vector needs to be created
-      vector<uint8_t> codeBuffer(length);
+      // TODO: optimise this so no copy needs to be created
+      bytes codeBuffer(length, '\0');
       size_t numCopied = m_host.copy_code(address, codeOffset, codeBuffer.data(), codeBuffer.size());
       ensureCondition(numCopied == length, InvalidMemoryAccess, "Out of bounds (source) memory copy");
 
@@ -347,7 +346,7 @@ void WasmEngine::collectBenchmarkingData()
       topics[3] = (numberOfTopics == 4) ? loadBytes32(topic4) : evmc_uint256be{};
 
       ensureSourceMemoryBounds(dataOffset, length);
-      vector<uint8_t> data(length);
+      bytes data(length, '\0');
       loadMemory(dataOffset, data, length);
 
       m_host.emit_log(m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
@@ -428,7 +427,7 @@ void WasmEngine::collectBenchmarkingData()
       HERA_DEBUG << depthToString() << " " << (revert ? "revert " : "finish ") << hex << offset << " " << size << dec << "\n";
 
       ensureSourceMemoryBounds(offset, size);
-      m_result.returnValue = vector<uint8_t>(size);
+      m_result.returnValue = bytes(size, '\0');
       loadMemory(offset, m_result.returnValue, size);
 
       m_result.isRevert = revert;
@@ -507,7 +506,7 @@ void WasmEngine::collectBenchmarkingData()
 #endif
 
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
-      vector<uint8_t> input_data;
+      bytes input_data;
       if (dataLength) {
         ensureSourceMemoryBounds(dataOffset, dataLength);
         input_data.resize(dataLength);
@@ -592,7 +591,7 @@ void WasmEngine::collectBenchmarkingData()
         return 1;
 
       // NOTE: this must be declared outside the condition to ensure the memory doesn't go out of scope
-      vector<uint8_t> contract_code;
+      bytes contract_code;
       if (length) {
         ensureSourceMemoryBounds(dataOffset, length);
         contract_code.resize(length);
@@ -707,7 +706,7 @@ void WasmEngine::collectBenchmarkingData()
     }
   }
 
-  void EthereumInterface::loadMemory(uint32_t srcOffset, vector<uint8_t> & dst, size_t length)
+  void EthereumInterface::loadMemory(uint32_t srcOffset, bytes& dst, size_t length)
   {
     // NOTE: the source bound check is not needed as the caller already ensures it
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
@@ -748,7 +747,7 @@ void WasmEngine::collectBenchmarkingData()
     }
   }
 
-  void EthereumInterface::storeMemory(vector<uint8_t> const& src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
+  void EthereumInterface::storeMemory(bytes_view src, uint32_t srcOffset, uint32_t dstOffset, uint32_t length)
   {
     ensureCondition((srcOffset + length) >= srcOffset, InvalidMemoryAccess, "Out of bounds (source) memory copy.");
     ensureCondition(src.size() >= (srcOffset + length), InvalidMemoryAccess, "Out of bounds (source) memory copy.");

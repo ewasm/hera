@@ -32,24 +32,24 @@ public:
 
   ExecutionResult execute(
     evmc_context* context,
-    std::vector<uint8_t> const& code,
-    std::vector<uint8_t> const& state_code,
+    bytes_view code,
+    bytes_view state_code,
     evmc_message const& msg,
     bool meterInterfaceGas
   ) override;
 
-  void verifyContract(std::vector<uint8_t> const&) override;
+  void verifyContract(bytes_view code) override;
 
 private:
   ExecutionResult internalExecute(
     evmc_context* context,
-    std::vector<uint8_t> const& code,
-    std::vector<uint8_t> const& state_code,
+    bytes_view code,
+    bytes_view state_code,
     evmc_message const& msg,
     bool meterInterfaceGas
   );
 
-  IR::Module parseModule(std::vector<uint8_t> const& code);
+  IR::Module parseModule(bytes_view code);
 };
 
 } // namespace hera

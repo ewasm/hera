@@ -22,17 +22,20 @@
 
 namespace hera {
 
-std::string loadFileContents(std::string const& path);
+using bytes = std::basic_string<uint8_t>;
+using bytes_view = std::basic_string_view<uint8_t>;
+
+bytes loadFileContents(std::string const& path);
 
 std::string toHex(evmc_uint256be const& value);
 
 // Returns a formatted string (with prefix "0x") representing the bytes of an array.
-std::string bytesAsHexStr(const uint8_t *bytes, const size_t length);
+std::string bytesAsHexStr(bytes_view bytes);
 
-std::vector<uint8_t> parseHexString(std::string const& input);
+bytes parseHexString(std::string const& input);
 
-bool hasWasmPreamble(std::vector<uint8_t> const& _input);
+bool hasWasmPreamble(bytes_view _input);
 
-bool hasWasmVersion(std::vector<uint8_t> const& _input, uint8_t _version);
+bool hasWasmVersion(bytes_view _input, uint8_t _version);
 
 }

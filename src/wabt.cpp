@@ -44,7 +44,7 @@ class WabtEthereumInterface : public EthereumInterface {
 public:
   explicit WabtEthereumInterface(
     evmc_context* _context,
-    vector<uint8_t> const& _code,
+    bytes_view _code,
     evmc_message const& _msg,
     ExecutionResult & _result,
     bool _meterGas
@@ -73,8 +73,8 @@ unique_ptr<WasmEngine> WabtEngine::create()
 
 ExecutionResult WabtEngine::execute(
   evmc_context* context,
-  vector<uint8_t> const& code,
-  vector<uint8_t> const& state_code,
+  bytes_view code,
+  bytes_view state_code,
   evmc_message const& msg,
   bool meterInterfaceGas
 ) {
@@ -670,7 +670,7 @@ ExecutionResult WabtEngine::execute(
   return result;
 }
 
-void WabtEngine::verifyContract(std::vector<uint8_t> const& code) {
+void WabtEngine::verifyContract(bytes_view code) {
   // Set up the wabt Environment, which includes the Wasm store
   // and the list of modules used for importing/exporting between modules
   interp::Environment env;

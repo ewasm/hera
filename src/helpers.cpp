@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include <vector>
+#include <fstream>
 #include <iomanip>
 #include <sstream>
-#include <fstream>
+#include <vector>
 
 #include <evmc/evmc.h>
 
@@ -27,10 +27,11 @@ using namespace std;
 
 namespace hera {
 
-string loadFileContents(string const& path)
+bytes loadFileContents(string const& path)
 {
-  ifstream is(path);
-  return string{(istreambuf_iterator<char>(is)), istreambuf_iterator<char>()};
+  using iterator = istreambuf_iterator<ifstream::char_type>;
+  ifstream is{path};
+  return {iterator{is}, iterator{}};
 }
 
 string toHex(evmc_uint256be const& value) {
@@ -41,11 +42,11 @@ string toHex(evmc_uint256be const& value) {
   return "0x" + os.str();
 }
 
-string bytesAsHexStr(const uint8_t *bytes, const size_t length) {
+string bytesAsHexStr(bytes_view bytes) {
   stringstream ret;
   ret << hex << "0x";
-  for (size_t i = 0; i < length; ++i) {
-    ret << setw(2) << setfill('0') << static_cast<int>(bytes[i]);
+  for (auto const b : bytes) {
+    ret << setw(2) << setfill('0') << static_cast<int>(b);
   }
   return ret.str();
 }
@@ -72,21 +73,21 @@ bool nibble2value(unsigned input, unsigned& output) {
 // Returns an empty vector if input is invalid (odd number of characters or invalid nibbles).
 // Assumes input is whitespace free, therefore if input is non-zero long an empty output
 // signals an error.
-vector<uint8_t> parseHexString(const string& input) {
+bytes parseHexString(const string& input) {
   size_t len = input.length();
   if (len % 2 != 0)
-    return vector<uint8_t>{};
-  vector<uint8_t> ret;
+    return {};
+  bytes ret;
   for (size_t i = 0; i <= len - 2; i += 2) {
     unsigned lo, hi;
     if (!nibble2value(unsigned(input[i]), hi) || !nibble2value(unsigned(input[i + 1]), lo))
-      return vector<uint8_t>{};
+      return {};
     ret.push_back(static_cast<uint8_t>((hi << 4) | lo));
   }
   return ret;
 }
 
-bool hasWasmPreamble(vector<uint8_t> const& _input) {
+bool hasWasmPreamble(bytes_view _input) {
   return
     _input.size() >= 8 &&
     _input[0] == 0 &&
@@ -95,7 +96,7 @@ bool hasWasmPreamble(vector<uint8_t> const& _input) {
     _input[3] == 'm';
 }
 
-bool hasWasmVersion(vector<uint8_t> const& _input, uint8_t _version) {
+bool hasWasmVersion(bytes_view _input, uint8_t _version) {
   return
     _input.size() >= 8 &&
     _input[4] == _version &&

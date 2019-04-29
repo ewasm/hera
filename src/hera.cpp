@@ -90,7 +90,7 @@ struct hera_instance : evmc_instance {
   };
   hera_evm1mode evm1mode = hera_evm1mode::reject;
   bool metering = false;
-  map<evmc_address, vector<uint8_t>> contract_preload_list;
+  map<evmc_address, bytes> contract_preload_list;
 
   hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr, nullptr}) {}
 };
@@ -101,11 +101,11 @@ const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 // Calls a system contract at @address with input data @input.
 // It is a "staticcall" with sender 000...000 and no value.
 // @returns output data from the contract and update the @gas variable with the gas left.
-pair<evmc_status_code, vector<uint8_t>> callSystemContract(
+pair<evmc_status_code, bytes> callSystemContract(
   evmc_context* context,
   evmc_address const& address,
   int64_t & gas,
-  vector<uint8_t> const& input
+  bytes_view input
 ) {
   evmc_message message = {
     .kind = EVMC_CALL,
@@ -122,7 +122,7 @@ pair<evmc_status_code, vector<uint8_t>> callSystemContract(
 
   evmc_result result = context->host->call(context, &message);
 
-  vector<uint8_t> ret;
+  bytes ret;
   if (result.status_code == EVMC_SUCCESS && result.output_data)
     ret.assign(result.output_data, result.output_data + result.output_size);
 
@@ -136,14 +136,14 @@ pair<evmc_status_code, vector<uint8_t>> callSystemContract(
 
 // Calls the Sentinel contract with input data @input.
 // @returns the validated and metered output or empty output otherwise.
-vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
+bytes sentinel(evmc_context* context, bytes_view input)
 {
   HERA_DEBUG << "Metering (input " << input.size() << " bytes)...\n";
 
   int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
   int64_t gas = startgas;
   evmc_status_code status;
-  vector<uint8_t> ret;
+  bytes ret;
 
   tie(status, ret) = callSystemContract(
     context,
@@ -165,13 +165,13 @@ vector<uint8_t> sentinel(evmc_context* context, vector<uint8_t> const& input)
 
 // Calls the evm2wasm contract with input data @input.
 // @returns the compiled output or empty output otherwise.
-vector<uint8_t> evm2wasm(evmc_context* context, vector<uint8_t> const& input) {
+bytes evm2wasm(evmc_context* context, bytes_view input) {
   HERA_DEBUG << "Calling evm2wasm (input " << input.size() << " bytes)...\n";
 
   int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
   int64_t gas = startgas;
   evmc_status_code status;
-  vector<uint8_t> ret;
+  bytes ret;
 
   tie(status, ret) = callSystemContract(
     context,
@@ -218,10 +218,10 @@ evmc_result hera_execute(
     bool meterInterfaceGas = true;
 
     // the bytecode residing in the state - this will be used by interface methods (i.e. codecopy)
-    vector<uint8_t> state_code(code, code + code_size);
+    bytes_view state_code{code, code_size};
 
     // the actual executable code - this can be modified (metered or evm2wasm compiled)
-    vector<uint8_t> run_code(code, code + code_size);
+    bytes run_code{state_code};
 
     // replace executable code if replacement is supplied
     auto preload = hera->contract_preload_list.find(msg->destination);
@@ -278,7 +278,7 @@ evmc_result hera_execute(
 
     // copy call result
     if (result.returnValue.size() > 0) {
-      vector<uint8_t> returnValue;
+      bytes returnValue;
 
       if (msg->kind == EVMC_CREATE && !result.isRevert && hasWasmPreamble(result.returnValue)) {
         ensureCondition(
@@ -295,7 +295,7 @@ evmc_result hera_execute(
           "Invalid contract or metering failed."
         );
         // FIXME: this should be done by the sentinel
-        engine.verifyContract(returnValue);
+        engine.verifyContract({returnValue.data(), returnValue.size()});
       } else {
         returnValue = move(result.returnValue);
       }
@@ -354,7 +354,7 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
 
   if (name.find("0x") == 0) {
     // hex address
-    vector<uint8_t> ret = parseHexString(name.substr(2, string::npos));
+    bytes ret = parseHexString(name.substr(2, string::npos));
     if (ret.empty()) {
       HERA_DEBUG << "Failed to parse hex address: " << name << "\n";
       return false;
@@ -380,7 +380,7 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
     address = aliases.at(name);
   }
 
-  string contents = loadFileContents(value);
+  bytes contents = loadFileContents(value);
   if (contents.size() == 0) {
     HERA_DEBUG << "Failed to load contract source (or empty): " << value << "\n";
     return false;
@@ -388,7 +388,7 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
 
   HERA_DEBUG << "Loaded contract for " << name << " from " << value << " (" << contents.size() << " bytes)\n";
 
-  hera->contract_preload_list[address] = vector<uint8_t>(contents.begin(), contents.end());
+  hera->contract_preload_list[address] = move(contents);
 
   return true;
 }

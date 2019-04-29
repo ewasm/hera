@@ -39,7 +39,7 @@ class BinaryenEthereumInterface : public wasm::ShellExternalInterface, EthereumI
 public:
   explicit BinaryenEthereumInterface(
     evmc_context* _context,
-    vector<uint8_t> const& _code,
+    bytes_view _code,
     evmc_message const& _msg,
     ExecutionResult & _result,
     bool _meterGas
@@ -474,8 +474,8 @@ unique_ptr<WasmEngine> BinaryenEngine::create()
 // Execute the contract through Binaryen.
 ExecutionResult BinaryenEngine::execute(
   evmc_context* context,
-  vector<uint8_t> const& code,
-  vector<uint8_t> const& state_code,
+  bytes_view code,
+  bytes_view state_code,
   evmc_message const& msg,
   bool meterInterfaceGas
 ) {
@@ -513,10 +513,13 @@ ExecutionResult BinaryenEngine::execute(
   return result;
 }
 
-void BinaryenEngine::loadModule(vector<uint8_t> const& code, wasm::Module & module)
+void BinaryenEngine::loadModule(bytes_view code, wasm::Module& module)
 {
   try {
-    wasm::WasmBinaryBuilder parser(module, reinterpret_cast<vector<char> const&>(code), false);
+    auto const b = reinterpret_cast<char const*>(code.begin());
+    auto const e = reinterpret_cast<char const*>(code.end());
+    std::vector<char> codeCopy{b, e};
+    wasm::WasmBinaryBuilder parser(module, codeCopy, false);
     parser.read();
   } catch (wasm::ParseException const& e) {
     string msg = "Error in parsing WASM binary: '" + e.text + "'";
@@ -526,7 +529,7 @@ void BinaryenEngine::loadModule(vector<uint8_t> const& code, wasm::Module & modu
   }
 }
 
-void BinaryenEngine::verifyContract(vector<uint8_t> const& code)
+void BinaryenEngine::verifyContract(bytes_view code)
 {
   wasm::Module module;
   loadModule(code, module);

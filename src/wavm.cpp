@@ -46,7 +46,7 @@ class WavmEthereumInterface : public EthereumInterface {
 public:
   explicit WavmEthereumInterface(
     evmc_context* _context,
-    vector<uint8_t> const& _code,
+    bytes_view _code,
     evmc_message const& _msg,
     ExecutionResult & _result,
     bool _meterGas
@@ -279,8 +279,8 @@ struct WavmInterfaceKeeper {
 
 ExecutionResult WavmEngine::execute(
   evmc_context* context,
-  vector<uint8_t> const& code,
-  vector<uint8_t> const& state_code,
+  bytes_view code,
+  bytes_view state_code,
   evmc_message const& msg,
   bool meterInterfaceGas
 ) {
@@ -300,7 +300,7 @@ ExecutionResult WavmEngine::execute(
   }
 }
 
-IR::Module WavmEngine::parseModule(vector<uint8_t> const& code)
+IR::Module WavmEngine::parseModule(bytes_view code)
 {
   // first parse module
   IR::Module moduleIR;
@@ -321,8 +321,8 @@ IR::Module WavmEngine::parseModule(vector<uint8_t> const& code)
 
 ExecutionResult WavmEngine::internalExecute(
   evmc_context* context,
-  vector<uint8_t> const& code,
-  vector<uint8_t> const& state_code,
+  bytes_view code,
+  bytes_view state_code,
   evmc_message const& msg,
   bool meterInterfaceGas
 ) {
@@ -398,7 +398,7 @@ ExecutionResult WavmEngine::internalExecute(
   return result;
 }
 
-void WavmEngine::verifyContract(vector<uint8_t> const& code)
+void WavmEngine::verifyContract(bytes_view code)
 {
   IR::Module moduleIR = parseModule(code);
 
