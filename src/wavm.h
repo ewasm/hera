@@ -19,8 +19,10 @@
 
 #include "eei.h"
 
+namespace WAVM {
 namespace IR {
 class Module;
+}
 }
 
 namespace hera {
@@ -49,7 +51,7 @@ private:
     bool meterInterfaceGas
   );
 
-  IR::Module parseModule(bytes_view code);
+  WAVM::IR::Module parseModule(bytes_view code);
 };
 
 } // namespace hera
