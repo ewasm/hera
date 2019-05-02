@@ -572,11 +572,15 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
     "Contract export (\"memory\") missing."
   );
 
+/*
+***** in the metering benchmarks, inline-block and inline-super both export the inline useGas functions
+// just going to comment this out since here since we need to change Hera for static libs anyway
   ensureCondition(
     module.exports.size() == 2,
     ContractValidationFailure,
     "Contract exports more than (\"main\") and (\"memory\")."
   );
+*/
 
   // The existence of this is ensured above.
   wasm::Export* main_export = module.getExport(wasm::Name("main"));

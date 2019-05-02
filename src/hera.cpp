@@ -94,7 +94,10 @@ struct hera_instance : evmc_instance {
   bool metering = false;
   map<evmc_address, bytes> contract_preload_list;
 
-  hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr, nullptr}) {}
+  // hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr, nullptr}) {}
+  // fix error with geth+evmc:  /tmp/go-build940146972/b001/runtime.test: symbol lookup error: /tmp/go-build940146972/b001/runtime.test: undefined symbol: hera_get_buildinfo
+  hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}) {}
+
 };
 
 const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } };
