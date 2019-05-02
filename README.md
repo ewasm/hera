@@ -75,6 +75,7 @@ These are to be used via EVMC `set_option`:
 - `reject` will reject any EVM1 bytecode with an error (the default setting)
 - `fallback` will allow EVM1 bytecode to be passed through to the client for execution
 - `evm2wasm` will enable transformation of bytecode using the [EVM Transcompiler]
+- `runevm` will transform EVM1 bytecode using [runevm]
 
 ## Interfaces
 
@@ -129,3 +130,4 @@ Apache 2.0
 [Sentinel system contract]: https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract
 [EVM Transcompiler]: https://github.com/ewasm/design/blob/master/system_contracts.md#evm-transcompiler
 [EEI]: https://github.com/ewasm/design/blob/master/eth_interface.md
+[runevm]: https://github.com/axic/runevm
