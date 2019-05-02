@@ -166,14 +166,19 @@ defaults:
       command: |
         ~/build/evmc/test/evmc-vmtester ~/build/src/libhera.so
 
-#  evm2wasm-test: &evm2wasm-test
-#    run:
-#      name: "Run evm2wasm state tests"
-#      command: |
-#        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/8/lib/linux/libclang_rt.asan-x86_64.so; fi
-#        testeth --version
-#        testeth -t GeneralStateTests/stExample -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --singletest "add11" --evmc evm1mode=evm2wasm.cpp
-#        testeth -t GeneralStateTests/stStackTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc evm1mode=evm2wasm.cpp
+  evm2wasm-test: &evm2wasm-test
+    run:
+      name: "Run evm2wasm state tests (using runevm contract)"
+      command: |
+        curl -o /tmp/runevm.wasm -L https://github.com/axic/runevm/releases/download/0.1.0-alpha2/runevm.wasm
+        test "$(shasum /tmp/runevm.wasm)" = "f9c11823f34bc2910bfa457342e3d6d00801ea5f  /tmp/runevm.wasm"
+        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/8/lib/linux/libclang_rt.asan-x86_64.so; fi
+        testeth --version
+        testeth -t GeneralStateTests/stExample -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc evm1mode=runevm --evmc sys:runevm=/tmp/runevm.wasm
+        # This works, but takes too much time (4 minutes)
+        # testeth -t GeneralStateTests/stStackTests -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc evm1mode=runevm --evmc sys:runevm=/tmp/runevm.wasm
+        testeth -t GeneralStateTests/stShift -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc evm1mode=runevm --evmc sys:runevm=/tmp/runevm.wasm
+        testeth -t GeneralStateTests/stCodeSizeLimit -- --testpath tests --vm ~/build/src/libhera.so --singlenet Byzantium --evmc evm1mode=runevm --evmc sys:runevm=/tmp/runevm.wasm
 
   upload-coverage-data: &upload-coverage-data
     run:
@@ -210,7 +215,7 @@ jobs:
       - *test-wabt
       - *test-wavm
       - *evmc-test
-#      - *evm2wasm-test
+      - *evm2wasm-test
 
   linux-clang-shared-asan:
     environment:
@@ -239,7 +244,7 @@ jobs:
       - *test-wabt
       - *test-wavm
       - *evmc-test
-#      - *evm2wasm-test
+      - *evm2wasm-test
 
   linux-gcc-shared-coverage:
     environment:
