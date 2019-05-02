@@ -40,8 +40,8 @@ defaults:
       name: "Run clang-format"
       command: |
         clang-format --version
-        clang-format -i src/*
-        git diff --exit-code
+        find include src test -name '*.hpp' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' | xargs clang-format -i
+        git diff --color --exit-code
 
   build: &build
     run:
