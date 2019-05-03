@@ -4,3 +4,6 @@
 [submodule "cable"]
 	path = cmake/cable
 	url = https://github.com/ethereum/cable
+[submodule "intx"]
+	path = intx
+	url = https://github.com/chfast/intx
