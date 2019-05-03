@@ -28,7 +28,7 @@ set(PROJECT_VERSION 0.2.4-alpha.0)
 
 cable_set_build_type(DEFAULT RelWithDebInfo CONFIGURATION_TYPES Debug;Release;RelWithDebInfo)
 
-cable_configure_compiler()
+cable_configure_compiler(NO_PEDANTIC NO_CONVERSION_WARNINGS NO_STACK_PROTECTION)
 if(CABLE_COMPILER_GNULIKE)
     # TODO: fix the warnings instead
     add_compile_options(-Wno-pedantic)
@@ -68,6 +68,7 @@ if (NOT (HERA_BINARYEN OR HERA_WABT OR HERA_WAVM))
 endif()
 
 add_subdirectory(evmc)
+add_subdirectory(intx)
 add_subdirectory(src)
 add_subdirectory(test)
 

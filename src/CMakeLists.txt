@@ -1,8 +1,5 @@
 find_package(Threads REQUIRED)
 
-hunter_add_package(intx)
-find_package(intx CONFIG REQUIRED)
-
 set(hera_include_dir ${PROJECT_SOURCE_DIR}/include)
 get_filename_component(evmc_include_dir .. ABSOLUTE)
 
