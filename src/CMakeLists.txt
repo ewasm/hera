@@ -1,5 +1,8 @@
 find_package(Threads REQUIRED)
 
+hunter_add_package(intx)
+find_package(intx CONFIG REQUIRED)
+
 set(hera_include_dir ${PROJECT_SOURCE_DIR}/include)
 get_filename_component(evmc_include_dir .. ABSOLUTE)
 
@@ -33,7 +36,7 @@ endif()
 target_include_directories(hera
     PUBLIC $<BUILD_INTERFACE:${hera_include_dir}>$<INSTALL_INTERFACE:include>
 )
-target_link_libraries(hera PUBLIC evmc::evmc PRIVATE hera-buildinfo evmc::instructions)
+target_link_libraries(hera PUBLIC evmc::evmc PRIVATE hera-buildinfo evmc::instructions intx::intx)
 if(NOT WIN32)
   if(CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(hera PROPERTIES LINK_FLAGS "-Wl,--no-undefined")
