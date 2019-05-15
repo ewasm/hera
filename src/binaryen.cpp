@@ -463,6 +463,14 @@ private:
       eeiSelfDestruct(addressOffset);
     }
 
+    if (import->base == wasm::Name("isAccountEmpty")) {
+      heraAssert(arguments.size() == 1, string("Argument count mismatch in: ") + import->base.str);
+
+      uint32_t addressOffset = static_cast<uint32_t>(arguments[0].geti32());
+
+      return wasm::Literal(eeiIsAccountEmpty(addressOffset));
+    }
+
     heraAssert(false, string("Unsupported import called: ") + import->module.str + "::" + import->base.str + " (" + to_string(arguments.size()) + "arguments)");
   }
 
@@ -628,7 +636,8 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
     { wasm::Name("callDelegate"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
     { wasm::Name("callStatic"), createFunctionType({ wasm::Type::i64, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
     { wasm::Name("create"), createFunctionType({ wasm::Type::i32, wasm::Type::i32, wasm::Type::i32, wasm::Type::i32 }, wasm::Type::i32) },
-    { wasm::Name("selfDestruct"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) }
+    { wasm::Name("selfDestruct"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) },
+    { wasm::Name("isAccountEmpty"), createFunctionType({ wasm::Type::i32 }, wasm::Type::i32) }
   };
 
   for (auto const& import: module.imports) {

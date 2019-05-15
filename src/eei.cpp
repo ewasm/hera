@@ -651,6 +651,15 @@ void WasmEngine::collectBenchmarkingData()
       throw EndExecution{};
   }
 
+  uint32_t EthereumInterface::eeiIsAccountEmpty(uint32_t addressOffset)
+  {
+      HERA_DEBUG << depthToString() << " isAccountEmpty " << hex << addressOffset << dec << "\n";
+
+      evmc_address address = loadAddress(addressOffset);
+
+      return m_host.account_exists(address) ? 0 : 1;
+  }
+
   void EthereumInterface::takeGas(int64_t gas)
   {
     // NOTE: gas >= 0 is validated by the callers of this method
