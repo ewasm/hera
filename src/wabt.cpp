@@ -61,6 +61,10 @@ private:
   size_t memorySize() const override { return m_wasmMemory->data.size(); }
   void memorySet(size_t offset, uint8_t value) override { m_wasmMemory->data[offset] = static_cast<char>(value); }
   uint8_t memoryGet(size_t offset) override { return static_cast<uint8_t>(m_wasmMemory->data[offset]); }
+  uint8_t* memoryPointer(size_t offset, size_t length) override {
+    ensureCondition(memorySize() >= (offset + length), InvalidMemoryAccess, "Memory is shorter than requested segment");
+    return reinterpret_cast<uint8_t*>(&m_wasmMemory->data[offset]);
+  }
 
   interp::Memory* m_wasmMemory;
 };

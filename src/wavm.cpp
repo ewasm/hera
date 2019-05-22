@@ -63,6 +63,10 @@ private:
   size_t memorySize() const override { return Runtime::getMemoryNumPages(m_wasmMemory) * 65536; }
   void memorySet(size_t offset, uint8_t value) override { (Runtime::memoryArrayPtr<U8>(m_wasmMemory, offset, 1))[0] = value; }
   uint8_t memoryGet(size_t offset) override { return (Runtime::memoryArrayPtr<U8>(m_wasmMemory, offset, 1))[0]; }
+  uint8_t* memoryPointer(size_t offset, size_t length) override {
+    ensureCondition(memorySize() >= (offset + length), InvalidMemoryAccess, "Memory is shorter than requested segment");
+    return Runtime::memoryArrayPtr<U8>(m_wasmMemory, offset, length);
+  }
 
   Runtime::MemoryInstance* m_wasmMemory;
 };
