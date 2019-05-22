@@ -23,7 +23,7 @@ cable_configure_toolchain(DEFAULT cxx17-pic)
 set(CMAKE_DEBUG_POSTFIX "")
 
 project(hera)
-set(PROJECT_VERSION 0.2.4-alpha.0)
+set(PROJECT_VERSION 0.2.4)
 
 cable_set_build_type(DEFAULT RelWithDebInfo CONFIGURATION_TYPES Debug;Release;RelWithDebInfo)
 
