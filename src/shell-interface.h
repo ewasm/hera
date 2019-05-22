@@ -51,7 +51,6 @@ struct ShellExternalInterface : ModuleInstance::ExternalInterface {
     Memory& operator=(const Memory&) = delete;
 
    public:
-    Memory() {}
     Memory() = default;
     // Gives no guarantee about the length of the memory. Caller needs to ensure that.
     char* rawpointer(size_t offset) {
