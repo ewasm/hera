@@ -1,4 +1,4 @@
 extraction:
   cpp:
     configure:
-      command: cmake -DHERA_WABT=ON -DHERA_BINARYEN=ON
+      command: cmake -DHERA_WABT=ON -DHERA_BINARYEN=ON -DHERA_WAVM=ON
