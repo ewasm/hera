@@ -13,12 +13,12 @@ set(wabt_library ${binary_dir}/${CMAKE_STATIC_LIBRARY_PREFIX}wabt${CMAKE_STATIC_
 
 ExternalProject_Add(wabt
     PREFIX ${prefix}
-    DOWNLOAD_NAME wabt-1.0.10.tar.gz
+    DOWNLOAD_NAME wabt-1.0.11.tar.gz
     DOWNLOAD_DIR ${prefix}/downloads
     SOURCE_DIR ${source_dir}
     BINARY_DIR ${binary_dir}
-    URL https://github.com/WebAssembly/wabt/archive/1.0.10.tar.gz
-    URL_HASH SHA256=7d143a8c8ee0593517dcc40068204591a8d325b1ca3c0311402bb81d3e5ac90b
+    URL https://github.com/WebAssembly/wabt/archive/1.0.11.tar.gz
+    URL_HASH SHA256=90e7f4a4e924e38af4edb6ca298ade662869c5b61a12399e71ee53d598d52cbe
     CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     -DCMAKE_BUILD_TYPE=Release
