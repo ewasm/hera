@@ -251,9 +251,9 @@ jobs:
       - BUILD_TYPE: Debug
       - CXX: g++
       - CC:  gcc
-      - GENERATOR: Ninja
+      - GENERATOR: Unix Makefiles
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DCOVERAGE=ON -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON -DHERA_BINARYEN=ON
+      - CMAKE_OPTIONS: -DCOVERAGE=ON -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON -DHERA_BINARYEN=ON -DHERA_WABT=ON -DHERA_WAVM=ON
       - TESTETH_OPTIONS: --evmc benchmark=true
     docker:
       - image: ethereum/cpp-build-env:9
@@ -269,6 +269,8 @@ jobs:
       - *install-aleth
       - *fetch-tests
       - *test-binaryen
+      - *test-wabt
+      - *test-wavm
       - *upload-coverage-data
 
   linux-gcc-static-debug:
