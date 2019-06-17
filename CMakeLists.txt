@@ -58,6 +58,11 @@ if (HERA_WAVM)
     include(ProjectWAVM)
 endif()
 
+option(HERA_V8 "Build with V8" OFF)
+if (HERA_V8)
+    include(ProjectV8)
+endif()
+
 if (NOT (HERA_BINARYEN OR HERA_WABT OR HERA_WAVM))
     message(FATAL_ERROR "At least one one engine must be enabled.")
 endif()
