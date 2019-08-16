@@ -24,7 +24,7 @@
 #include "helpers.h"
 
 #include <evmc/instructions.h>
-#include <evmc/helpers.hpp>
+#include <evmc/helpers.hpp>  // FIXME: Do not include deprecated helpers.hpp.
 
 using namespace std;
 
@@ -192,7 +192,7 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::blockhash);
 
-      evmc_bytes32 blockhash = m_host.get_block_hash(static_cast<int64_t>(number));
+      const auto blockhash = m_host.get_block_hash(static_cast<int64_t>(number));
 
       if (is_zero(blockhash))
         return 1;
@@ -336,11 +336,11 @@ void WasmEngine::collectBenchmarkingData()
       ensureCondition(numberOfTopics <= 4, ContractValidationFailure, "Too many topics specified");
 
       // TODO: should this assert that unused topic offsets must be 0?
-      array<evmc_uint256be, 4> topics;
-      topics[0] = (numberOfTopics >= 1) ? loadBytes32(topic1) : evmc_uint256be{};
-      topics[1] = (numberOfTopics >= 2) ? loadBytes32(topic2) : evmc_uint256be{};
-      topics[2] = (numberOfTopics >= 3) ? loadBytes32(topic3) : evmc_uint256be{};
-      topics[3] = (numberOfTopics == 4) ? loadBytes32(topic4) : evmc_uint256be{};
+      array<evmc::uint256be, 4> topics;
+      topics[0] = (numberOfTopics >= 1) ? loadBytes32(topic1) : evmc::uint256be{};
+      topics[1] = (numberOfTopics >= 2) ? loadBytes32(topic2) : evmc::uint256be{};
+      topics[2] = (numberOfTopics >= 3) ? loadBytes32(topic3) : evmc::uint256be{};
+      topics[3] = (numberOfTopics == 4) ? loadBytes32(topic4) : evmc::uint256be{};
 
       ensureSourceMemoryBounds(dataOffset, length);
       bytes data(length, '\0');
@@ -394,9 +394,9 @@ void WasmEngine::collectBenchmarkingData()
 
       ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "storageStore");
 
-      evmc_bytes32 path = loadBytes32(pathOffset);
-      evmc_bytes32 value = loadBytes32(valueOffset);
-      evmc_bytes32 current = m_host.get_storage(m_msg.destination, path);
+      const auto path = loadBytes32(pathOffset);
+      const auto value = loadBytes32(valueOffset);
+      const auto current = m_host.get_storage(m_msg.destination, path);
 
       // Charge the right amount in case of the create case.
       if (is_zero(current) && !is_zero(value))
@@ -466,7 +466,7 @@ void WasmEngine::collectBenchmarkingData()
         call_message.sender = m_msg.destination;
         call_message.value = loadUint128(valueOffset);
 
-        if ((kind == EEICallKind::Call) && !is_zero(call_message.value)) {
+        if ((kind == EEICallKind::Call) && !evmc::is_zero(call_message.value)) {
           ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "call");
         }
         break;
@@ -763,50 +763,50 @@ void WasmEngine::collectBenchmarkingData()
    * Memory Op Wrapper Functions
    */
 
-  evmc_uint256be EthereumInterface::loadBytes32(uint32_t srcOffset)
+  evmc::bytes32 EthereumInterface::loadBytes32(uint32_t srcOffset)
   {
-    evmc_uint256be dst = {};
+    evmc::bytes32 dst;
     loadMemory(srcOffset, dst.bytes, 32);
     return dst;
   }
 
-  void EthereumInterface::storeBytes32(evmc_uint256be const& src, uint32_t dstOffset)
+  void EthereumInterface::storeBytes32(evmc::uint256be const& src, uint32_t dstOffset)
   {
     storeMemory(src.bytes, dstOffset, 32);
   }
 
-  evmc_uint256be EthereumInterface::loadUint256(uint32_t srcOffset)
+  evmc::uint256be EthereumInterface::loadUint256(uint32_t srcOffset)
   {
-    evmc_uint256be dst = {};
+    evmc::uint256be dst;
     loadMemoryReverse(srcOffset, dst.bytes, 32);
     return dst;
   }
 
-  void EthereumInterface::storeUint256(evmc_uint256be const& src, uint32_t dstOffset)
+  void EthereumInterface::storeUint256(evmc::uint256be const& src, uint32_t dstOffset)
   {
     storeMemoryReverse(src.bytes, dstOffset, 32);
   }
 
-  evmc_address EthereumInterface::loadAddress(uint32_t srcOffset)
+  evmc::address EthereumInterface::loadAddress(uint32_t srcOffset)
   {
-    evmc_address dst = {};
+    evmc::address dst;
     loadMemory(srcOffset, dst.bytes, 20);
     return dst;
   }
 
-  void EthereumInterface::storeAddress(evmc_address const& src, uint32_t dstOffset)
+  void EthereumInterface::storeAddress(evmc::address const& src, uint32_t dstOffset)
   {
     storeMemory(src.bytes, dstOffset, 20);
   }
 
-  evmc_uint256be EthereumInterface::loadUint128(uint32_t srcOffset)
+  evmc::uint256be EthereumInterface::loadUint128(uint32_t srcOffset)
   {
-    evmc_uint256be dst = {};
+    evmc::uint256be dst;
     loadMemoryReverse(srcOffset, dst.bytes + 16, 16);
     return dst;
   }
 
-  void EthereumInterface::storeUint128(evmc_uint256be const& src, uint32_t dstOffset)
+  void EthereumInterface::storeUint128(evmc::uint256be const& src, uint32_t dstOffset)
   {
     ensureCondition(!exceedsUint128(src), ArgumentOutOfRange, "Account balance (or transaction value) exceeds 128 bits.");
     storeMemoryReverse(src.bytes + 16, dstOffset, 16);
