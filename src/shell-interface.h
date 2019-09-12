@@ -97,28 +97,9 @@ struct ShellExternalInterface : ModuleInstance::ExternalInterface {
   virtual ~ShellExternalInterface() = default;
 
   void init(Module& wasm, ModuleInstance& instance) override {
+    (void)instance;
     memory.resize(wasm.memory.initial * wasm::Memory::kPageSize);
-    // apply memory segments
-    for (auto& segment : wasm.memory.segments) {
-      Address offset = static_cast<uint32_t>(ConstantExpressionRunner<TrivialGlobalManager>(instance.globals).visit(segment.offset).value.geti32());
-      if (offset + segment.data.size() > wasm.memory.initial * wasm::Memory::kPageSize) {
-        trap("invalid offset when initializing memory");
-      }
-      for (size_t i = 0; i != segment.data.size(); ++i) {
-        memory.set(offset + i, segment.data[i]);
-      }
-    }
-
     table.resize(wasm.table.initial);
-    for (auto& segment : wasm.table.segments) {
-      Address offset = static_cast<uint32_t>(ConstantExpressionRunner<TrivialGlobalManager>(instance.globals).visit(segment.offset).value.geti32());
-      if (offset + segment.data.size() > wasm.table.initial) {
-        trap("invalid offset when initializing table");
-      }
-      for (size_t i = 0; i != segment.data.size(); ++i) {
-        table[offset + i] = segment.data[i];
-      }
-    }
   }
 
   void importGlobals(std::map<Name, Literal>& globals, Module& wasm) override {
@@ -173,6 +154,8 @@ struct ShellExternalInterface : ModuleInstance::ExternalInterface {
   void store128(Address addr, const std::array<uint8_t, 16>& value) override {
     memory.set<std::array<uint8_t, 16>>(addr, value);
   }
+
+  void tableStore(Address addr, Name entry) override { table[addr] = entry; }
 
   void growMemory(Address /*oldSize*/, Address newSize) override {
     memory.resize(newSize);
