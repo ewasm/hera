@@ -18,8 +18,6 @@
 #include <iomanip>
 #include <sstream>
 
-#include <evmc/evmc.h>
-
 #include "helpers.h"
 
 using namespace std;
@@ -33,7 +31,7 @@ bytes loadFileContents(string const& path)
   return {iterator{is}, iterator{}};
 }
 
-string toHex(evmc_uint256be const& value) {
+string toHex(evmc::uint256be const& value) {
   ostringstream os;
   os << hex;
   for (auto b: value.bytes)

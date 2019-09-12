@@ -18,7 +18,7 @@
 
 #include <string>
 
-#include <evmc/evmc.h>
+#include <evmc/evmc.hpp>
 
 namespace hera {
 
@@ -27,7 +27,7 @@ using bytes_view = std::basic_string_view<uint8_t>;
 
 bytes loadFileContents(std::string const& path);
 
-std::string toHex(evmc_uint256be const& value);
+std::string toHex(evmc::uint256be const& value);
 
 // Returns a formatted string (with prefix "0x") representing the bytes of an array.
 std::string bytesAsHexStr(bytes_view bytes);

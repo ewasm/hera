@@ -196,9 +196,9 @@ private:
   /* Checks for overflow and safely charges gas for variable length data copies */
   void safeChargeDataCopy(uint32_t length, unsigned baseCost);
 
-  bool enoughSenderBalanceFor(evmc_uint256be const& value);
+  bool enoughSenderBalanceFor(evmc::uint256be const& value);
 
-  static unsigned __int128 safeLoadUint128(evmc_uint256be const& value);
+  static unsigned __int128 safeLoadUint128(evmc::uint256be const& value);
 
   evmc::HostContext& m_host;
   bytes_view m_code;
