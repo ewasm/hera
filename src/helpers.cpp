@@ -41,10 +41,10 @@ string toHex(evmc_uint256be const& value) {
   return "0x" + os.str();
 }
 
-string bytesAsHexStr(bytes_view bytes) {
+string bytesAsHexStr(bytes_view input) {
   stringstream ret;
   ret << hex << "0x";
-  for (auto const b : bytes) {
+  for (auto const b : input) {
     ret << setw(2) << setfill('0') << static_cast<int>(b);
   }
   return ret.str();
