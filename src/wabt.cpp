@@ -591,6 +591,20 @@ ExecutionResult WabtEngine::execute(
   heraAssert(hostModule, "Failed to create host module.");
 
   hostModule->AppendFuncExport(
+    "printMem",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.debugPrintMem(false, args[0].value.i32, args[1].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
     "printMemHex",
     {{Type::I32, Type::I32}, {}},
     [&interface](
@@ -599,7 +613,21 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface.debugPrintMem(1, args[0].value.i32, args[1].value.i32);
+      interface.debugPrintMem(true, args[0].value.i32, args[1].value.i32);
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "printStorage",
+    {{Type::I32, Type::I32}, {}},
+    [&interface](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues& args,
+      interp::TypedValues&
+    ) {
+      interface.debugPrintStorage(false, args[0].value.i32);
       return interp::Result::Ok;
     }
   );
@@ -613,7 +641,7 @@ ExecutionResult WabtEngine::execute(
       const interp::TypedValues& args,
       interp::TypedValues&
     ) {
-      interface.debugPrintStorage(1, args[0].value.i32);
+      interface.debugPrintStorage(true, args[0].value.i32);
       return interp::Result::Ok;
     }
   );
@@ -1125,7 +1153,33 @@ void WabtEngine::verifyContract(bytes_view code) {
   heraAssert(hostModule, "Failed to create host module.");
 
   hostModule->AppendFuncExport(
+    "printMem",
+    {{Type::I32, Type::I32}, {}},
+    [&](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
     "printMemHex",
+    {{Type::I32, Type::I32}, {}},
+    [&](
+      const interp::HostFunc*,
+      const interp::FuncSignature*,
+      const interp::TypedValues&,
+      interp::TypedValues&
+    ) {
+      return interp::Result::Ok;
+    }
+  );
+
+  hostModule->AppendFuncExport(
+    "printStorage",
     {{Type::I32, Type::I32}, {}},
     [&](
       const interp::HostFunc*,
