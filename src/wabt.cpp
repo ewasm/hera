@@ -639,6 +639,12 @@ ExecutionResult WabtEngine::execute(
     &module
   );
 
+#if HERA_DEBUGGING
+  for (auto it = errors.begin(); it != errors.end(); ++it) {
+    HERA_DEBUG << "wabt (execute): " << it->message << "\n";
+  }
+#endif
+
   ensureCondition(Succeeded(loadResult) && module, ContractValidationFailure, "Module failed to load.");
   ensureCondition(env.GetMemoryCount() == 1, ContractValidationFailure, "Multiple memory sections exported.");
   ensureCondition(module->GetExport("memory"), ContractValidationFailure, "\"memory\" not found");
@@ -1164,6 +1170,12 @@ void WabtEngine::verifyContract(bytes_view code) {
     &errors,
     &module
   );
+
+#if HERA_DEBUGGING
+  for (auto it = errors.begin(); it != errors.end(); ++it) {
+    HERA_DEBUG << "wabt (verifyContract): " << it->message << "\n";
+  }
+#endif
 
   ensureCondition(Succeeded(loadResult) && module, ContractValidationFailure, "Module failed to load.");
   ensureCondition(env.GetMemoryCount() == 1, ContractValidationFailure, "Multiple memory sections exported.");
