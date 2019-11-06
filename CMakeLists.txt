@@ -21,7 +21,7 @@ cable_set_build_type(DEFAULT RelWithDebInfo CONFIGURATION_TYPES Debug;Release;Re
 set(CMAKE_DEBUG_POSTFIX "")
 
 project(hera)
-set(PROJECT_VERSION 0.2.5-alpha.0)
+set(PROJECT_VERSION 0.2.5)
 
 cable_configure_compiler()
 if(CABLE_COMPILER_GNULIKE)
