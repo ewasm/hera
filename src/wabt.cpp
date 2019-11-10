@@ -42,7 +42,7 @@ namespace hera {
 class WabtEthereumInterface : public EthereumInterface {
 public:
   explicit WabtEthereumInterface(
-    evmc_context* _context,
+    evmc::HostContext& _context,
     bytes_view _code,
     evmc_message const& _msg,
     ExecutionResult & _result,
@@ -75,7 +75,7 @@ unique_ptr<WasmEngine> WabtEngine::create()
 }
 
 ExecutionResult WabtEngine::execute(
-  evmc_context* context,
+  evmc::HostContext& context,
   bytes_view code,
   bytes_view state_code,
   evmc_message const& msg,

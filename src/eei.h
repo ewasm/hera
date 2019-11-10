@@ -43,7 +43,7 @@ public:
   virtual ~WasmEngine() noexcept = default;
 
   virtual ExecutionResult execute(
-    evmc_context* context,
+    evmc::HostContext& context,
     bytes_view code,
     bytes_view state_code,
     evmc_message const& msg,
@@ -85,13 +85,13 @@ private:
 class EthereumInterface {
 public:
   explicit EthereumInterface(
-    evmc_context* _context,
+    evmc::HostContext& _host,
     bytes_view _code,
     evmc_message const& _msg,
     ExecutionResult& _result,
     bool _meterGas
   ):
-    m_host(_context),
+    m_host{_host}, // FIXME: Change param to &.
     m_code{_code},
     m_msg(_msg),
     m_result(_result),
@@ -200,7 +200,7 @@ private:
 
   static unsigned __int128 safeLoadUint128(evmc_uint256be const& value);
 
-  evmc::HostContext m_host;
+  evmc::HostContext& m_host;
   bytes_view m_code;
   evmc_message const& m_msg;
   bytes m_lastReturnData;
