@@ -58,14 +58,18 @@ if (HERA_WAVM)
     include(ProjectWAVM)
 endif()
 
-if (NOT (HERA_BINARYEN OR HERA_WABT OR HERA_WAVM))
+option(HERA_V8 "Build with V8" OFF)
+if (HERA_V8)
+    include(ProjectV8)
+endif()
+
+if (NOT (HERA_BINARYEN OR HERA_WABT OR HERA_WAVM OR HERA_V8))
     message(FATAL_ERROR "At least one one engine must be enabled.")
 endif()
 
 add_subdirectory(evmc)
 add_subdirectory(src)
 add_subdirectory(test)
-
 
 install(DIRECTORY include/hera DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
