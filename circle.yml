@@ -195,7 +195,7 @@ jobs:
       CC:  clang
       GENERATOR: Ninja
       BUILD_PARALLEL_JOBS: 4
-      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_BINARYEN=ON -DHERA_WAVM=ON -DHERA_WABT=ON
+      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_BINARYEN=ON -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TOOLS=ON
     docker:
       - image: ethereum/cpp-build-env:14-clang-10
     steps:
@@ -213,7 +213,7 @@ jobs:
       - *test-binaryen
       - *test-wabt
       - *test-wavm
-#      - *evmc-test
+      - *evmc-test
       - *evm2wasm-test
 
   linux-clang-shared-asan:
@@ -223,7 +223,7 @@ jobs:
       CC:  clang
       GENERATOR: Ninja
       BUILD_PARALLEL_JOBS: 4
-      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_BINARYEN=ON -DHERA_WAVM=ON -DHERA_WABT=ON -DSANITIZE=address
+      CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=OFF -DHERA_BINARYEN=ON -DHERA_WAVM=ON -DHERA_WABT=ON -DEVMC_TOOLS=ON -DSANITIZE=address
       # The ASan must the first loaded shared library. Force preloading it with this flag.
       PRELOAD_ASAN: true
     docker:
@@ -242,7 +242,7 @@ jobs:
       - *test-binaryen
       - *test-wabt
       - *test-wavm
-#      - *evmc-test
+      - *evmc-test
       - *evm2wasm-test
 
   linux-gcc-shared-coverage:
