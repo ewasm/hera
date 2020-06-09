@@ -184,6 +184,7 @@ defaults:
     run:
       name: "Upload coverage data"
       command: |
+        sudo pip3 install --upgrade --quiet --no-cache-dir codecov
         codecov --required --gcov-root ~/build --gcov-exec gcov-8
 
 
