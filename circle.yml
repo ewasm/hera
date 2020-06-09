@@ -31,8 +31,6 @@ defaults:
     run:
       name: "Run codespell"
       command: |
-        sudo pip3 install --upgrade pip setuptools
-        sudo pip3 install codespell
         codespell --skip=".git"
 
   build: &build
@@ -324,7 +322,7 @@ jobs:
 
   lint:
     docker:
-      - image: ethereum/cpp-build-env:9
+      - image: ethereum/cpp-build-env:14-lint
     steps:
       - checkout
       - *codespell
