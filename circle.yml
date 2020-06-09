@@ -300,12 +300,12 @@ jobs:
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON -DHERA_BINARYEN=ON -DHERA_WABT=ON
     macos:
-      xcode: "10.1.0"
+      xcode: "11.5.0"
     steps:
       - run:
           name: "Install system dependencies"
           command: |
-            HOMEBREW_NO_AUTO_UPDATE=1 brew install -q cmake ninja leveldb
+            HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew install cmake ninja leveldb
       - checkout
       - *update-submodules
       - *environment-info
