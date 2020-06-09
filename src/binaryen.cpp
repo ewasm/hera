@@ -38,7 +38,7 @@ namespace hera {
 class BinaryenEthereumInterface : public wasm::ShellExternalInterface, EthereumInterface {
 public:
   explicit BinaryenEthereumInterface(
-    evmc_context* _context,
+    evmc::HostContext& _context,
     bytes_view _code,
     evmc_message const& _msg,
     ExecutionResult & _result,
@@ -477,7 +477,7 @@ unique_ptr<WasmEngine> BinaryenEngine::create()
 
 // Execute the contract through Binaryen.
 ExecutionResult BinaryenEngine::execute(
-  evmc_context* context,
+  evmc::HostContext& context,
   bytes_view code,
   bytes_view state_code,
   evmc_message const& msg,

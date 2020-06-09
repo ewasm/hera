@@ -24,7 +24,6 @@
 #include "helpers.h"
 
 #include <evmc/instructions.h>
-#include <evmc/helpers.hpp>  // FIXME: Do not include deprecated helpers.hpp.
 
 using namespace std;
 
@@ -523,7 +522,7 @@ void WasmEngine::collectBenchmarkingData()
 
       // These checks are in EIP150 but not in the YellowPaper
       // Charge valuetransfer gas if value is being transferred.
-      if ((kind == EEICallKind::Call || kind == EEICallKind::CallCode) && !is_zero(call_message.value)) {
+      if ((kind == EEICallKind::Call || kind == EEICallKind::CallCode) && !evmc::is_zero(call_message.value)) {
         takeInterfaceGas(GasSchedule::valuetransfer);
 
         if (!enoughSenderBalanceFor(call_message.value))
@@ -541,7 +540,7 @@ void WasmEngine::collectBenchmarkingData()
       takeInterfaceGas(gas);
 
       // Add gas stipend for value transfers
-      if (!is_zero(call_message.value))
+      if (!evmc::is_zero(call_message.value))
         gas += GasSchedule::valueStipend;
 
       call_message.gas = gas;

@@ -31,7 +31,7 @@ public:
   static std::unique_ptr<WasmEngine> create();
 
   ExecutionResult execute(
-    evmc_context* context,
+    evmc::HostContext& context,
     bytes_view code,
     bytes_view state_code,
     evmc_message const& msg,
@@ -42,7 +42,7 @@ public:
 
 private:
   ExecutionResult internalExecute(
-    evmc_context* context,
+    evmc::HostContext& context,
     bytes_view code,
     bytes_view state_code,
     evmc_message const& msg,

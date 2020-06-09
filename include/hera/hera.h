@@ -24,7 +24,7 @@
 extern "C" {
 #endif
 
-EVMC_EXPORT struct evmc_instance* evmc_create_hera(void) EVMC_NOEXCEPT;
+EVMC_EXPORT struct evmc_vm* evmc_create_hera(void) EVMC_NOEXCEPT;
 
 #if __cplusplus
 }

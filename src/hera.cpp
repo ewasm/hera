@@ -24,7 +24,6 @@
 #include <memory>
 
 #include <evmc/evmc.h>
-#include <evmc/helpers.hpp>
 
 #include "debugging.h"
 #include "eei.h"
@@ -88,24 +87,26 @@ WasmEngineCreateFn wasmEngineCreateFn =
 #endif
 ;
 
-struct hera_instance : evmc_instance {
+struct hera_instance : evmc_vm {
   unique_ptr<WasmEngine> engine = wasmEngineCreateFn();
   hera_evm1mode evm1mode = hera_evm1mode::reject;
   bool metering = false;
-  map<evmc_address, bytes> contract_preload_list;
+  map<evmc::address, bytes> contract_preload_list;
 
-  hera_instance() noexcept : evmc_instance({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr, nullptr}) {}
+  hera_instance() noexcept : evmc_vm({EVMC_ABI_VERSION, "hera", hera_get_buildinfo()->project_version, nullptr, nullptr, nullptr, nullptr}) {}
 };
 
-const evmc_address sentinelAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xa } };
-const evmc_address evm2wasmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xb } };
-const evmc_address runevmAddress = { .bytes = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xc } };
+using namespace evmc::literals;
+
+constexpr auto sentinelAddress = 0x000000000000000000000000000000000000000a_address;
+constexpr auto evm2wasmAddress = 0x000000000000000000000000000000000000000b_address;
+constexpr auto runevmAddress = 0x000000000000000000000000000000000000000c_address;
 
 // Calls a system contract at @address with input data @input.
 // It is a "staticcall" with sender 000...000 and no value.
 // @returns output data from the contract and update the @gas variable with the gas left.
 pair<evmc_status_code, bytes> callSystemContract(
-  evmc_context* context,
+  evmc::HostContext& context,
   evmc_address const& address,
   int64_t & gas,
   bytes_view input
@@ -123,7 +124,7 @@ pair<evmc_status_code, bytes> callSystemContract(
     .create2_salt = {},
   };
 
-  evmc_result result = context->host->call(context, &message);
+  evmc::result result = context.call(message);
 
   bytes ret;
   if (result.status_code == EVMC_SUCCESS && result.output_data)
@@ -131,14 +132,11 @@ pair<evmc_status_code, bytes> callSystemContract(
 
   gas = result.gas_left;
 
-  if (result.release)
-    result.release(&result);
-
   return {result.status_code, ret};
 }
 
 pair<evmc_status_code, bytes> locallyExecuteSystemContract(
-  evmc_context* context,
+  evmc::HostContext& context,
   evmc_address const& address,
   int64_t & gas,
   bytes_view input,
@@ -172,7 +170,7 @@ pair<evmc_status_code, bytes> locallyExecuteSystemContract(
 
 // Calls the Sentinel contract with input data @input.
 // @returns the validated and metered output or empty output otherwise.
-bytes sentinel(evmc_context* context, bytes_view input)
+bytes sentinel(evmc::HostContext& context, bytes_view input)
 {
   HERA_DEBUG << "Metering (input " << input.size() << " bytes)...\n";
 
@@ -201,7 +199,7 @@ bytes sentinel(evmc_context* context, bytes_view input)
 
 // Calls the evm2wasm contract with input data @input.
 // @returns the compiled output or empty output otherwise.
-bytes evm2wasm(evmc_context* context, bytes_view input) {
+bytes evm2wasm(evmc::HostContext& context, bytes_view input) {
   HERA_DEBUG << "Calling evm2wasm (input " << input.size() << " bytes)...\n";
 
   int64_t startgas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
@@ -229,7 +227,7 @@ bytes evm2wasm(evmc_context* context, bytes_view input) {
 
 // Calls the runevm contract.
 // @returns a wasm-based evm interpreter.
-bytes runevm(evmc_context* context, bytes code) {
+bytes runevm(evmc::HostContext& context, bytes code) {
   HERA_DEBUG << "Calling runevm (code " << code.size() << " bytes)...\n";
 
   int64_t gas = numeric_limits<int64_t>::max(); // do not charge for metering yet (give unlimited gas)
@@ -272,14 +270,16 @@ void hera_destroy_result(evmc_result const* result) noexcept
 }
 
 evmc_result hera_execute(
-  evmc_instance *instance,
-  evmc_context *context,
+  evmc_vm *vm,
+  const evmc_host_interface* host_interface,
+  evmc_host_context *context,
   enum evmc_revision rev,
   const evmc_message *msg,
   const uint8_t *code,
   size_t code_size
 ) noexcept {
-  hera_instance* hera = static_cast<hera_instance*>(instance);
+  hera_instance* hera = static_cast<hera_instance*>(vm);
+  evmc::HostContext host{*host_interface, context};
 
   HERA_DEBUG << "Executing message in Hera\n";
 
@@ -311,7 +311,7 @@ evmc_result hera_execute(
     if (!isWasm) {
       switch (hera->evm1mode) {
       case hera_evm1mode::evm2wasm_contract:
-        run_code = evm2wasm(context, run_code);
+        run_code = evm2wasm(host, run_code);
         ensureCondition(run_code.size() > 8, ContractValidationFailure, "Transcompiling via evm2wasm failed");
         // TODO: enable this once evm2wasm does metering of interfaces
         // meterInterfaceGas = false;
@@ -325,7 +325,7 @@ evmc_result hera_execute(
         ret.status_code = EVMC_FAILURE;
         return ret;
       case hera_evm1mode::runevm_contract:
-        run_code = runevm(context, hera->contract_preload_list[runevmAddress]);
+        run_code = runevm(host, hera->contract_preload_list[runevmAddress]);
         ensureCondition(run_code.size() > 8, ContractValidationFailure, "Interpreting via runevm failed");
         // Runevm does interface metering on its own
         meterInterfaceGas = false;
@@ -343,7 +343,7 @@ evmc_result hera_execute(
     if (msg->kind == EVMC_CREATE && isWasm) {
       // Meter the deployment (constructor) code if it is WebAssembly
       if (hera->metering)
-        run_code = sentinel(context, run_code);
+        run_code = sentinel(host, run_code);
       ensureCondition(
         hasWasmPreamble(run_code) && hasWasmVersion(run_code, 1),
         ContractValidationFailure,
@@ -354,7 +354,7 @@ evmc_result hera_execute(
     heraAssert(hera->engine, "Wasm engine not set.");
     WasmEngine& engine = *hera->engine;
 
-    ExecutionResult result = engine.execute(context, run_code, state_code, *msg, meterInterfaceGas);
+    ExecutionResult result = engine.execute(host, run_code, state_code, *msg, meterInterfaceGas);
     heraAssert(result.gasLeft >= 0, "Negative gas left after execution.");
 
     // copy call result
@@ -369,7 +369,7 @@ evmc_result hera_execute(
         );
 
         // Meter the deployed code if it is WebAssembly
-        returnValue = hera->metering ? sentinel(context, result.returnValue) : move(result.returnValue);
+        returnValue = hera->metering ? sentinel(host, result.returnValue) : move(result.returnValue);
         ensureCondition(
           hasWasmPreamble(returnValue) && hasWasmVersion(returnValue, 1),
           ContractValidationFailure,
@@ -476,11 +476,11 @@ bool hera_parse_sys_option(hera_instance *hera, string const& _name, string cons
 }
 
 evmc_set_option_result hera_set_option(
-  evmc_instance *instance,
+  evmc_vm* vm,
   char const *name,
   char const *value
 ) noexcept {
-  hera_instance* hera = static_cast<hera_instance*>(instance);
+  hera_instance* hera = static_cast<hera_instance*>(vm);
 
   if (strcmp(name, "evm1mode") == 0) {
     if (evm1mode_options.count(value)) {
@@ -525,16 +525,16 @@ evmc_set_option_result hera_set_option(
   return EVMC_SET_OPTION_INVALID_NAME;
 }
 
-void hera_destroy(evmc_instance* instance) noexcept
+void hera_destroy(evmc_vm* vm) noexcept
 {
-  hera_instance* hera = static_cast<hera_instance*>(instance);
+  hera_instance* hera = static_cast<hera_instance*>(vm);
   delete hera;
 }
 
-evmc_capabilities_flagset hera_get_capabilities(evmc_instance* instance)
+evmc_capabilities_flagset hera_get_capabilities(evmc_vm* vm)
 {
   evmc_capabilities_flagset caps = EVMC_CAPABILITY_EWASM;
-  if (static_cast<hera_instance*>(instance)->evm1mode != hera_evm1mode::reject)
+  if (static_cast<hera_instance*>(vm)->evm1mode != hera_evm1mode::reject)
     caps |= EVMC_CAPABILITY_EVM1;
   return caps;
 }
@@ -543,7 +543,7 @@ evmc_capabilities_flagset hera_get_capabilities(evmc_instance* instance)
 
 extern "C" {
 
-evmc_instance* evmc_create_hera() noexcept
+evmc_vm* evmc_create_hera() noexcept
 {
   hera_instance* instance = new hera_instance;
   instance->destroy = hera_destroy;
@@ -555,7 +555,7 @@ evmc_instance* evmc_create_hera() noexcept
 
 #if hera_EXPORTS
 // If compiled as shared library, also export this symbol.
-EVMC_EXPORT evmc_instance* evmc_create() noexcept
+EVMC_EXPORT evmc_vm* evmc_create() noexcept
 {
   return evmc_create_hera();
 }

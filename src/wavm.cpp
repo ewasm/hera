@@ -45,7 +45,7 @@ namespace hera {
 class WavmEthereumInterface : public EthereumInterface {
 public:
   explicit WavmEthereumInterface(
-    evmc_context* _context,
+    evmc::HostContext& _context,
     bytes_view _code,
     evmc_message const& _msg,
     ExecutionResult & _result,
@@ -282,7 +282,7 @@ struct WavmInterfaceKeeper {
 };
 
 ExecutionResult WavmEngine::execute(
-  evmc_context* context,
+  evmc::HostContext& context,
   bytes_view code,
   bytes_view state_code,
   evmc_message const& msg,
@@ -324,7 +324,7 @@ IR::Module WavmEngine::parseModule(bytes_view code)
 }
 
 ExecutionResult WavmEngine::internalExecute(
-  evmc_context* context,
+  evmc::HostContext& context,
   bytes_view code,
   bytes_view state_code,
   evmc_message const& msg,
