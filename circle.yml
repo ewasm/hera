@@ -135,9 +135,8 @@ defaults:
     run:
       name: "Test shared Hera (binaryen)"
       command: |
-        export ASAN_OPTIONS=detect_leaks=0
         SO=$([ $(uname) = Darwin ] && echo dylib || echo so)
-        if [[ $PRELOAD_ASAN ]]; then export LD_PRELOAD=/usr/lib/clang/8/lib/linux/libclang_rt.asan-x86_64.so; fi
+        export DYLD_INSERT_LIBRARIES=/Applications/Xcode-10.1.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/10.0.0/lib/darwin/libclang_rt.asan_osx_dynamic.dylib
         testeth --version
         testeth -t GeneralStateTests/stEWASMTests -- --testpath tests --vm ~/build/src/libhera.$SO --singlenet Byzantium --evmc engine=binaryen $TESTETH_OPTIONS
 
@@ -300,7 +299,7 @@ jobs:
       - CXX: c++
       - GENERATOR: Unix Makefiles
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON -DHERA_BINARYEN=ON -DHERA_WABT=ON
+      - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON -DHERA_BINARYEN=ON -DHERA_WABT=ON -DSANITIZE=address
     macos:
       xcode: "10.1.0"
     steps:
@@ -355,24 +354,7 @@ workflows:
   version: 2
   hera:
     jobs:
-      - lint
-      - linux-clang-shared-asan
-      - linux-gcc-shared-coverage
-      - linux-gcc-static-debug
-      - linux-clang-shared-release:
-          filters:
-            tags:
-              only: /.*/
       - macos:
           filters:
             tags:
               only: /.*/
-      - deploy:
-          requires:
-            - linux-clang-shared-release
-            - macos
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v[0-9].*/

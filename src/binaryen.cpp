@@ -49,9 +49,9 @@ public:
   { }
 
 protected:
-  wasm::Literal callImport(wasm::Import *import, wasm::LiteralList& arguments) override;
+  wasm::Literal callImport(wasm::Function* import, wasm::LiteralList& arguments) override;
 #if HERA_DEBUGGING
-  wasm::Literal callDebugImport(wasm::Import *import, wasm::LiteralList& arguments);
+  wasm::Literal callDebugImport(wasm::Function* import, wasm::LiteralList& arguments);
 #endif
 
   void importGlobals(map<wasm::Name, wasm::Literal>& globals, wasm::Module& wasm) override;
@@ -77,7 +77,7 @@ private:
   }
 
 #if HERA_DEBUGGING
-  wasm::Literal BinaryenEthereumInterface::callDebugImport(wasm::Import *import, wasm::LiteralList& arguments) {
+  wasm::Literal BinaryenEthereumInterface::callDebugImport(wasm::Function *import, wasm::LiteralList& arguments) {
     heraAssert(import->module == wasm::Name("debug"), "Import namespace error.");
 
     if (import->base == wasm::Name("print32")) {
@@ -138,7 +138,7 @@ private:
   }
 #endif
 
-  wasm::Literal BinaryenEthereumInterface::callImport(wasm::Import *import, wasm::LiteralList& arguments) {
+  wasm::Literal BinaryenEthereumInterface::callImport(wasm::Function* import, wasm::LiteralList& arguments) {
 #if HERA_DEBUGGING
     if (import->module == wasm::Name("debug"))
       // Reroute to debug namespace
@@ -505,9 +505,7 @@ ExecutionResult BinaryenEngine::execute(
   executionStarted();
 
   try {
-    wasm::Name main = wasm::Name("main");
-    wasm::LiteralList args;
-    instance.callExport(main, args);
+    instance.callExport(wasm::Name("main"), wasm::LiteralList{});
   } catch (EndExecution const&) {
     // This exception is ignored here because we consider it to be a success.
     // It is only a clutch for POSIX style exit()
@@ -635,7 +633,11 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
     { wasm::Name("selfDestruct"), createFunctionType({ wasm::Type::i32 }, wasm::Type::none) }
   };
 
-  for (auto const& import: module.imports) {
+  for (auto const& import: module.functions) {
+
+    if (!import->imported())  // Only check imported functions.
+      continue;
+
 #if HERA_DEBUGGING
     if (import->module == wasm::Name("debug"))
       continue;
@@ -655,7 +657,7 @@ void BinaryenEngine::verifyContract(wasm::Module & module)
     // NOTE: needs to be a copy by value due to `structuralComparison` requiring a non-const input
     wasm::FunctionType eei_function_type = eei_signatures.at(import->base);
 
-    wasm::FunctionType* function_type = module.getFunctionTypeOrNull(import->functionType);
+    wasm::FunctionType* function_type = module.getFunctionTypeOrNull(import->type);
     ensureCondition(
       function_type,
       ContractValidationFailure,

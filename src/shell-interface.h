@@ -51,7 +51,7 @@ struct ShellExternalInterface : ModuleInstance::ExternalInterface {
     Memory& operator=(const Memory&) = delete;
 
    public:
-    Memory() {}
+    Memory() = default;
     // Gives no guarantee about the length of the memory. Caller needs to ensure that.
     char* rawpointer(size_t offset) {
       return &memory[offset];
@@ -94,26 +94,12 @@ struct ShellExternalInterface : ModuleInstance::ExternalInterface {
   std::vector<Name> table;
 
   ShellExternalInterface() : memory() {}
+  virtual ~ShellExternalInterface() = default;
 
   void init(Module& wasm, ModuleInstance& instance) override {
+    (void)instance;
     memory.resize(wasm.memory.initial * wasm::Memory::kPageSize);
-    // apply memory segments
-    for (auto& segment : wasm.memory.segments) {
-      Address offset = static_cast<uint32_t>(ConstantExpressionRunner<TrivialGlobalManager>(instance.globals).visit(segment.offset).value.geti32());
-      assert(offset + segment.data.size() <= wasm.memory.initial * wasm::Memory::kPageSize);
-      for (size_t i = 0; i != segment.data.size(); ++i) {
-        memory.set(offset + i, segment.data[i]);
-      }
-    }
-
     table.resize(wasm.table.initial);
-    for (auto& segment : wasm.table.segments) {
-      Address offset = static_cast<uint32_t>(ConstantExpressionRunner<TrivialGlobalManager>(instance.globals).visit(segment.offset).value.geti32());
-      assert(offset + segment.data.size() <= wasm.table.initial);
-      for (size_t i = 0; i != segment.data.size(); ++i) {
-        table[offset + i] = segment.data[i];
-      }
-    }
   }
 
   void importGlobals(std::map<Name, Literal>& globals, Module& wasm) override {
@@ -122,7 +108,7 @@ struct ShellExternalInterface : ModuleInstance::ExternalInterface {
     trap("No globals supported.");
   }
 
-  Literal callImport(Import *import, LiteralList& arguments) override {
+  Literal callImport(Function* import, LiteralList& arguments) override {
     (void)import;
     (void)arguments;
     trap("No imports supported.");
@@ -142,7 +128,11 @@ struct ShellExternalInterface : ModuleInstance::ExternalInterface {
     if (func->result != result) {
       trap("callIndirect: bad result type");
     }
-    return instance.callFunctionInternal(func->name, arguments);
+    if (func->imported()) {
+      return callImport(func, arguments);
+    } else {
+      return instance.callFunctionInternal(func->name, arguments);
+    }
   }
 
   int8_t load8s(Address addr) override { return memory.get<int8_t>(addr); }
@@ -153,11 +143,19 @@ struct ShellExternalInterface : ModuleInstance::ExternalInterface {
   uint32_t load32u(Address addr) override { return memory.get<uint32_t>(addr); }
   int64_t load64s(Address addr) override { return memory.get<int64_t>(addr); }
   uint64_t load64u(Address addr) override { return memory.get<uint64_t>(addr); }
+  std::array<uint8_t, 16> load128(Address addr) override {
+    return memory.get<std::array<uint8_t, 16>>(addr);
+  }
 
   void store8(Address addr, int8_t value) override { memory.set<int8_t>(addr, value); }
   void store16(Address addr, int16_t value) override { memory.set<int16_t>(addr, value); }
   void store32(Address addr, int32_t value) override { memory.set<int32_t>(addr, value); }
   void store64(Address addr, int64_t value) override { memory.set<int64_t>(addr, value); }
+  void store128(Address addr, const std::array<uint8_t, 16>& value) override {
+    memory.set<std::array<uint8_t, 16>>(addr, value);
+  }
+
+  void tableStore(Address addr, Name entry) override { table[addr] = entry; }
 
   void growMemory(Address /*oldSize*/, Address newSize) override {
     memory.resize(newSize);
