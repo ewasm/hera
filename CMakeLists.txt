@@ -55,10 +55,15 @@ endif()
 
 option(HERA_WAVM "Build with WAVM" OFF)
 if (HERA_WAVM)
-    include(ProjectWAVM)
+include(ProjectWAVM)
 endif()
 
-if (NOT (HERA_BINARYEN OR HERA_WABT OR HERA_WAVM))
+option(HERA_WASMER "Build with wasmer" OFF)
+if (HERA_WASMER)
+    include(ProjectWasmer)
+endif()
+
+if (NOT (HERA_BINARYEN OR HERA_WABT OR HERA_WAVM OR HERA_WASMER))
     message(FATAL_ERROR "At least one one engine must be enabled.")
 endif()
 

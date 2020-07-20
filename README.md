@@ -60,6 +60,15 @@ Please also check the build options listed in the following section.
 - `-DHERA_WAVM=ON` will request the compilation of WAVM support
 - `-DLLVM_DIR=...` one will need to specify the path to LLVM's CMake file. In most installations this has to be within the `lib/cmake/llvm` directory, such as `/usr/local/Cellar/llvm/6.0.1/lib/cmake/llvm` on Homebrew.
 
+### wasmer support
+
+*Complete support.*
+
+[wasmer] support needs to be enabled via the following build option and requested at runtime with `engine=wavm`:
+
+- `-DHERA_WASMER=ON`
+- `cargo` is needed to build.
+
 ## Runtime options
 
 These are to be used via EVMC `set_option`:
@@ -127,6 +136,7 @@ Apache 2.0
 [Binaryen]: https://github.com/webassembly/binaryen
 [wabt]: https://github.com/webassembly/wabt
 [WAVM]: https://github.com/WAVM/WAVM
+[wasmer]: https://github.com/wasmerio/wasmer
 [Sentinel system contract]: https://github.com/ewasm/design/blob/master/system_contracts.md#sentinel-contract
 [EVM Transcompiler]: https://github.com/ewasm/design/blob/master/system_contracts.md#evm-transcompiler
 [EEI]: https://github.com/ewasm/design/blob/master/eth_interface.md
