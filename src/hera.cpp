@@ -23,7 +23,7 @@
 #include <map>
 #include <memory>
 
-#include <evmc/evmc.h>
+#include <evmc/evmc.hpp>
 
 #include "debugging.h"
 #include "eei.h"
@@ -107,7 +107,7 @@ constexpr auto runevmAddress = 0x000000000000000000000000000000000000000c_addres
 // @returns output data from the contract and update the @gas variable with the gas left.
 pair<evmc_status_code, bytes> callSystemContract(
   evmc::HostContext& context,
-  evmc_address const& address,
+  evmc::address const& address,
   int64_t & gas,
   bytes_view input
 ) {
@@ -137,7 +137,7 @@ pair<evmc_status_code, bytes> callSystemContract(
 
 pair<evmc_status_code, bytes> locallyExecuteSystemContract(
   evmc::HostContext& context,
-  evmc_address const& address,
+  evmc::address const& address,
   int64_t & gas,
   bytes_view input,
   bytes_view code,

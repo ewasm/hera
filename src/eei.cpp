@@ -31,7 +31,7 @@ namespace hera {
 namespace
 {
 /* Checks if host supplied 256 bit value exceeds UINT128_MAX */
-bool exceedsUint128(evmc_uint256be const& value) noexcept
+bool exceedsUint128(evmc::uint256be const& value) noexcept
 {
     for (unsigned i = 0; i < 16; i++)
     {
@@ -88,7 +88,7 @@ void WasmEngine::collectBenchmarkingData()
 
   void EthereumInterface::debugPrintStorage(bool useHex, uint32_t pathOffset)
   {
-      evmc_uint256be path = loadBytes32(pathOffset);
+      evmc::uint256be path = loadBytes32(pathOffset);
 
       HERA_DEBUG << depthToString() << " DEBUG printStorage" << (useHex ? "Hex" : "") << "(0x" << hex;
 
@@ -98,7 +98,7 @@ void WasmEngine::collectBenchmarkingData()
 
       HERA_DEBUG << "): " << dec;
 
-      evmc_bytes32 result = m_host.get_storage(m_msg.destination, path);
+      evmc::bytes32 result = m_host.get_storage(m_msg.destination, path);
 
       if (useHex)
       {
@@ -119,7 +119,7 @@ void WasmEngine::collectBenchmarkingData()
   {
       HERA_DEBUG << depthToString() << " evmTrace\n";
 
-      static constexpr int stackItemSize = sizeof(evmc_uint256be);
+      static constexpr int stackItemSize = sizeof(evmc::uint256be);
       heraAssert(sp <= (1024 * stackItemSize), "EVM stack pointer out of bounds.");
       heraAssert(opcode >= 0x00 && opcode <= 0xff, "Invalid EVM instruction.");
 
@@ -136,7 +136,7 @@ void WasmEngine::collectBenchmarkingData()
         << ",\"stack\":[";
 
       for (int32_t i = 0; i <= sp; i += stackItemSize) {
-        evmc_uint256be x = loadUint256(static_cast<uint32_t>(i));
+        evmc::uint256be x = loadUint256(static_cast<uint32_t>(i));
         cout << '"' << toHex(x) << '"';
         if (i != sp)
           cout << ',';
@@ -180,8 +180,8 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::balance);
 
-      evmc_address address = loadAddress(addressOffset);
-      evmc_uint256be balance = m_host.get_balance(address);
+      evmc::address address = loadAddress(addressOffset);
+      evmc::uint256be balance = m_host.get_balance(address);
       storeUint128(balance, resultOffset);
   }
 
@@ -261,7 +261,7 @@ void WasmEngine::collectBenchmarkingData()
 
       safeChargeDataCopy(length, GasSchedule::extcode);
 
-      evmc_address address = loadAddress(addressOffset);
+      evmc::address address = loadAddress(addressOffset);
       // TODO: optimise this so no copy needs to be created
       bytes codeBuffer(length, '\0');
       size_t numCopied = m_host.copy_code(address, codeOffset, codeBuffer.data(), codeBuffer.size());
@@ -276,7 +276,7 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::extcode);
 
-      evmc_address address = loadAddress(addressOffset);
+      evmc::address address = loadAddress(addressOffset);
       size_t code_size = m_host.get_code_size(address);
 
       return static_cast<uint32_t>(code_size);
@@ -412,8 +412,8 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::storageLoad);
 
-      evmc_bytes32 path = loadBytes32(pathOffset);
-      evmc_bytes32 result = m_host.get_storage(m_msg.destination, path);
+      evmc::bytes32 path = loadBytes32(pathOffset);
+      evmc::bytes32 result = m_host.get_storage(m_msg.destination, path);
 
       storeBytes32(result, resultOffset);
   }
@@ -640,7 +640,7 @@ void WasmEngine::collectBenchmarkingData()
 
       ensureCondition(!(m_msg.flags & EVMC_STATIC), StaticModeViolation, "selfDestruct");
 
-      evmc_address address = loadAddress(addressOffset);
+      evmc::address address = loadAddress(addressOffset);
 
       if (!m_host.account_exists(address))
         takeInterfaceGas(GasSchedule::callNewAccount);
@@ -828,13 +828,13 @@ void WasmEngine::collectBenchmarkingData()
     takeInterfaceGas(GasSchedule::copy * ((int64_t(length) + 31) / 32));
   }
 
-  bool EthereumInterface::enoughSenderBalanceFor(evmc_uint256be const& value)
+  bool EthereumInterface::enoughSenderBalanceFor(evmc::uint256be const& value)
   {
-    evmc_uint256be balance = m_host.get_balance(m_msg.destination);
+    evmc::uint256be balance = m_host.get_balance(m_msg.destination);
     return safeLoadUint128(balance) >= safeLoadUint128(value);
   }
 
-  unsigned __int128 EthereumInterface::safeLoadUint128(evmc_uint256be const& value)
+  unsigned __int128 EthereumInterface::safeLoadUint128(evmc::uint256be const& value)
   {
     ensureCondition(!exceedsUint128(value), ArgumentOutOfRange, "Account balance (or transaction value) exceeds 128 bits.");
     unsigned __int128 ret = 0;
