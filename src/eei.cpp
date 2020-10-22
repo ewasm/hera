@@ -63,6 +63,16 @@ void WasmEngine::collectBenchmarkingData()
 }
 
 #if HERA_DEBUGGING
+  void EthereumInterface::debugPrint32(uint32_t value)
+  {
+      cerr << depthToString() << " DEBUG print32: " << value << " " << hex << "0x" << value << dec << endl;
+  }
+
+  void EthereumInterface::debugPrint64(uint64_t value)
+  {
+      cerr << depthToString() << " DEBUG print64: " << value << " " << hex << "0x" << value << dec << endl;
+  }
+
   void EthereumInterface::debugPrintMem(bool useHex, uint32_t offset, uint32_t length)
   {
       heraAssert((offset + length) > offset, "Overflow.");

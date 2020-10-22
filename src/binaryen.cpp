@@ -85,7 +85,7 @@ private:
 
       uint32_t value = static_cast<uint32_t>(arguments[0].geti32());
 
-      cerr << "DEBUG print32: " << value << " " << hex << "0x" << value << dec << endl;
+      debugPrint32(value);
 
       return wasm::Literal();
     }
@@ -95,7 +95,7 @@ private:
 
       uint64_t value = static_cast<uint64_t>(arguments[0].geti64());
 
-      cerr << "DEBUG print64: " << value << " " << hex << "0x" << value << dec << endl;
+      debugPrint64(value);
 
       return wasm::Literal();
     }
