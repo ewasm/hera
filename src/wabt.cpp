@@ -620,7 +620,7 @@ ExecutionResult WabtEngine::execute(
 
   hostModule->AppendFuncExport(
     "printStorage",
-    {{Type::I32, Type::I32}, {}},
+    {{Type::I32}, {}},
     [&interface](
       const interp::HostFunc*,
       const interp::FuncSignature*,
@@ -634,7 +634,7 @@ ExecutionResult WabtEngine::execute(
 
   hostModule->AppendFuncExport(
     "printStorageHex",
-    {{Type::I32, Type::I32}, {}},
+    {{Type::I32}, {}},
     [&interface](
       const interp::HostFunc*,
       const interp::FuncSignature*,
@@ -1180,7 +1180,7 @@ void WabtEngine::verifyContract(bytes_view code) {
 
   hostModule->AppendFuncExport(
     "printStorage",
-    {{Type::I32, Type::I32}, {}},
+    {{Type::I32}, {}},
     [&](
       const interp::HostFunc*,
       const interp::FuncSignature*,
@@ -1193,7 +1193,7 @@ void WabtEngine::verifyContract(bytes_view code) {
 
   hostModule->AppendFuncExport(
     "printStorageHex",
-    {{Type::I32, Type::I32}, {}},
+    {{Type::I32}, {}},
     [&](
       const interp::HostFunc*,
       const interp::FuncSignature*,
