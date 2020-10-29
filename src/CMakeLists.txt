@@ -28,6 +28,10 @@ if(HERA_WAVM)
   target_sources(hera PRIVATE wavm.cpp wavm.h)
 endif()
 
+if(HERA_WASMER)
+  target_sources(hera PRIVATE wasmer.cpp wasmer.h)
+endif()
+
 option(HERA_DEBUGGING "Display debugging messages during execution." ON)
 if(HERA_DEBUGGING)
   target_compile_definitions(hera PRIVATE HERA_DEBUGGING=1)
@@ -58,6 +62,11 @@ endif()
 if(HERA_WAVM)
     target_compile_definitions(hera PRIVATE HERA_WAVM=1)
     target_link_libraries(hera PRIVATE wavm::wavm)
+endif()
+
+if(HERA_WASMER)
+    target_compile_definitions(hera PRIVATE HERA_WASMER=1)
+    target_link_libraries(hera PRIVATE WASMER::runtim)
 endif()
 
 install(TARGETS hera EXPORT heraTargets

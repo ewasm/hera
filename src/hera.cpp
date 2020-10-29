@@ -38,6 +38,9 @@
 #if HERA_WABT
 #include "wabt.h"
 #endif
+#if HERA_WASMER
+#include "wasmer.h"
+#endif
 
 #include <hera/buildinfo.h>
 
@@ -72,6 +75,9 @@ const map<string, WasmEngineCreateFn> wasm_engine_map {
 #if HERA_WABT
   { "wabt", WabtEngine::create },
 #endif
+#if HERA_WASMER
+  { "wabt", WasmerEngine::create },
+#endif
 };
 
 WasmEngineCreateFn wasmEngineCreateFn =
@@ -82,6 +88,8 @@ WasmEngineCreateFn wasmEngineCreateFn =
     WabtEngine::create
 #elif HERA_WAVM
     WavmEngine::create
+#elif HERA_WASMER
+    WasmerEngine::create
 #else
 #error "No engine requested."
 #endif

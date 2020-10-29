@@ -109,7 +109,7 @@ public:
 // WAVM/WABT host functions access this interface through an instance,
 // which requires public methods.
 // TODO: update upstream WAVM/WABT to have a context (user data) passed down.
-#if HERA_WAVM == 0 && HERA_WABT == 0
+#if HERA_WAVM == 0 && HERA_WABT == 0 && HERA_WASMER == 0
 protected:
 #endif
   virtual size_t memorySize() const = 0 ;
