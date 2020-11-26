@@ -32,7 +32,7 @@ Please also check the build options listed in the following section.
 
 ## Build options
 
-- `-DHERA_DEBUGGING=ON` will turn on debugging features and messages
+- `-DHERA_DEBUGGING=ON` will turn on debugging features and messages. This is off by default.
 - `-DBUILD_SHARED_LIBS=ON` is a standard CMake option to build libraries as shared. This will build Hera shared library that can be then dynamically loaded by EVMC compatible Clients (e.g. `aleth` from [aleth]). **This is the preferred way of compilation.**
 
 ### wabt support
