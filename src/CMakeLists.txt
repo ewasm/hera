@@ -28,7 +28,7 @@ if(HERA_WAVM)
   target_sources(hera PRIVATE wavm.cpp wavm.h)
 endif()
 
-option(HERA_DEBUGGING "Display debugging messages during execution." ON)
+option(HERA_DEBUGGING "Display debugging messages during execution." OFF)
 if(HERA_DEBUGGING)
   target_compile_definitions(hera PRIVATE HERA_DEBUGGING=1)
 endif()
