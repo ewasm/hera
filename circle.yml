@@ -163,8 +163,9 @@ defaults:
   evmc-test: &evmc-test
     run:
       name: "Run evmc tests"
+      working_directory: ~/build
       command: |
-        ~/build/evmc/test/evmc-vmtester ~/build/src/libhera.so
+        ctest
 
   evm2wasm-test: &evm2wasm-test
     run:
