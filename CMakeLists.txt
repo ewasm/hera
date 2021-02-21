@@ -10,7 +10,6 @@ include(CableBuildType)
 include(CableCompilerSettings)
 include(CableToolchains)
 include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
 
 include(Hunter/init)
 
@@ -22,6 +21,8 @@ set(CMAKE_DEBUG_POSTFIX "")
 
 project(hera)
 set(PROJECT_VERSION 0.3.2)
+
+include(GNUInstallDirs)
 
 cable_configure_compiler()
 if(CABLE_COMPILER_GNULIKE)
