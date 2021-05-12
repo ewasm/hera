@@ -212,11 +212,11 @@ jobs:
       - *install-aleth
       - *add-package-to-workspace
       - *fetch-tests
-      - *test-binaryen
-      - *test-wabt
-      - *test-wavm
+#      - *test-binaryen
+#      - *test-wabt
+#      - *test-wavm
 #      - *evmc-test
-      - *evm2wasm-test
+#      - *evm2wasm-test
 
   linux-clang-shared-asan:
     environment:
@@ -241,11 +241,11 @@ jobs:
       - *save-deps-cache
       - *install-aleth
       - *fetch-tests
-      - *test-binaryen
-      - *test-wabt
-      - *test-wavm
+#      - *test-binaryen
+#      - *test-wabt
+#      - *test-wavm
 #      - *evmc-test
-      - *evm2wasm-test
+#      - *evm2wasm-test
 
   linux-gcc-shared-coverage:
     environment:
@@ -269,9 +269,9 @@ jobs:
       - *save-deps-cache
       - *install-aleth
       - *fetch-tests
-      - *test-binaryen
-      - *test-wabt
-      - *test-wavm
+#      - *test-binaryen
+#      - *test-wabt
+#      - *test-wavm
       - *upload-coverage-data
 
   linux-gcc-static-debug:
@@ -319,8 +319,8 @@ jobs:
       - *add-package-to-workspace
       - *install-aleth
       - *fetch-tests
-      - *test-binaryen
-      - *test-wabt
+#      - *test-binaryen
+#      - *test-wabt
 
   lint:
     docker:
