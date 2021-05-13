@@ -329,6 +329,16 @@ jobs:
       - checkout
       - *codespell
 
+  test_ghr:
+    docker:
+      - image: circleci/golang
+    steps:
+      - run:
+          name: "Install ghr"
+          command: |
+            go install github.com/tcnksm/ghr@v0.13.0
+            ghr --version
+
   # The job collects built packages (available in the workspace) and
   # uploads them to the GitHub release matching the git tag.
   deploy:
@@ -338,8 +348,7 @@ jobs:
       - run:
           name: "Install ghr"
           command: |
-            go get -u github.com/kardianos/govendor
-            govendor get github.com/tcnksm/ghr@=v0.12.0
+            go install github.com/tcnksm/ghr@v0.13.0
       - attach_workspace:
           at: ~/package
       - run:
@@ -355,6 +364,7 @@ workflows:
   version: 2
   hera:
     jobs:
+      - test_ghr
       - lint
       - linux-clang-shared-asan
       - linux-gcc-shared-coverage
