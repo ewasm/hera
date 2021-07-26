@@ -302,7 +302,7 @@ jobs:
       - BUILD_PARALLEL_JOBS: 4
       - CMAKE_OPTIONS: -DHERA_DEBUGGING=ON -DHERA_BINARYEN=ON -DHERA_WABT=ON
     macos:
-      xcode: "10.1.0"
+      xcode: "11.7.0"
     steps:
       - run:
           name: "Install system dependencies"
