@@ -116,15 +116,16 @@ pair<evmc_status_code, bytes> callSystemContract(
     .flags = EVMC_STATIC,
     .depth = 0,
     .gas = gas,
-    .destination = address,
+    .recipient = address,
     .sender = {},
     .input_data = input.data(),
     .input_size = input.size(),
     .value = {},
     .create2_salt = {},
+    .code_address = address,
   };
 
-  evmc::result result = context.call(message);
+  evmc::Result result = context.call(message);
 
   bytes ret;
   if (result.status_code == EVMC_SUCCESS && result.output_data)
@@ -148,12 +149,13 @@ pair<evmc_status_code, bytes> locallyExecuteSystemContract(
     .flags = EVMC_STATIC,
     .depth = 0,
     .gas = gas,
-    .destination = address,
+    .recipient = address,
     .sender = {},
     .input_data = input.data(),
     .input_size = input.size(),
     .value = {},
     .create2_salt = {},
+    .code_address = address,
   };
 
   unique_ptr<WasmEngine> engine = wasmEngineCreateFn();
@@ -299,7 +301,7 @@ evmc_result hera_execute(
     bytes run_code{state_code};
 
     // replace executable code if replacement is supplied
-    auto preload = hera->contract_preload_list.find(msg->destination);
+    auto preload = hera->contract_preload_list.find(msg->recipient);
     if (preload != hera->contract_preload_list.end()) {
       HERA_DEBUG << "Overriding contract.\n";
       run_code = preload->second;
