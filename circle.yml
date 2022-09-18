@@ -249,12 +249,12 @@ jobs:
 
   linux-gcc-shared-coverage:
     environment:
-      - BUILD_TYPE: Debug
+      - BUILD_TYPE: Coverage
       - CXX: g++
       - CC:  gcc
       - GENERATOR: Unix Makefiles
       - BUILD_PARALLEL_JOBS: 4
-      - CMAKE_OPTIONS: -DCOVERAGE=ON -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON -DHERA_BINARYEN=ON -DHERA_WABT=ON -DHERA_WAVM=ON
+      - CMAKE_OPTIONS: -DBUILD_SHARED_LIBS=ON -DHERA_DEBUGGING=ON -DHERA_BINARYEN=ON -DHERA_WABT=ON -DHERA_WAVM=ON
       - TESTETH_OPTIONS: --evmc benchmark=true
     docker:
       - image: ethereum/cpp-build-env:9
