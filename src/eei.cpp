@@ -108,7 +108,7 @@ void WasmEngine::collectBenchmarkingData()
 
       HERA_DEBUG << "): " << dec;
 
-      evmc::bytes32 result = m_host.get_storage(m_msg.destination, path);
+      evmc::bytes32 result = m_host.get_storage(m_msg.recipient, path);
 
       if (useHex)
       {
@@ -181,7 +181,7 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::base);
 
-      storeAddress(m_msg.destination, resultOffset);
+      storeAddress(m_msg.recipient, resultOffset);
   }
 
   void EthereumInterface::eeiGetExternalBalance(uint32_t addressOffset, uint32_t resultOffset)
@@ -307,7 +307,7 @@ void WasmEngine::collectBenchmarkingData()
 
       takeInterfaceGas(GasSchedule::base);
 
-      storeUint256(m_host.get_tx_context().block_difficulty, offset);
+      storeUint256(m_host.get_tx_context().block_prev_randao, offset);
   }
 
   int64_t EthereumInterface::eeiGetBlockGasLimit()
@@ -355,7 +355,7 @@ void WasmEngine::collectBenchmarkingData()
       bytes data(length, '\0');
       loadMemory(dataOffset, data, length);
 
-      m_host.emit_log(m_msg.destination, data.data(), length, topics.data(), numberOfTopics);
+      m_host.emit_log(m_msg.recipient, data.data(), length, topics.data(), numberOfTopics);
   }
 
   int64_t EthereumInterface::eeiGetBlockNumber()
@@ -405,7 +405,7 @@ void WasmEngine::collectBenchmarkingData()
 
       const auto path = loadBytes32(pathOffset);
       const auto value = loadBytes32(valueOffset);
-      const auto current = m_host.get_storage(m_msg.destination, path);
+      const auto current = m_host.get_storage(m_msg.recipient, path);
 
       // Charge the right amount in case of the create case.
       if (is_zero(current) && !is_zero(value))
@@ -413,7 +413,7 @@ void WasmEngine::collectBenchmarkingData()
 
       // We do not need to take care about the delete case (gas refund), the client does it.
 
-      m_host.set_storage(m_msg.destination, path, value);
+      m_host.set_storage(m_msg.recipient, path, value);
   }
 
   void EthereumInterface::eeiStorageLoad(uint32_t pathOffset, uint32_t resultOffset)
@@ -423,7 +423,7 @@ void WasmEngine::collectBenchmarkingData()
       takeInterfaceGas(GasSchedule::storageLoad);
 
       evmc::bytes32 path = loadBytes32(pathOffset);
-      evmc::bytes32 result = m_host.get_storage(m_msg.destination, path);
+      evmc::bytes32 result = m_host.get_storage(m_msg.recipient, path);
 
       storeBytes32(result, resultOffset);
   }
@@ -464,7 +464,7 @@ void WasmEngine::collectBenchmarkingData()
       ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
 
       evmc_message call_message;
-      call_message.destination = loadAddress(addressOffset);
+      call_message.recipient = loadAddress(addressOffset);
       call_message.flags = m_msg.flags & EVMC_STATIC;
       call_message.depth = m_msg.depth + 1;
 
@@ -472,7 +472,7 @@ void WasmEngine::collectBenchmarkingData()
       case EEICallKind::Call:
       case EEICallKind::CallCode:
         call_message.kind = (kind == EEICallKind::CallCode) ? EVMC_CALLCODE : EVMC_CALL;
-        call_message.sender = m_msg.destination;
+        call_message.sender = m_msg.recipient;
         call_message.value = loadUint128(valueOffset);
 
         if ((kind == EEICallKind::Call) && !evmc::is_zero(call_message.value)) {
@@ -487,7 +487,7 @@ void WasmEngine::collectBenchmarkingData()
       case EEICallKind::CallStatic:
         call_message.kind = EVMC_CALL;
         call_message.flags |= EVMC_STATIC;
-        call_message.sender = m_msg.destination;
+        call_message.sender = m_msg.recipient;
         call_message.value = {};
         break;
       }
@@ -539,7 +539,7 @@ void WasmEngine::collectBenchmarkingData()
           return 1;
 
         // Only charge callNewAccount gas if the account is new and non-zero value is being transferred per EIP161.
-        if ((kind == EEICallKind::Call) && !m_host.account_exists(call_message.destination))
+        if ((kind == EEICallKind::Call) && !m_host.account_exists(call_message.recipient))
           takeInterfaceGas(GasSchedule::callNewAccount);
       }
 
@@ -587,8 +587,8 @@ void WasmEngine::collectBenchmarkingData()
 
       evmc_message create_message;
 
-      create_message.destination = {};
-      create_message.sender = m_msg.destination;
+      create_message.recipient = {};
+      create_message.sender = m_msg.recipient;
       create_message.value = loadUint128(valueOffset);
 
       if (m_msg.depth >= 1024)
@@ -655,7 +655,7 @@ void WasmEngine::collectBenchmarkingData()
       if (!m_host.account_exists(address))
         takeInterfaceGas(GasSchedule::callNewAccount);
 
-      m_host.selfdestruct(m_msg.destination, address);
+      m_host.selfdestruct(m_msg.recipient, address);
 
       throw EndExecution{};
   }
@@ -840,7 +840,7 @@ void WasmEngine::collectBenchmarkingData()
 
   bool EthereumInterface::enoughSenderBalanceFor(evmc::uint256be const& value)
   {
-    evmc::uint256be balance = m_host.get_balance(m_msg.destination);
+    evmc::uint256be balance = m_host.get_balance(m_msg.recipient);
     return safeLoadUint128(balance) >= safeLoadUint128(value);
   }
 
