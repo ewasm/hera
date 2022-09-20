@@ -19,7 +19,7 @@ cable_set_build_type(DEFAULT RelWithDebInfo CONFIGURATION_TYPES Debug;Release;Re
 set(CMAKE_DEBUG_POSTFIX "")
 
 project(hera)
-set(PROJECT_VERSION 0.5.0)
+set(PROJECT_VERSION 0.6.0)
 
 include(CableBuildInfo)
 include(GNUInstallDirs)
