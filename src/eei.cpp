@@ -162,6 +162,10 @@ void WasmEngine::collectBenchmarkingData()
       ensureCondition(gas >= 0, ArgumentOutOfRange, "Negative gas supplied.");
 
       takeGas(gas);
+
+      // FIXME: this may overflow
+      heraAssert((ffsl(gas) + ffsl(memory.size()) <= 64), "Memory gas calculation overflow."); //may need to find alternative to ffsl for cross-libc portability
+      takeGas(gas * memory.size() / GasSchedule::memoryPageSize * GasSchedule::memoryCostPerPage + 1); //round gas cost up
   }
 
   int64_t EthereumInterface::eeiGetGasLeft()
