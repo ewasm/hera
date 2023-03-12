@@ -854,4 +854,35 @@ void WasmEngine::collectBenchmarkingData()
     }
     return ret;
   }
+
+  intx::uint256 EthereumInterface::loadBignum256(uint32_t srcOffset)
+  {
+    uint8_t data[32];
+    loadMemory(srcOffset, data, 32);
+    // FIXME: change this to little endian?
+    return intx::be::uint256(data);
+  }
+
+  void EthereumInterface::storeBignum256(intx::uint256 const& src, uint32_t dstOffset)
+  {
+    uint8_t data[32];
+    // FIXME: change this to little endian?
+    intx::be::store(data, src);
+    storeMemory(data, dstOffset, 32);
+  }
+
+  void EthereumInterface::mul256(uint32_t aOffset, uint32_t bOffset, uint32_t retOffset)
+  {
+    storeBignum256(loadBignum256(aOffset) * loadBignum256(bOffset), retOffset);
+  }
+
+  void EthereumInterface::umulmod256(uint32_t aOffset, uint32_t bOffset, uint32_t modOffset, uint32_t retOffset)
+  {
+    using intx::uint512;
+    auto a = loadBignum256(aOffset);
+    auto b = loadBignum256(bOffset);
+    auto mod = loadBignum256(modOffset);
+    auto ret = mod != 0 ? ((uint512{a} * uint512{b}) % uint512{mod}).lo : 0;
+    storeBignum256(ret, retOffset);
+  }
 }

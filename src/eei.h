@@ -23,6 +23,8 @@
 #include <evmc/evmc.h>
 #include <evmc/evmc.hpp>
 
+#include <intx/intx.hpp>
+
 #include "exceptions.h"
 #include "helpers.h"
 
@@ -165,6 +167,10 @@ protected:
   uint32_t eeiCreate(uint32_t valueOffset, uint32_t dataOffset, uint32_t length, uint32_t resultOffset);
   void eeiSelfDestruct(uint32_t addressOffset);
 
+  // Bignum system library
+  void mul256(uint32_t aOffset, uint32_t bOffset, uint32_t retOffset);
+  void umulmod256(uint32_t aOffset, uint32_t bOffset, uint32_t modOffset, uint32_t retOffset);
+
 private:
   void eeiRevertOrFinish(bool revert, uint32_t offset, uint32_t size);
 
@@ -192,6 +198,9 @@ private:
   void storeAddress(evmc::address const& src, uint32_t dstOffset);
   evmc::uint256be loadUint128(uint32_t srcOffset);
   void storeUint128(evmc::uint256be const& src, uint32_t dstOffset);
+
+  intx::uint256 loadBignum256(uint32_t srcOffset);
+  void storeBignum256(intx::uint256 const& src, uint32_t dstOffset);
 
   inline int64_t maxCallGas(int64_t gas) { return gas - (gas / 64); }
 
