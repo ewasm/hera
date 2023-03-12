@@ -35,6 +35,14 @@ defaults:
         sudo pip3 install codespell
         codespell --skip=".git"
 
+  clangformat: &clangformat
+    run:
+      name: "Run clang-format"
+      command: |
+        clang-format --version
+        find include src test -name '*.hpp' -o -name '*.cpp' -o -name '*.h' -o -name '*.c' | xargs clang-format -i
+        git diff --color --exit-code
+
   build: &build
     run:
       name: "Build"
@@ -328,6 +336,7 @@ jobs:
     steps:
       - checkout
       - *codespell
+      - *clangformat
 
   test_ghr:
     docker:
